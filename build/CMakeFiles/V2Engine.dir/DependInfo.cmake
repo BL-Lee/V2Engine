@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/DeviceSelection.cpp" "CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.o.d"
+  "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBCommandBuffer.cpp" "CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.o.d"
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGraphicsPipeline.cpp" "CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o.d"
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBRenderPass.cpp" "CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o.d"
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/main.cpp" "CMakeFiles/V2Engine.dir/src/main.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/main.cpp.o.d"

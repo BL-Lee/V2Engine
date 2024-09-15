@@ -29,8 +29,8 @@ void VkBGraphicsPipeline::createGraphicsPipeline(VkDevice device, VkBSwapChain& 
     //Declare dynamic states of the pipelien
     //Could make this fixed, but is typically dynamic
     std::vector<VkDynamicState> dynamicStates = {
-      VK_DYNAMIC_STATE_VIEWPORT,
-      VK_DYNAMIC_STATE_SCISSOR
+      // VK_DYNAMIC_STATE_VIEWPORT,
+      //VK_DYNAMIC_STATE_SCISSOR
     };
 	
     VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -67,6 +67,9 @@ void VkBGraphicsPipeline::createGraphicsPipeline(VkDevice device, VkBSwapChain& 
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
     viewportState.scissorCount = 1;
+    viewportState.pViewports = &viewport;
+    viewportState.pScissors = &scissor;
+
 
     //Rasterizing
     VkPipelineRasterizationStateCreateInfo rasterizer{};

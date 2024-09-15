@@ -36,8 +36,10 @@ find_package(Vulkan REQUIRED)
 include_directories(libraries/glm)
 
 #src files
-file(GLOB SRC src/*)
-add_executable(V2Engine ${SRC} ${LDFLAGS})
+file(GLOB SRC src/*.cpp)
+
+add_executable(V2Engine src/main.cpp ${LDFLAGS})
+target_sources(V2Engine PUBLIC ${SRC})
 #add_executable(V2Engine src/main.cpp ${LDFLAGS})
 
 if (VULKAN_FOUND)

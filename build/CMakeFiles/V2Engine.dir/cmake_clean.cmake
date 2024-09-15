@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.o"
   "CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.o.d"
+  "CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.o"
+  "CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.o.d"
   "CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o"
   "CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o.d"
   "CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o"

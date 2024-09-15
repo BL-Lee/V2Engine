@@ -8,5 +8,4 @@ class VkBRenderPass
 public:
   VkRenderPass renderPass; 
   void createRenderPass(VkDevice device, VkFormat format);
-
 };

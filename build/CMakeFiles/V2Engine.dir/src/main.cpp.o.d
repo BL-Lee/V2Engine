@@ -184,4 +184,6 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/swapChain.hpp \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBRenderPass.hpp \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/DeviceSelection.hpp \
- /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGraphicsPipeline.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGraphicsPipeline.hpp \
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBCommandPool.hpp \
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBCommandBuffer.hpp

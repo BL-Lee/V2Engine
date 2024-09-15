@@ -179,6 +179,30 @@ src/DeviceSelection.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.s
 .PHONY : src/DeviceSelection.cpp.s
 
+src/VkBCommandBuffer.o: src/VkBCommandBuffer.cpp.o
+.PHONY : src/VkBCommandBuffer.o
+
+# target to build an object file
+src/VkBCommandBuffer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.o
+.PHONY : src/VkBCommandBuffer.cpp.o
+
+src/VkBCommandBuffer.i: src/VkBCommandBuffer.cpp.i
+.PHONY : src/VkBCommandBuffer.i
+
+# target to preprocess a source file
+src/VkBCommandBuffer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.i
+.PHONY : src/VkBCommandBuffer.cpp.i
+
+src/VkBCommandBuffer.s: src/VkBCommandBuffer.cpp.s
+.PHONY : src/VkBCommandBuffer.s
+
+# target to generate assembly for a file
+src/VkBCommandBuffer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.s
+.PHONY : src/VkBCommandBuffer.cpp.s
+
 src/VkBGraphicsPipeline.o: src/VkBGraphicsPipeline.cpp.o
 .PHONY : src/VkBGraphicsPipeline.o
 
@@ -313,6 +337,9 @@ help:
 	@echo "... src/DeviceSelection.o"
 	@echo "... src/DeviceSelection.i"
 	@echo "... src/DeviceSelection.s"
+	@echo "... src/VkBCommandBuffer.o"
+	@echo "... src/VkBCommandBuffer.i"
+	@echo "... src/VkBCommandBuffer.s"
 	@echo "... src/VkBGraphicsPipeline.o"
 	@echo "... src/VkBGraphicsPipeline.i"
 	@echo "... src/VkBGraphicsPipeline.s"
