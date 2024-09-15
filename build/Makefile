@@ -155,6 +155,78 @@ update_mappings/fast:
 	$(MAKE) $(MAKESILENT) -f libraries/glfw-3.4/src/CMakeFiles/update_mappings.dir/build.make libraries/glfw-3.4/src/CMakeFiles/update_mappings.dir/build
 .PHONY : update_mappings/fast
 
+src/DeviceSelection.o: src/DeviceSelection.cpp.o
+.PHONY : src/DeviceSelection.o
+
+# target to build an object file
+src/DeviceSelection.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.o
+.PHONY : src/DeviceSelection.cpp.o
+
+src/DeviceSelection.i: src/DeviceSelection.cpp.i
+.PHONY : src/DeviceSelection.i
+
+# target to preprocess a source file
+src/DeviceSelection.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.i
+.PHONY : src/DeviceSelection.cpp.i
+
+src/DeviceSelection.s: src/DeviceSelection.cpp.s
+.PHONY : src/DeviceSelection.s
+
+# target to generate assembly for a file
+src/DeviceSelection.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.s
+.PHONY : src/DeviceSelection.cpp.s
+
+src/VkBGraphicsPipeline.o: src/VkBGraphicsPipeline.cpp.o
+.PHONY : src/VkBGraphicsPipeline.o
+
+# target to build an object file
+src/VkBGraphicsPipeline.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o
+.PHONY : src/VkBGraphicsPipeline.cpp.o
+
+src/VkBGraphicsPipeline.i: src/VkBGraphicsPipeline.cpp.i
+.PHONY : src/VkBGraphicsPipeline.i
+
+# target to preprocess a source file
+src/VkBGraphicsPipeline.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.i
+.PHONY : src/VkBGraphicsPipeline.cpp.i
+
+src/VkBGraphicsPipeline.s: src/VkBGraphicsPipeline.cpp.s
+.PHONY : src/VkBGraphicsPipeline.s
+
+# target to generate assembly for a file
+src/VkBGraphicsPipeline.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.s
+.PHONY : src/VkBGraphicsPipeline.cpp.s
+
+src/VkBRenderPass.o: src/VkBRenderPass.cpp.o
+.PHONY : src/VkBRenderPass.o
+
+# target to build an object file
+src/VkBRenderPass.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o
+.PHONY : src/VkBRenderPass.cpp.o
+
+src/VkBRenderPass.i: src/VkBRenderPass.cpp.i
+.PHONY : src/VkBRenderPass.i
+
+# target to preprocess a source file
+src/VkBRenderPass.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.i
+.PHONY : src/VkBRenderPass.cpp.i
+
+src/VkBRenderPass.s: src/VkBRenderPass.cpp.s
+.PHONY : src/VkBRenderPass.s
+
+# target to generate assembly for a file
+src/VkBRenderPass.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.s
+.PHONY : src/VkBRenderPass.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -179,6 +251,54 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/swapChain.o: src/swapChain.cpp.o
+.PHONY : src/swapChain.o
+
+# target to build an object file
+src/swapChain.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/swapChain.cpp.o
+.PHONY : src/swapChain.cpp.o
+
+src/swapChain.i: src/swapChain.cpp.i
+.PHONY : src/swapChain.i
+
+# target to preprocess a source file
+src/swapChain.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/swapChain.cpp.i
+.PHONY : src/swapChain.cpp.i
+
+src/swapChain.s: src/swapChain.cpp.s
+.PHONY : src/swapChain.s
+
+# target to generate assembly for a file
+src/swapChain.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/swapChain.cpp.s
+.PHONY : src/swapChain.cpp.s
+
+src/vkDebug.o: src/vkDebug.cpp.o
+.PHONY : src/vkDebug.o
+
+# target to build an object file
+src/vkDebug.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o
+.PHONY : src/vkDebug.cpp.o
+
+src/vkDebug.i: src/vkDebug.cpp.i
+.PHONY : src/vkDebug.i
+
+# target to preprocess a source file
+src/vkDebug.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/vkDebug.cpp.i
+.PHONY : src/vkDebug.cpp.i
+
+src/vkDebug.s: src/vkDebug.cpp.s
+.PHONY : src/vkDebug.s
+
+# target to generate assembly for a file
+src/vkDebug.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/vkDebug.cpp.s
+.PHONY : src/vkDebug.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -190,9 +310,24 @@ help:
 	@echo "... update_mappings"
 	@echo "... V2Engine"
 	@echo "... glfw"
+	@echo "... src/DeviceSelection.o"
+	@echo "... src/DeviceSelection.i"
+	@echo "... src/DeviceSelection.s"
+	@echo "... src/VkBGraphicsPipeline.o"
+	@echo "... src/VkBGraphicsPipeline.i"
+	@echo "... src/VkBGraphicsPipeline.s"
+	@echo "... src/VkBRenderPass.o"
+	@echo "... src/VkBRenderPass.i"
+	@echo "... src/VkBRenderPass.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/swapChain.o"
+	@echo "... src/swapChain.i"
+	@echo "... src/swapChain.s"
+	@echo "... src/vkDebug.o"
+	@echo "... src/vkDebug.i"
+	@echo "... src/vkDebug.s"
 .PHONY : help
 
 

@@ -38,6 +38,7 @@ include_directories(libraries/glm)
 #src files
 file(GLOB SRC src/*)
 add_executable(V2Engine ${SRC} ${LDFLAGS})
+#add_executable(V2Engine src/main.cpp ${LDFLAGS})
 
 if (VULKAN_FOUND)
   message(STATUS "Found vulkan!")
@@ -45,6 +46,7 @@ if (VULKAN_FOUND)
   target_link_libraries(V2Engine glfw)
 if ( MSVC )
 else()
+  #-lglfw -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi
   target_link_libraries(V2Engine dl pthread X11 Xxf86vm Xrandr Xi)
 endif()
 endif(VULKAN_FOUND)
