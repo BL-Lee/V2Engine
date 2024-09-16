@@ -179,29 +179,29 @@ src/DeviceSelection.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.s
 .PHONY : src/DeviceSelection.cpp.s
 
-src/VkBCommandBuffer.o: src/VkBCommandBuffer.cpp.o
-.PHONY : src/VkBCommandBuffer.o
+src/VkBDrawCommandBuffer.o: src/VkBDrawCommandBuffer.cpp.o
+.PHONY : src/VkBDrawCommandBuffer.o
 
 # target to build an object file
-src/VkBCommandBuffer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.o
-.PHONY : src/VkBCommandBuffer.cpp.o
+src/VkBDrawCommandBuffer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o
+.PHONY : src/VkBDrawCommandBuffer.cpp.o
 
-src/VkBCommandBuffer.i: src/VkBCommandBuffer.cpp.i
-.PHONY : src/VkBCommandBuffer.i
+src/VkBDrawCommandBuffer.i: src/VkBDrawCommandBuffer.cpp.i
+.PHONY : src/VkBDrawCommandBuffer.i
 
 # target to preprocess a source file
-src/VkBCommandBuffer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.i
-.PHONY : src/VkBCommandBuffer.cpp.i
+src/VkBDrawCommandBuffer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.i
+.PHONY : src/VkBDrawCommandBuffer.cpp.i
 
-src/VkBCommandBuffer.s: src/VkBCommandBuffer.cpp.s
-.PHONY : src/VkBCommandBuffer.s
+src/VkBDrawCommandBuffer.s: src/VkBDrawCommandBuffer.cpp.s
+.PHONY : src/VkBDrawCommandBuffer.s
 
 # target to generate assembly for a file
-src/VkBCommandBuffer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBCommandBuffer.cpp.s
-.PHONY : src/VkBCommandBuffer.cpp.s
+src/VkBDrawCommandBuffer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.s
+.PHONY : src/VkBDrawCommandBuffer.cpp.s
 
 src/VkBGraphicsPipeline.o: src/VkBGraphicsPipeline.cpp.o
 .PHONY : src/VkBGraphicsPipeline.o
@@ -250,6 +250,30 @@ src/VkBRenderPass.s: src/VkBRenderPass.cpp.s
 src/VkBRenderPass.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.s
 .PHONY : src/VkBRenderPass.cpp.s
+
+src/VkBVertexBuffer.o: src/VkBVertexBuffer.cpp.o
+.PHONY : src/VkBVertexBuffer.o
+
+# target to build an object file
+src/VkBVertexBuffer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o
+.PHONY : src/VkBVertexBuffer.cpp.o
+
+src/VkBVertexBuffer.i: src/VkBVertexBuffer.cpp.i
+.PHONY : src/VkBVertexBuffer.i
+
+# target to preprocess a source file
+src/VkBVertexBuffer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.i
+.PHONY : src/VkBVertexBuffer.cpp.i
+
+src/VkBVertexBuffer.s: src/VkBVertexBuffer.cpp.s
+.PHONY : src/VkBVertexBuffer.s
+
+# target to generate assembly for a file
+src/VkBVertexBuffer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.s
+.PHONY : src/VkBVertexBuffer.cpp.s
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
@@ -337,15 +361,18 @@ help:
 	@echo "... src/DeviceSelection.o"
 	@echo "... src/DeviceSelection.i"
 	@echo "... src/DeviceSelection.s"
-	@echo "... src/VkBCommandBuffer.o"
-	@echo "... src/VkBCommandBuffer.i"
-	@echo "... src/VkBCommandBuffer.s"
+	@echo "... src/VkBDrawCommandBuffer.o"
+	@echo "... src/VkBDrawCommandBuffer.i"
+	@echo "... src/VkBDrawCommandBuffer.s"
 	@echo "... src/VkBGraphicsPipeline.o"
 	@echo "... src/VkBGraphicsPipeline.i"
 	@echo "... src/VkBGraphicsPipeline.s"
 	@echo "... src/VkBRenderPass.o"
 	@echo "... src/VkBRenderPass.i"
 	@echo "... src/VkBRenderPass.s"
+	@echo "... src/VkBVertexBuffer.o"
+	@echo "... src/VkBVertexBuffer.i"
+	@echo "... src/VkBVertexBuffer.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

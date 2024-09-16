@@ -97,7 +97,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtils::debugCallback(
 							 const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 							 void* pUserData 
 							 ) {
-  std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+  std::cerr << "validation layer:\n\t " << pCallbackData->pMessage << std::endl << std::endl;
   return VK_FALSE;
 }
 

@@ -13,8 +13,8 @@
 #include <set>
 
 
-const uint32_t WINDOW_WIDTH = 800;
-const uint32_t WINDOW_HEIGHT = 600;
+const uint32_t WINDOW_WIDTH = 1600;
+const uint32_t WINDOW_HEIGHT = 1200;
 
 const std::vector<const char*> validationLayers = {
   "VK_LAYER_KHRONOS_validation"
@@ -39,7 +39,8 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBGraphicsPipeline.hpp"
 #include "VkBRenderPass.hpp"
 #include "VkBCommandPool.hpp"
-#include "VkBCommandBuffer.hpp"
+#include "VkBDrawCommandBuffer.hpp"
+#include "VkBVertexBuffer.hpp"
 class V2Engine {
 public:
   VkInstance instance;  
@@ -53,13 +54,15 @@ public:
   VkSurfaceKHR surface;
   
   VkBGraphicsPipeline graphicsPipeline;
+  
   VkBRenderPass renderPass;
 
-
+  VkBVertexBuffer vertexBuffer;
 
 
   VkCommandPool drawCommandPool;
-  VkBCommandBuffer commandBuffer;
+  VkCommandPool transientCommandPool; //For short lived command buffers
+  VkBDrawCommandBuffer commandBuffer;
 
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
@@ -86,6 +89,16 @@ private:
   DebugUtils debugUtils;
   VkBSwapChain swapChain;
 
+
+  const std::vector<Vertex> vertices = {
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
+  };
+  const std::vector<uint32_t> indices = {
+    0, 1, 2, 2, 3, 0
+  };
   
   void initWindow() {
     glfwInit();
@@ -111,7 +124,18 @@ private:
     renderPass.createRenderPass(device, swapChain.imageFormat);
     graphicsPipeline.createGraphicsPipeline(device, swapChain, renderPass);
     swapChain.createFramebuffers(device, renderPass);
-    createCommandPool(&drawCommandPool, device, physicalDevice, surface);
+    createCommandPool(&drawCommandPool, device, physicalDevice, surface,
+		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    createCommandPool(&transientCommandPool, device, physicalDevice, surface,
+		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+    vertexBuffer.create(device, physicalDevice,
+			vertices.size() * sizeof(Vertex),
+			indices.size() * sizeof(uint32_t));
+    vertexBuffer.fill(device,
+		      vertices.data(), vertices.size(),
+		      indices.data(), indices.size());
+    vertexBuffer.transferToDevice(device, transientCommandPool, graphicsQueue);
+    
     commandBuffer.createCommandBuffer(device, drawCommandPool);
     createSyncObjects();
 	
@@ -268,11 +292,12 @@ private:
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
-    //Reset buffer before we write to it
     commandBuffer.record(renderPass.renderPass,
-				      swapChain.framebuffers[imageIndex],
-				      swapChain.extent,
-				      graphicsPipeline.pipeline);
+			 swapChain.framebuffers[imageIndex],
+			 swapChain.extent,
+			 graphicsPipeline.pipeline,
+			 &vertexBuffer
+			 );
     
 
     VkSubmitInfo submitInfo{};
@@ -322,6 +347,7 @@ private:
     vkDestroyFence(device, inFlightFence, nullptr);
 	
     vkDestroyCommandPool(device, drawCommandPool, nullptr);
+    vkDestroyCommandPool(device, transientCommandPool, nullptr);
 
     for (auto framebuffer : swapChain.framebuffers) {
       vkDestroyFramebuffer(device, framebuffer, nullptr);
@@ -334,6 +360,7 @@ private:
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
+    vertexBuffer.destroy(device);
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     if (enableVulkanValidationLayers) {

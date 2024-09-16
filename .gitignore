@@ -2,3 +2,4 @@ build/*
 build
 *~
 CMakeCache.txt
+glslc
