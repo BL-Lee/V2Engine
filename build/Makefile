@@ -179,6 +179,30 @@ src/DeviceSelection.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.s
 .PHONY : src/DeviceSelection.cpp.s
 
+src/VkBBuffer.o: src/VkBBuffer.cpp.o
+.PHONY : src/VkBBuffer.o
+
+# target to build an object file
+src/VkBBuffer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o
+.PHONY : src/VkBBuffer.cpp.o
+
+src/VkBBuffer.i: src/VkBBuffer.cpp.i
+.PHONY : src/VkBBuffer.i
+
+# target to preprocess a source file
+src/VkBBuffer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.i
+.PHONY : src/VkBBuffer.cpp.i
+
+src/VkBBuffer.s: src/VkBBuffer.cpp.s
+.PHONY : src/VkBBuffer.s
+
+# target to generate assembly for a file
+src/VkBBuffer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.s
+.PHONY : src/VkBBuffer.cpp.s
+
 src/VkBDrawCommandBuffer.o: src/VkBDrawCommandBuffer.cpp.o
 .PHONY : src/VkBDrawCommandBuffer.o
 
@@ -250,6 +274,54 @@ src/VkBRenderPass.s: src/VkBRenderPass.cpp.s
 src/VkBRenderPass.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.s
 .PHONY : src/VkBRenderPass.cpp.s
+
+src/VkBUniformBuffer.o: src/VkBUniformBuffer.cpp.o
+.PHONY : src/VkBUniformBuffer.o
+
+# target to build an object file
+src/VkBUniformBuffer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o
+.PHONY : src/VkBUniformBuffer.cpp.o
+
+src/VkBUniformBuffer.i: src/VkBUniformBuffer.cpp.i
+.PHONY : src/VkBUniformBuffer.i
+
+# target to preprocess a source file
+src/VkBUniformBuffer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.i
+.PHONY : src/VkBUniformBuffer.cpp.i
+
+src/VkBUniformBuffer.s: src/VkBUniformBuffer.cpp.s
+.PHONY : src/VkBUniformBuffer.s
+
+# target to generate assembly for a file
+src/VkBUniformBuffer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.s
+.PHONY : src/VkBUniformBuffer.cpp.s
+
+src/VkBUniformPool.o: src/VkBUniformPool.cpp.o
+.PHONY : src/VkBUniformPool.o
+
+# target to build an object file
+src/VkBUniformPool.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o
+.PHONY : src/VkBUniformPool.cpp.o
+
+src/VkBUniformPool.i: src/VkBUniformPool.cpp.i
+.PHONY : src/VkBUniformPool.i
+
+# target to preprocess a source file
+src/VkBUniformPool.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.i
+.PHONY : src/VkBUniformPool.cpp.i
+
+src/VkBUniformPool.s: src/VkBUniformPool.cpp.s
+.PHONY : src/VkBUniformPool.s
+
+# target to generate assembly for a file
+src/VkBUniformPool.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.s
+.PHONY : src/VkBUniformPool.cpp.s
 
 src/VkBVertexBuffer.o: src/VkBVertexBuffer.cpp.o
 .PHONY : src/VkBVertexBuffer.o
@@ -361,6 +433,9 @@ help:
 	@echo "... src/DeviceSelection.o"
 	@echo "... src/DeviceSelection.i"
 	@echo "... src/DeviceSelection.s"
+	@echo "... src/VkBBuffer.o"
+	@echo "... src/VkBBuffer.i"
+	@echo "... src/VkBBuffer.s"
 	@echo "... src/VkBDrawCommandBuffer.o"
 	@echo "... src/VkBDrawCommandBuffer.i"
 	@echo "... src/VkBDrawCommandBuffer.s"
@@ -370,6 +445,12 @@ help:
 	@echo "... src/VkBRenderPass.o"
 	@echo "... src/VkBRenderPass.i"
 	@echo "... src/VkBRenderPass.s"
+	@echo "... src/VkBUniformBuffer.o"
+	@echo "... src/VkBUniformBuffer.i"
+	@echo "... src/VkBUniformBuffer.s"
+	@echo "... src/VkBUniformPool.o"
+	@echo "... src/VkBUniformPool.i"
+	@echo "... src/VkBUniformPool.s"
 	@echo "... src/VkBVertexBuffer.o"
 	@echo "... src/VkBVertexBuffer.i"
 	@echo "... src/VkBVertexBuffer.s"

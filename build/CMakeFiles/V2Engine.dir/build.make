@@ -97,10 +97,24 @@ CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/benlee/Desktop/RandomCodingTests/V2Engine/src/DeviceSelection.cpp -o CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.s
 
+CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o: CMakeFiles/V2Engine.dir/flags.make
+CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o: ../src/VkBBuffer.cpp
+CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o: CMakeFiles/V2Engine.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o -MF CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o.d -o CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o -c /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBBuffer.cpp
+
+CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBBuffer.cpp > CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.i
+
+CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBBuffer.cpp -o CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.s
+
 CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o: CMakeFiles/V2Engine.dir/flags.make
 CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o: ../src/VkBDrawCommandBuffer.cpp
 CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o: CMakeFiles/V2Engine.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o -MF CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o.d -o CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o -c /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBDrawCommandBuffer.cpp
 
 CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.i: cmake_force
@@ -114,7 +128,7 @@ CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.s: cmake_force
 CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o: CMakeFiles/V2Engine.dir/flags.make
 CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o: ../src/VkBGraphicsPipeline.cpp
 CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o: CMakeFiles/V2Engine.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o -MF CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o.d -o CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o -c /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGraphicsPipeline.cpp
 
 CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.i: cmake_force
@@ -128,7 +142,7 @@ CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.s: cmake_force
 CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o: CMakeFiles/V2Engine.dir/flags.make
 CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o: ../src/VkBRenderPass.cpp
 CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o: CMakeFiles/V2Engine.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o -MF CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o.d -o CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o -c /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBRenderPass.cpp
 
 CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.i: cmake_force
@@ -139,10 +153,38 @@ CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBRenderPass.cpp -o CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.s
 
+CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o: CMakeFiles/V2Engine.dir/flags.make
+CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o: ../src/VkBUniformBuffer.cpp
+CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o: CMakeFiles/V2Engine.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o -MF CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o.d -o CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o -c /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformBuffer.cpp
+
+CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformBuffer.cpp > CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.i
+
+CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformBuffer.cpp -o CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.s
+
+CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o: CMakeFiles/V2Engine.dir/flags.make
+CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o: ../src/VkBUniformPool.cpp
+CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o: CMakeFiles/V2Engine.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o -MF CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o.d -o CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o -c /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.cpp
+
+CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.cpp > CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.i
+
+CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.cpp -o CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.s
+
 CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o: CMakeFiles/V2Engine.dir/flags.make
 CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o: ../src/VkBVertexBuffer.cpp
 CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o: CMakeFiles/V2Engine.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o -MF CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o.d -o CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o -c /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBVertexBuffer.cpp
 
 CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.i: cmake_force
@@ -156,7 +198,7 @@ CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.s: cmake_force
 CMakeFiles/V2Engine.dir/src/swapChain.cpp.o: CMakeFiles/V2Engine.dir/flags.make
 CMakeFiles/V2Engine.dir/src/swapChain.cpp.o: ../src/swapChain.cpp
 CMakeFiles/V2Engine.dir/src/swapChain.cpp.o: CMakeFiles/V2Engine.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/V2Engine.dir/src/swapChain.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/V2Engine.dir/src/swapChain.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/V2Engine.dir/src/swapChain.cpp.o -MF CMakeFiles/V2Engine.dir/src/swapChain.cpp.o.d -o CMakeFiles/V2Engine.dir/src/swapChain.cpp.o -c /home/benlee/Desktop/RandomCodingTests/V2Engine/src/swapChain.cpp
 
 CMakeFiles/V2Engine.dir/src/swapChain.cpp.i: cmake_force
@@ -170,7 +212,7 @@ CMakeFiles/V2Engine.dir/src/swapChain.cpp.s: cmake_force
 CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: CMakeFiles/V2Engine.dir/flags.make
 CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp
 CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: CMakeFiles/V2Engine.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o -MF CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o.d -o CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o -c /home/benlee/Desktop/RandomCodingTests/V2Engine/src/vkDebug.cpp
 
 CMakeFiles/V2Engine.dir/src/vkDebug.cpp.i: cmake_force
@@ -185,9 +227,12 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.s: cmake_force
 V2Engine_OBJECTS = \
 "CMakeFiles/V2Engine.dir/src/main.cpp.o" \
 "CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.o" \
+"CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o" \
 "CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o" \
 "CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o" \
 "CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o" \
+"CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o" \
+"CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o" \
 "CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o" \
 "CMakeFiles/V2Engine.dir/src/swapChain.cpp.o" \
 "CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o"
@@ -197,9 +242,12 @@ V2Engine_EXTERNAL_OBJECTS =
 
 V2Engine: CMakeFiles/V2Engine.dir/src/main.cpp.o
 V2Engine: CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.o
+V2Engine: CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o
 V2Engine: CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o
 V2Engine: CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o
 V2Engine: CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o
+V2Engine: CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o
+V2Engine: CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o
 V2Engine: CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o
 V2Engine: CMakeFiles/V2Engine.dir/src/swapChain.cpp.o
 V2Engine: CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o
@@ -209,7 +257,7 @@ V2Engine: libraries/glfw-3.4/src/libglfw3.a
 V2Engine: /usr/lib/x86_64-linux-gnu/librt.a
 V2Engine: /usr/lib/x86_64-linux-gnu/libm.so
 V2Engine: CMakeFiles/V2Engine.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX executable V2Engine"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/benlee/Desktop/RandomCodingTests/V2Engine/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Linking CXX executable V2Engine"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/V2Engine.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

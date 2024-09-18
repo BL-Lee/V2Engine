@@ -11,6 +11,11 @@
 #include <algorithm>
 #include <optional>
 #include <set>
+#define GLM_FORCE_RADIANS
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <chrono>
+
 
 
 const uint32_t WINDOW_WIDTH = 1600;
@@ -41,6 +46,8 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBCommandPool.hpp"
 #include "VkBDrawCommandBuffer.hpp"
 #include "VkBVertexBuffer.hpp"
+#include "VkBUniformBuffer.hpp"
+#include "VkBUniformPool.hpp"
 class V2Engine {
 public:
   VkInstance instance;  
@@ -58,7 +65,9 @@ public:
   VkBRenderPass renderPass;
 
   VkBVertexBuffer vertexBuffer;
-
+  VkBUniformBuffer matrixUBO;
+  VkBUniformBuffer triangleUBO;
+  VkBUniformPool matrixPool;
 
   VkCommandPool drawCommandPool;
   VkCommandPool transientCommandPool; //For short lived command buffers
@@ -68,7 +77,11 @@ public:
   VkSemaphore renderFinishedSemaphore;
   VkFence inFlightFence;
   GLFWwindow* window;
-
+  struct MVPMatrixUBO {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+  };
   
   void run() {
 
@@ -94,10 +107,16 @@ private:
     {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
     {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
     {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}}
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+
+    {{-0.5f, -0.5f, 0.2f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f, 0.2f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+
   };
   const std::vector<uint32_t> indices = {
-    0, 1, 2, 2, 3, 0
+    0, 2, 1, 2, 0, 3,
+    4,6,5
   };
   
   void initWindow() {
@@ -117,17 +136,26 @@ private:
     createSurface();
     physicalDevice = VkBDeviceSelection::pickPhysicalDevice(instance, surface, deviceExtensions);
     createLogicalDevice();
-    
+
+    //Swap chain and pipeilne
     swapChain.createSwapChain(device, physicalDevice, surface, window);
     swapChain.createImageViews(device);
     
     renderPass.createRenderPass(device, swapChain.imageFormat);
-    graphicsPipeline.createGraphicsPipeline(device, swapChain, renderPass);
+    
+    matrixPool.createDescriptorSetLayout(device);
+    
+    graphicsPipeline.createGraphicsPipeline(device, swapChain, renderPass, matrixPool.descriptorSetLayout);
+    
     swapChain.createFramebuffers(device, renderPass);
+
+    //Command pools
     createCommandPool(&drawCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     createCommandPool(&transientCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+
+    //Vertices and indices
     vertexBuffer.create(device, physicalDevice,
 			vertices.size() * sizeof(Vertex),
 			indices.size() * sizeof(uint32_t));
@@ -135,6 +163,15 @@ private:
 		      vertices.data(), vertices.size(),
 		      indices.data(), indices.size());
     vertexBuffer.transferToDevice(device, transientCommandPool, graphicsQueue);
+
+    //Uniforms
+    matrixUBO.createUniformBuffers(physicalDevice, device,
+				   sizeof(MVPMatrixUBO),
+				   swapChain.imageViews.size());
+    triangleUBO.createUniformBuffers(physicalDevice, device, sizeof(MVPMatrixUBO),			     swapChain.imageViews.size());
+    matrixPool.create(device, 2, swapChain.imageViews.size());
+    matrixUBO.allocateDescriptorSets(device, matrixPool);
+    triangleUBO.allocateDescriptorSets(device, matrixPool);
     
     commandBuffer.createCommandBuffer(device, drawCommandPool);
     createSyncObjects();
@@ -282,7 +319,31 @@ private:
   //Queue families -----------------------------------------------------
 
 
+  void updateProjectionMatrices(uint32_t currentImage)
+  {
+    static auto startTime = std::chrono::high_resolution_clock::now();
 
+    auto currentTime = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+
+    MVPMatrixUBO ubo{};
+    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
+			    glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
+			   glm::vec3(0.0f, 0.0f, 0.0f),
+			   glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f),
+				swapChain.extent.width / (float) swapChain.extent.height,
+				0.1f, 10.0f);
+    ubo.proj[1][1] *= -1;
+
+    memcpy(matrixUBO.uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+
+    ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, glm::sin(time)));
+    memcpy(triangleUBO.uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    
+  }
+  
   void drawFrame() {
     //Wait for previous frame to finish
     vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
@@ -291,14 +352,28 @@ private:
     //Get image index we'll draw to, indicating the semaphore for the presentation engine to signal when its done using it. After that we can write to it
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-
-    commandBuffer.record(renderPass.renderPass,
-			 swapChain.framebuffers[imageIndex],
-			 swapChain.extent,
-			 graphicsPipeline.pipeline,
-			 &vertexBuffer
-			 );
     
+    updateProjectionMatrices(imageIndex);
+    //plane
+    vkResetCommandBuffer(commandBuffer.commandBuffer, 0);
+    commandBuffer.begin(renderPass.renderPass,
+			swapChain.framebuffers[imageIndex],
+			swapChain.extent);
+    commandBuffer.record(graphicsPipeline.pipeline,
+			 graphicsPipeline.layout,
+			 &vertexBuffer,
+			 &matrixPool.descriptorSets[matrixUBO.indexIntoPool + imageIndex],
+			 0, 6
+			 );
+
+    //Tri
+    commandBuffer.record(graphicsPipeline.pipeline,
+			 graphicsPipeline.layout,
+			 &vertexBuffer,
+			 &matrixPool.descriptorSets[triangleUBO.indexIntoPool + imageIndex],
+			 6, 3
+			 );
+    commandBuffer.end();
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -361,6 +436,9 @@ private:
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
     vertexBuffer.destroy(device);
+    matrixUBO.destroy(device);
+    triangleUBO.destroy(device);
+    matrixPool.destroy(device);
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     if (enableVulkanValidationLayers) {

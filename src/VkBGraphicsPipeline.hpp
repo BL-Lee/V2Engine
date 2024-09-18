@@ -25,5 +25,8 @@ public:
   VkPipelineLayout layout;
   static std::vector<char> readShader(const std::string& filename);
   VkShaderModule createShaderModule(VkDevice device, const std::vector<char>& code);
-  void createGraphicsPipeline(VkDevice device, VkBSwapChain& swapChain, VkBRenderPass renderPass);
+  void createGraphicsPipeline(VkDevice device,
+			      VkBSwapChain& swapChain,
+			      VkBRenderPass renderPass,
+			      VkDescriptorSetLayout descriptorSetLayout);
 };

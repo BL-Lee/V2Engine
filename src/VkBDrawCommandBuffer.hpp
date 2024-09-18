@@ -8,10 +8,16 @@ public:
   VkCommandBuffer commandBuffer;
   
   void createCommandBuffer(VkDevice device, VkCommandPool commandPool);
-  void record(VkRenderPass renderPass,
-	      VkFramebuffer frameBuffer,
-	      VkExtent2D extent,
-	      VkPipeline pipeline,
-	      VkBVertexBuffer* vb
+  void record(VkPipeline pipeline,
+	      VkPipelineLayout pipelineLayout,
+	      VkBVertexBuffer* vertexBuffer,
+	      VkDescriptorSet* descriptorSet,
+	      int offset,
+	      int count
 	      );
+  void end();
+  void begin(VkRenderPass renderPass,
+	     VkFramebuffer frameBuffer,
+	     VkExtent2D extent);
+
 };
