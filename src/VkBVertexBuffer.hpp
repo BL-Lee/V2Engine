@@ -38,10 +38,9 @@ https://vulkan-tutorial.com/en/Vertex_buffers/Index_buffer
   uint32_t vertexCount;
   uint32_t indexCount;
   
-  void create(VkDevice device, VkPhysicalDevice physicalDevice, size_t initialVertexSize, size_t initialIndexSize)  ;
-  void destroy(VkDevice device);
-  void fill(VkDevice device,
-	    const Vertex* vertices, uint32_t vertexCount,
+  void create(size_t initialVertexSize, size_t initialIndexSize)  ;
+  void destroy();
+  void fill(const Vertex* vertices, uint32_t vertexCount,
 	    const uint32_t* indices, uint32_t indexCount);
-  void transferToDevice(VkDevice device, VkCommandPool transientPool, VkQueue graphicsQueue);
+  void transferToDevice(VkCommandPool transientPool, VkQueue graphicsQueue);
 };

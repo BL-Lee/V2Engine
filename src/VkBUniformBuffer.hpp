@@ -19,7 +19,7 @@ public:
   int indexIntoPool;
 
   
-  void destroy(VkDevice);
+  void destroy();
 
   void createUniformBuffers(VkPhysicalDevice physicalDevice,
 					    VkDevice device,

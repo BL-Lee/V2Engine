@@ -13,8 +13,8 @@ public:
   int totalSets;
   int filledSets;
   VkDescriptorSetLayout descriptorSetLayout;
-  void createDescriptorSetLayout(VkDevice device);
-  void destroy(VkDevice device);
-  void create(VkDevice device, uint32_t totalToStore, uint32_t duplicateCount);
+  void createDescriptorSetLayout();
+  void destroy();
+  void create(uint32_t totalToStore, uint32_t duplicateCount);
   int getDescriptorSetIndex();
 };

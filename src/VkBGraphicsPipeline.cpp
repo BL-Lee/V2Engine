@@ -1,11 +1,10 @@
 #include "VkBGraphicsPipeline.hpp"
 #include "Vertex.hpp"
-
+#include "VkBGlobals.hpp"
 #include <stdexcept>
 #include <fstream>
 
-void VkBGraphicsPipeline::createGraphicsPipeline(VkDevice device,
-						 VkBSwapChain& swapChain,
+void VkBGraphicsPipeline::createGraphicsPipeline(VkBSwapChain& swapChain,
 						 VkBRenderPass renderPass,
 						 VkDescriptorSetLayout descriptorSetLayout)
 {
@@ -13,8 +12,8 @@ void VkBGraphicsPipeline::createGraphicsPipeline(VkDevice device,
     auto vertShaderCode = readShader("../src/shaders/vert.spv");
     auto fragShaderCode = readShader("../src/shaders/frag.spv");
 	
-    VkShaderModule vertShaderModule = createShaderModule(device, vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(device, fragShaderCode);
+    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
+    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -183,7 +182,7 @@ VkBGraphicsPipeline::readShader(const std::string& filename)
 
 
 VkShaderModule
-VkBGraphicsPipeline::createShaderModule(VkDevice device, const std::vector<char>& code)
+VkBGraphicsPipeline::createShaderModule(const std::vector<char>& code)
 {
       VkShaderModuleCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;

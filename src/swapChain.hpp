@@ -55,14 +55,14 @@ public:
     std::vector<VkPresentModeKHR> presentModes;
   };
 
-  void createSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, GLFWwindow* window);
+  void createSwapChain(VkSurfaceKHR surface, GLFWwindow* window);
   
   static SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface);
   VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
   VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window);
 
-  void createImageViews(VkDevice device);
-  void createFramebuffers(VkDevice device, VkBRenderPass renderPass);
+  void createImageViews();
+  void createFramebuffers(VkBRenderPass renderPass);
   
 };

@@ -1,8 +1,9 @@
+#include "VkBGlobals.hpp"
 #include "VkBDrawCommandBuffer.hpp"
 #include "VkBVertexBuffer.hpp"
 #include <stdexcept>
 void
-VkBDrawCommandBuffer::createCommandBuffer(VkDevice device, VkCommandPool commandPool)
+VkBDrawCommandBuffer::createCommandBuffer(VkCommandPool commandPool)
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO; //@todo: hints

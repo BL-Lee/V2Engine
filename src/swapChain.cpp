@@ -3,7 +3,8 @@
 #include <stdexcept>
 #include <algorithm>
 #include <limits>
-void VkBSwapChain::createSwapChain(VkDevice device, VkPhysicalDevice physicalDevice, VkSurfaceKHR surface, GLFWwindow* window) {
+#include "VkBGlobals.hpp"
+void VkBSwapChain::createSwapChain(VkSurfaceKHR surface, GLFWwindow* window) {
   SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
   VkSurfaceFormatKHR surfaceFormat = chooseSwapSurfaceFormat(swapChainSupport.formats);
@@ -96,7 +97,9 @@ VkSurfaceFormatKHR VkBSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSur
 }
     
 VkPresentModeKHR VkBSwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
-  return VK_PRESENT_MODE_FIFO_KHR; //double buffering basically
+  //return VK_PRESENT_MODE_IMMEDIATE_KHR;
+  //return VK_PRESENT_MODE_MAILBOX_KHR; // triple buffering
+  return VK_PRESENT_MODE_FIFO_KHR; //double buffering basically (why jittery?)
   //Look back in the tutorial if you want mailbox (triple buffering) or immediate mode (single buffering)
 }
 
@@ -124,7 +127,7 @@ VkExtent2D VkBSwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabi
     
 }
 
-void VkBSwapChain::createImageViews(VkDevice device) {
+void VkBSwapChain::createImageViews() {
   imageViews.resize(images.size());
 
   for (int i = 0; i < images.size(); i++) {
@@ -151,7 +154,7 @@ void VkBSwapChain::createImageViews(VkDevice device) {
   }
 }
   
-void VkBSwapChain::createFramebuffers(VkDevice device, VkBRenderPass renderPass) {
+void VkBSwapChain::createFramebuffers(VkBRenderPass renderPass) {
   framebuffers.resize(imageViews.size());
   for (size_t i = 0; i < imageViews.size(); i++) {
     VkImageView attachments[] = { imageViews[i] };

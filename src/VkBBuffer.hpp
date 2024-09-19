@@ -3,21 +3,17 @@
 #include "GLFW/glfw3.h"
 
 
-uint32_t findMemoryType(VkPhysicalDevice physicalDevice,
-			uint32_t typeFilter,
+uint32_t findMemoryType(uint32_t typeFilter,
 			VkMemoryPropertyFlags properties);
 
-void createBuffer(VkPhysicalDevice physicalDevice,
-		  VkDevice device,
-		  VkDeviceSize size,
+void createBuffer(VkDeviceSize size,
 		  VkBufferUsageFlags usage,
 		  VkMemoryPropertyFlags properties,
 		  VkBuffer& buffer,
 		  VkDeviceMemory& bufferMemory);
 
 //Command pool should be transientCommandPool
-void copyBuffer(VkDevice device,
-		VkBuffer srcBuffer,
+void copyBuffer(VkBuffer srcBuffer,
 		VkBuffer dstBuffer,
 		VkDeviceSize size,
 		VkCommandPool commandPool,

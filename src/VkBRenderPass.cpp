@@ -1,6 +1,7 @@
 #include "VkBRenderPass.hpp"
 #include <stdexcept>
-void VkBRenderPass::createRenderPass(VkDevice device, VkFormat format) {
+#include "VkBGlobals.hpp"
+void VkBRenderPass::createRenderPass(VkFormat format) {
   //There will pretty much always be one subpass, i think theyre only used for mobile or tiled rendering
   //Subpass info --------------------------------
   VkAttachmentReference colorAttachmentRef{};

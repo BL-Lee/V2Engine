@@ -1,7 +1,9 @@
+#include "VkBGlobals.hpp"
+
 #include "VkBUniformPool.hpp"
 #include <stdexcept>
 //Assume one per image in flight
-void VkBUniformPool::create(VkDevice device, uint32_t totalToStore, uint32_t duplicateCount) {
+void VkBUniformPool::create(uint32_t totalToStore, uint32_t duplicateCount) {
 
   filledSets = 0;
   imagesInFlight = duplicateCount;
@@ -48,7 +50,7 @@ int VkBUniformPool::getDescriptorSetIndex()
   return (filledSets - 1) * imagesInFlight;
 }
 
-void VkBUniformPool::createDescriptorSetLayout(VkDevice device) {
+void VkBUniformPool::createDescriptorSetLayout() {
   
   VkDescriptorSetLayoutBinding uboLayoutBinding{};
   uboLayoutBinding.binding = 0; //It'll say where in the shader
@@ -73,7 +75,7 @@ void VkBUniformPool::createDescriptorSetLayout(VkDevice device) {
   }
 }
 
-void VkBUniformPool::destroy(VkDevice device)
+void VkBUniformPool::destroy()
 {
   vkDestroyDescriptorPool(device, descriptorPool, nullptr);
   vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);

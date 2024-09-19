@@ -1,9 +1,9 @@
 #include "VkBUniformBuffer.hpp"
 #include "VkBBuffer.hpp"
-
+#include "VkBGlobals.hpp"
 
 #include <stdexcept>
-void VkBUniformBuffer::destroy(VkDevice device) {
+void VkBUniformBuffer::destroy() {
   for (size_t i = 0; i < uniformBuffers.size(); i++) { //TODO: should just make this a constant
     vkDestroyBuffer(device, uniformBuffers[i], nullptr);
     vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
@@ -24,8 +24,7 @@ void VkBUniformBuffer::createUniformBuffers(VkPhysicalDevice physicalDevice,
   uniformBuffersMapped.resize(maxFramesInFlight);
   
   for (size_t i = 0; i < maxFramesInFlight; i++) {
-    createBuffer(physicalDevice, device,
-		 bufferSize,
+    createBuffer(bufferSize,
 		 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		 uniformBuffers[i],

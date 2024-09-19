@@ -1,6 +1,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
-
+#define STB_IMAGE_IMPLEMENTATION
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -16,17 +16,23 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
 
-
-
 const uint32_t WINDOW_WIDTH = 1600;
 const uint32_t WINDOW_HEIGHT = 1200;
 
-const std::vector<const char*> validationLayers = {
+std::vector<const char*> validationLayers = {
   "VK_LAYER_KHRONOS_validation"
 };
-const std::vector<const char*> deviceExtensions = {
+std::vector<const char*> deviceExtensions = {
   VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
+VkInstance instance = VK_NULL_HANDLE;  
+
+VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+VkDevice device = VK_NULL_HANDLE;
+VkQueue graphicsQueue;
+VkQueue presentQueue;
+VkCommandPool drawCommandPool;
+VkCommandPool transientCommandPool; //For short lived command buffers
 
 
 #define NDEBUG_MODE 0
@@ -35,9 +41,7 @@ const bool enableVulkanValidationLayers = false;
 #else
 const bool enableVulkanValidationLayers = true;
 #endif
-
-
-
+#include "VkBGlobals.hpp"
 #include "vkDebug.hpp"
 #include "swapChain.hpp"
 #include "DeviceSelection.hpp"
@@ -48,15 +52,10 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBVertexBuffer.hpp"
 #include "VkBUniformBuffer.hpp"
 #include "VkBUniformPool.hpp"
+#include "VkBTexture.hpp"
 class V2Engine {
 public:
-  VkInstance instance;  
-
-  VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
-  VkDevice device;
   
-  VkQueue graphicsQueue;
-  VkQueue presentQueue;
 
   VkSurfaceKHR surface;
   
@@ -69,14 +68,14 @@ public:
   VkBUniformBuffer triangleUBO;
   VkBUniformPool matrixPool;
 
-  VkCommandPool drawCommandPool;
-  VkCommandPool transientCommandPool; //For short lived command buffers
   VkBDrawCommandBuffer commandBuffer;
-
+  VkBTexture texture;
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
   VkFence inFlightFence;
   GLFWwindow* window;
+  std::chrono::time_point<std::chrono::high_resolution_clock> fpsPrev;
+
   struct MVPMatrixUBO {
     glm::mat4 model;
     glm::mat4 view;
@@ -84,7 +83,7 @@ public:
   };
   
   void run() {
-
+    fpsPrev = std::chrono::high_resolution_clock::now();
 #if NDEBUG_MODE
     std::cout << "V2 Engine: Release Mode" << std::endl;
 #else
@@ -138,16 +137,18 @@ private:
     createLogicalDevice();
 
     //Swap chain and pipeilne
-    swapChain.createSwapChain(device, physicalDevice, surface, window);
-    swapChain.createImageViews(device);
+    swapChain.createSwapChain(surface, window);
+    swapChain.createImageViews();
     
-    renderPass.createRenderPass(device, swapChain.imageFormat);
+    renderPass.createRenderPass(swapChain.imageFormat);
     
-    matrixPool.createDescriptorSetLayout(device);
+    matrixPool.createDescriptorSetLayout();
     
-    graphicsPipeline.createGraphicsPipeline(device, swapChain, renderPass, matrixPool.descriptorSetLayout);
+    graphicsPipeline.createGraphicsPipeline(swapChain, renderPass, matrixPool.descriptorSetLayout);
     
-    swapChain.createFramebuffers(device, renderPass);
+    swapChain.createFramebuffers(renderPass);
+    std::cout << "Swap Chain image count: " << swapChain.imageViews.size() << std::endl;
+
 
     //Command pools
     createCommandPool(&drawCommandPool, device, physicalDevice, surface,
@@ -155,25 +156,24 @@ private:
     createCommandPool(&transientCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
+        texture.createTextureImage("../textures/texture.jpg");
     //Vertices and indices
-    vertexBuffer.create(device, physicalDevice,
-			vertices.size() * sizeof(Vertex),
+    vertexBuffer.create(vertices.size() * sizeof(Vertex),
 			indices.size() * sizeof(uint32_t));
-    vertexBuffer.fill(device,
-		      vertices.data(), vertices.size(),
+    vertexBuffer.fill(vertices.data(), vertices.size(),
 		      indices.data(), indices.size());
-    vertexBuffer.transferToDevice(device, transientCommandPool, graphicsQueue);
+    vertexBuffer.transferToDevice(transientCommandPool, graphicsQueue);
 
     //Uniforms
     matrixUBO.createUniformBuffers(physicalDevice, device,
 				   sizeof(MVPMatrixUBO),
 				   swapChain.imageViews.size());
     triangleUBO.createUniformBuffers(physicalDevice, device, sizeof(MVPMatrixUBO),			     swapChain.imageViews.size());
-    matrixPool.create(device, 2, swapChain.imageViews.size());
+    matrixPool.create(2, swapChain.imageViews.size());
     matrixUBO.allocateDescriptorSets(device, matrixPool);
     triangleUBO.allocateDescriptorSets(device, matrixPool);
     
-    commandBuffer.createCommandBuffer(device, drawCommandPool);
+    commandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
 	
   }
@@ -345,6 +345,12 @@ private:
   }
   
   void drawFrame() {
+
+    auto fpsNow = std::chrono::high_resolution_clock::now();
+    float time = std::chrono::duration<float, std::chrono::seconds::period>(fpsNow - fpsPrev).count();
+    printf("\r%.8f %4.2f", time, 1.0f / time);
+    fpsPrev = std::chrono::high_resolution_clock::now();
+
     //Wait for previous frame to finish
     vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
     vkResetFences(device, 1, &inFlightFence); //Reset it to unsignaled
@@ -423,7 +429,7 @@ private:
 	
     vkDestroyCommandPool(device, drawCommandPool, nullptr);
     vkDestroyCommandPool(device, transientCommandPool, nullptr);
-
+    
     for (auto framebuffer : swapChain.framebuffers) {
       vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
@@ -435,10 +441,11 @@ private:
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
-    vertexBuffer.destroy(device);
-    matrixUBO.destroy(device);
-    triangleUBO.destroy(device);
-    matrixPool.destroy(device);
+    texture.destroy();
+    vertexBuffer.destroy();
+    matrixUBO.destroy();
+    triangleUBO.destroy();
+    matrixPool.destroy();
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     if (enableVulkanValidationLayers) {

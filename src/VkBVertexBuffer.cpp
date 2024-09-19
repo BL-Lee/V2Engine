@@ -3,8 +3,9 @@
 #include "VkBBuffer.hpp"
 #include <stdexcept>
 #include <cstring>
+#include "VkBGlobals.hpp"
 void
-VkBVertexBuffer::destroy(VkDevice device)
+VkBVertexBuffer::destroy()
 {
   vkDestroyBuffer(device, buffer, nullptr);
   vkFreeMemory(device, bufferMemory, nullptr);
@@ -14,7 +15,7 @@ VkBVertexBuffer::destroy(VkDevice device)
 }
 
 void
-VkBVertexBuffer::fill(VkDevice device,
+VkBVertexBuffer::fill(
 			   const Vertex* vertices, uint32_t vCount,
 			   const uint32_t* indices, uint32_t iCount)
 {
@@ -38,17 +39,14 @@ VkBVertexBuffer::fill(VkDevice device,
 
 
 void
-VkBVertexBuffer::create(VkDevice device, VkPhysicalDevice physicalDevice,
-			VkDeviceSize initialVertexSize,
+VkBVertexBuffer::create(VkDeviceSize initialVertexSize,
 			VkDeviceSize initialIndexSize
 			)
 {
   VkMemoryPropertyFlags stagingMemFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
   VkBufferUsageFlags stagingUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-  createBuffer(physicalDevice,
-	       device,
-	       initialVertexSize + initialIndexSize,
+  createBuffer(initialVertexSize + initialIndexSize,
 	       stagingUsageFlags,
 	       stagingMemFlags,
 	       stagingBuffer,
@@ -57,9 +55,7 @@ VkBVertexBuffer::create(VkDevice device, VkPhysicalDevice physicalDevice,
 
   VkMemoryPropertyFlags memFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
   VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-  createBuffer(physicalDevice,
-	       device,
-	       initialVertexSize,
+  createBuffer(initialVertexSize,
 	       usageFlags,
 	       memFlags,
 	       buffer,
@@ -67,9 +63,7 @@ VkBVertexBuffer::create(VkDevice device, VkPhysicalDevice physicalDevice,
 
   VkMemoryPropertyFlags indexMemFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
   VkBufferUsageFlags indexUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-  createBuffer(physicalDevice,
-	       device,
-	       initialIndexSize,
+  createBuffer(initialIndexSize,
 	       indexUsageFlags,
 	       indexMemFlags,
 	       indexBuffer,
@@ -79,14 +73,14 @@ VkBVertexBuffer::create(VkDevice device, VkPhysicalDevice physicalDevice,
 }
 
 void
-VkBVertexBuffer::transferToDevice(VkDevice device, VkCommandPool transientPool, VkQueue graphicsQueue)
+VkBVertexBuffer::transferToDevice(VkCommandPool transientPool, VkQueue graphicsQueue)
 {
-  copyBuffer(device, stagingBuffer, buffer, sizeof(Vertex) * vertexCount,
+  copyBuffer(stagingBuffer, buffer, sizeof(Vertex) * vertexCount,
 	     transientPool, graphicsQueue,
 	     0,//src offset
 	     0//dst offset
 	     );
-  copyBuffer(device, stagingBuffer, indexBuffer, sizeof(uint32_t) * indexCount,
+  copyBuffer(stagingBuffer, indexBuffer, sizeof(uint32_t) * indexCount,
 	     transientPool, graphicsQueue,
 	     sizeof(Vertex) * vertexCount,//src offset
 	     0//dst offset

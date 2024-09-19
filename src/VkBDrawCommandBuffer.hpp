@@ -7,7 +7,7 @@ class VkBDrawCommandBuffer{
 public:
   VkCommandBuffer commandBuffer;
   
-  void createCommandBuffer(VkDevice device, VkCommandPool commandPool);
+  void createCommandBuffer(VkCommandPool commandPool);
   void record(VkPipeline pipeline,
 	      VkPipelineLayout pipelineLayout,
 	      VkBVertexBuffer* vertexBuffer,
