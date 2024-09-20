@@ -73,7 +73,11 @@ bool VkBDeviceSelection::isPhysicalDeviceSuitable(VkPhysicalDevice device, VkSur
     VkBSwapChain::SwapChainSupportDetails swapChainSupport = VkBSwapChain::querySwapChainSupport(device, surface);
     swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.presentModes.empty();
   }
-  return indices.isComplete() && extensionsSupported && swapChainAdequate;
+
+  VkPhysicalDeviceFeatures supportedFeatures;
+  vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+    
+  return indices.isComplete() && extensionsSupported && swapChainAdequate && supportedFeatures.samplerAnisotropy;
   //return deviceFeatures.geometryShader; Can check for other things too
 }
 

@@ -103,14 +103,14 @@ private:
 
 
   const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}},
+    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0, 0.0}},
+    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0, 1.0}},
+    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0, 1.0}},
+    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0, 0.0}},
 
-    {{-0.5f, -0.5f, 0.2f}, {1.0f, 0.0f, 0.0f}},
-    {{0.5f, -0.5f, 0.2f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}},
+      {{-0.5f, -0.5f, 0.2f}, {1.0f, 0.0f, 0.0f}, {0.0, 0.0}},
+       {{0.5f, -0.5f, 0.2f}, {0.0f, 1.0f, 0.0f}, {1.0, 0.0}},
+       {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0, 1.0}},
 
   };
   const std::vector<uint32_t> indices = {
@@ -165,13 +165,14 @@ private:
     vertexBuffer.transferToDevice(transientCommandPool, graphicsQueue);
 
     //Uniforms
+    
     matrixUBO.createUniformBuffers(physicalDevice, device,
 				   sizeof(MVPMatrixUBO),
 				   swapChain.imageViews.size());
     triangleUBO.createUniformBuffers(physicalDevice, device, sizeof(MVPMatrixUBO),			     swapChain.imageViews.size());
     matrixPool.create(2, swapChain.imageViews.size());
-    matrixUBO.allocateDescriptorSets(device, matrixPool);
-    triangleUBO.allocateDescriptorSets(device, matrixPool);
+    matrixUBO.allocateDescriptorSets(device, matrixPool, texture.textureImageView, texture.textureSampler);
+    triangleUBO.allocateDescriptorSets(device, matrixPool,texture.textureImageView, texture.textureSampler);
     
     commandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
@@ -290,7 +291,7 @@ private:
 
 
     VkPhysicalDeviceFeatures deviceFeatures{}; //The features we'll be using. Default everything to false for now
-
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
     
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

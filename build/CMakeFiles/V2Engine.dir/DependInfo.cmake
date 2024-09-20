@@ -13,6 +13,8 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBDrawCommandBuffer.cpp" "CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o.d"
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGraphicsPipeline.cpp" "CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o.d"
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBRenderPass.cpp" "CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o.d"
+  "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBSingleCommandBuffer.cpp" "CMakeFiles/V2Engine.dir/src/VkBSingleCommandBuffer.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBSingleCommandBuffer.cpp.o.d"
+  "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBTexture.cpp" "CMakeFiles/V2Engine.dir/src/VkBTexture.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBTexture.cpp.o.d"
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformBuffer.cpp" "CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o.d"
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.cpp" "CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o.d"
   "/home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBVertexBuffer.cpp" "CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o" "gcc" "CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o.d"

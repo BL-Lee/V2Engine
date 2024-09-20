@@ -371,6 +371,7 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/matrix_transform.inl \
  /usr/include/c++/11/chrono /usr/include/c++/11/ratio \
  /usr/include/c++/11/ctime /usr/include/c++/11/bits/parse_numbers.h \
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGlobals.hpp \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/vkDebug.hpp \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/swapChain.hpp \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBRenderPass.hpp \
@@ -381,4 +382,11 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBVertexBuffer.hpp \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Vertex.hpp \
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformBuffer.hpp \
- /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.hpp \
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBTexture.hpp \
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/stb/stb_image.h \
+ /usr/include/c++/11/stdlib.h /usr/include/c++/11/math.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/emmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/xmmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/mmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/11/include/mm_malloc.h

@@ -3,12 +3,20 @@
 
 class VkBTexture
 {
+public:
+
   int width, height, channels;
   VkImage textureImage;
   VkDeviceMemory textureImageMemory;
-public:
+  VkImageView textureImageView; //How you access the image, rather than going through byte offsets from the raw image
+  VkSampler textureSampler;
+
+  
   void destroy();
 
+  void initSampler();
+  void createTextureImageView();
+  static VkImageView createImageView(VkImage image, VkFormat format);
   void createTextureImage(const char* path) ;
 
   static void createImage(void* pixels,

@@ -26,6 +26,9 @@ public:
 					    size_t uniformSize,
 					      int maxFramesInFlight);
   
-  void allocateDescriptorSets(VkDevice device, VkBUniformPool& descriptorPool);
+  void allocateDescriptorSets(VkDevice device, VkBUniformPool& descriptorPool,
+			      VkImageView textureImageView, //temp
+			      VkSampler textureSampler //temp
+);
 
 };

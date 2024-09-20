@@ -275,6 +275,54 @@ src/VkBRenderPass.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.s
 .PHONY : src/VkBRenderPass.cpp.s
 
+src/VkBSingleCommandBuffer.o: src/VkBSingleCommandBuffer.cpp.o
+.PHONY : src/VkBSingleCommandBuffer.o
+
+# target to build an object file
+src/VkBSingleCommandBuffer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBSingleCommandBuffer.cpp.o
+.PHONY : src/VkBSingleCommandBuffer.cpp.o
+
+src/VkBSingleCommandBuffer.i: src/VkBSingleCommandBuffer.cpp.i
+.PHONY : src/VkBSingleCommandBuffer.i
+
+# target to preprocess a source file
+src/VkBSingleCommandBuffer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBSingleCommandBuffer.cpp.i
+.PHONY : src/VkBSingleCommandBuffer.cpp.i
+
+src/VkBSingleCommandBuffer.s: src/VkBSingleCommandBuffer.cpp.s
+.PHONY : src/VkBSingleCommandBuffer.s
+
+# target to generate assembly for a file
+src/VkBSingleCommandBuffer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBSingleCommandBuffer.cpp.s
+.PHONY : src/VkBSingleCommandBuffer.cpp.s
+
+src/VkBTexture.o: src/VkBTexture.cpp.o
+.PHONY : src/VkBTexture.o
+
+# target to build an object file
+src/VkBTexture.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBTexture.cpp.o
+.PHONY : src/VkBTexture.cpp.o
+
+src/VkBTexture.i: src/VkBTexture.cpp.i
+.PHONY : src/VkBTexture.i
+
+# target to preprocess a source file
+src/VkBTexture.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBTexture.cpp.i
+.PHONY : src/VkBTexture.cpp.i
+
+src/VkBTexture.s: src/VkBTexture.cpp.s
+.PHONY : src/VkBTexture.s
+
+# target to generate assembly for a file
+src/VkBTexture.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBTexture.cpp.s
+.PHONY : src/VkBTexture.cpp.s
+
 src/VkBUniformBuffer.o: src/VkBUniformBuffer.cpp.o
 .PHONY : src/VkBUniformBuffer.o
 
@@ -445,6 +493,12 @@ help:
 	@echo "... src/VkBRenderPass.o"
 	@echo "... src/VkBRenderPass.i"
 	@echo "... src/VkBRenderPass.s"
+	@echo "... src/VkBSingleCommandBuffer.o"
+	@echo "... src/VkBSingleCommandBuffer.i"
+	@echo "... src/VkBSingleCommandBuffer.s"
+	@echo "... src/VkBTexture.o"
+	@echo "... src/VkBTexture.i"
+	@echo "... src/VkBTexture.s"
 	@echo "... src/VkBUniformBuffer.o"
 	@echo "... src/VkBUniformBuffer.i"
 	@echo "... src/VkBUniformBuffer.s"
