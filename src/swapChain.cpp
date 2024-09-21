@@ -132,19 +132,37 @@ void VkBSwapChain::createImageViews() {
   imageViews.resize(images.size());
 
   for (int i = 0; i < images.size(); i++) {
-    imageViews[i] = VkBTexture::createImageView(images[i], imageFormat);
+    
+      VkImageViewCreateInfo viewInfo{};
+      viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+      viewInfo.image = images[i];
+      viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+      viewInfo.format = imageFormat;
+      viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      viewInfo.subresourceRange.baseMipLevel = 0; //Add mips later?
+      viewInfo.subresourceRange.levelCount = 1;
+      viewInfo.subresourceRange.baseArrayLayer = 0;
+      viewInfo.subresourceRange.layerCount = 1;
+      
+      if (vkCreateImageView(device, &viewInfo, nullptr, &imageViews[i]) != VK_SUCCESS) {
+	throw std::runtime_error("failed to create texture image view!");
+      }
+
+      //    //TODO: switch to hdr
+      //    imageViews[i] = VkBTexture::createImageView(images[i],  imageFormat, VK_IMAGE_ASPECT_COLOR_BIT);
   }
 }
   
-void VkBSwapChain::createFramebuffers(VkBRenderPass renderPass) {
+void VkBSwapChain::createFramebuffers(VkBRenderPass renderPass,
+				      VkImageView& depthImageView) {
   framebuffers.resize(imageViews.size());
   for (size_t i = 0; i < imageViews.size(); i++) {
-    VkImageView attachments[] = { imageViews[i] };
+    VkImageView attachments[] = { imageViews[i], depthImageView };
 
     VkFramebufferCreateInfo framebufferInfo{};
     framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
     framebufferInfo.renderPass = renderPass.renderPass;
-    framebufferInfo.attachmentCount = 1;
+    framebufferInfo.attachmentCount = 2;
     framebufferInfo.pAttachments = attachments;
     framebufferInfo.width = extent.width;
     framebufferInfo.height = extent.height;

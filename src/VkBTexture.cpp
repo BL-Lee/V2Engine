@@ -6,60 +6,122 @@
 #include <cstring>
 void VkBTexture::destroy() {
   vkDestroySampler(device, textureSampler, nullptr);
-  vkDestroyImageView(device, textureImageView, nullptr);
-  vkDestroyImage(device, textureImage, nullptr);
-  vkFreeMemory(device, textureImageMemory, nullptr);
+  vkDestroyImageView(device, imageView, nullptr);
+  vkDestroyImage(device, image, nullptr);
+  vkFreeMemory(device, imageMemory, nullptr);
 }
 
 
-VkImageView VkBTexture::createImageView(VkImage image, VkFormat format) {
+void VkBTexture::createImageView() {
+
+  VkImageViewCreateInfo viewInfo{};
+  viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+  viewInfo.image = image;
+  viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  viewInfo.format = format;
+  viewInfo.subresourceRange.aspectMask = aspectFlags;
+  viewInfo.subresourceRange.baseMipLevel = 0; //Add mips later?
+  viewInfo.subresourceRange.levelCount = 1;
+  viewInfo.subresourceRange.baseArrayLayer = 0;
+  viewInfo.subresourceRange.layerCount = 1;
+
+  if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create texture image view!");
+  }
+}
+
+void VkBTexture::setPropertiesFromType(VkBTextureType type) {
+  switch (type){
+    case VKB_TEXTURE_TYPE_DEPTH:
+      {
+	format = VK_FORMAT_D32_SFLOAT;
+	tiling = VK_IMAGE_TILING_OPTIMAL;
+	usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	imageSize = width * height * 4;
+	channels = 1;
+	aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+      }break;
+    
+    case VKB_TEXTURE_TYPE_RGBA:
+      {
+	format = VK_FORMAT_R8G8B8A8_SRGB;
+	tiling = VK_IMAGE_TILING_OPTIMAL;
+	usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+	imageSize = width * height * 4;
+	channels = 4;
+	aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+      }break;
+    default:
+      {
+	throw std::runtime_error("Invalid texture type VkBTexture.cpp");
+      }break;
+    }
+
+}
+
+void VkBTexture::createTextureImage(VkBTextureType type,
+				    uint32_t w, uint32_t h,
+				    void* pixels
+				    ) {
+  width = w;
+  height = h;
+  setPropertiesFromType(type);
   
-    VkImageViewCreateInfo viewInfo{};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewInfo.subresourceRange.baseMipLevel = 0; //Add mips later?
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = 1;
+  createDeviceImage();
+  createDeviceMemory();
 
-    VkImageView imageView;
-    if (vkCreateImageView(device, &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture image view!");
+  if (pixels) //Copies to memory, but if null then we haven't filled it yet
+    {
+      VkBuffer stagingBuffer;
+      VkDeviceMemory stagingBufferMemory;
+
+      transferTextureToStaging(&stagingBuffer, &stagingBufferMemory, pixels, imageSize);
+
+
+      vkBindImageMemory(device, image, imageMemory, 0);
+    
+      transitionImageLayout(image,
+			    format,
+			    VK_IMAGE_LAYOUT_UNDEFINED,
+			    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    
+      copyStagingToImage(stagingBuffer,
+			 image,
+			 width,
+			 height);
+
+      transitionImageLayout(image,
+			    format,
+			    VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+			    VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+      vkDestroyBuffer(device, stagingBuffer, nullptr);
+      vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
+  else
+    vkBindImageMemory(device, image, imageMemory, 0);  
+  createImageView();
 
-    return imageView;
+  initSampler();
 }
 
-void VkBTexture::createTextureImage(const char* path) {
-    stbi_uc* pixels = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
-
-    VkDeviceSize imageSize = width * height * 4;
-
-    if (!pixels) {
-      throw std::runtime_error("failed to load texture image");
-    }
-    
-    createImage(pixels, width, height,
-		VK_FORMAT_R8G8B8A8_SRGB,
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		textureImage, textureImageMemory);
-    
-    stbi_image_free(pixels);
-
-    initSampler();
+void VkBTexture::createTextureImage(VkBTextureType type, const char* path) {
+  stbi_uc* pixels = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
+      
+  if (!pixels) {
+    throw std::runtime_error(std::string("failed to load texture image: ") + path);
   }
 
+  createTextureImage(type, width, height, pixels);
+  stbi_image_free(pixels);
+}
+
 void VkBTexture::initSampler() {
+
   
-  textureImageView = VkBTexture::createImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB);
-  
-  VkPhysicalDeviceProperties properties{};
-  vkGetPhysicalDeviceProperties(physicalDevice, &properties);
+  VkPhysicalDeviceProperties physProperties{};
+  vkGetPhysicalDeviceProperties(physicalDevice, &physProperties);
   
   VkSamplerCreateInfo samplerInfo{};
   samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -69,7 +131,7 @@ void VkBTexture::initSampler() {
   samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.anisotropyEnable = VK_TRUE;
-  samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy; //Max quality.. maybe lower
+  samplerInfo.maxAnisotropy = physProperties.limits.maxSamplerAnisotropy; //Max quality.. maybe lower
   samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
   samplerInfo.unnormalizedCoordinates = VK_FALSE; //If for some wicked reason thy wish to address thy texture with (0, texWidth) and (0,texHeight), henceforth set this to VK_TRUE
   
@@ -86,42 +148,8 @@ void VkBTexture::initSampler() {
         throw std::runtime_error("failed to create texture sampler!");
   }
 }
-
-void VkBTexture::createImage(void* pixels,
-			     uint32_t width, uint32_t height,
-			     VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-			     VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory)
-  {
-    createDeviceImage(image, width, height, format, tiling, usage);
-    createDeviceMemory(image, imageMemory, properties);
-    
-    VkBuffer stagingBuffer;
-    VkDeviceMemory stagingBufferMemory;
-	
-    transferTextureToStaging(&stagingBuffer, &stagingBufferMemory, pixels, width * height * 4); // assume rgba for now
-
-    vkBindImageMemory(device, image, imageMemory, 0);
-    
-    transitionImageLayout(image,
-			  VK_FORMAT_R8G8B8A8_SRGB,
-			  VK_IMAGE_LAYOUT_UNDEFINED,
-			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    
-    copyStagingToImage(stagingBuffer,
-		      image,
-		      width,
-		      height);
-
-    transitionImageLayout(image,
-			  VK_FORMAT_R8G8B8A8_SRGB,
-			  VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    vkDestroyBuffer(device, stagingBuffer, nullptr);
-    vkFreeMemory(device, stagingBufferMemory, nullptr);
-  }
-
   
-void VkBTexture::createDeviceMemory(VkImage& image, VkDeviceMemory& imageMemory, VkMemoryPropertyFlags properties)
+void VkBTexture::createDeviceMemory()
   {
     VkMemoryRequirements memRequirements;
     vkGetImageMemoryRequirements(device, image, &memRequirements);
@@ -226,7 +254,7 @@ void VkBTexture::transitionImageLayout(VkImage image, VkFormat format, VkImageLa
     vKEndSingleTimeCommandBuffer(commandBuffer);
   }
   
-void VkBTexture::createDeviceImage(VkImage& image, uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage)
+void VkBTexture::createDeviceImage()
 {
   VkImageCreateInfo imageInfo{};
   imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

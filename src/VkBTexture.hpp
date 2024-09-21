@@ -1,33 +1,39 @@
-
+#pragma once
 #include <stb_image.h>
+
+typedef uint32_t VkBTextureType;
+#define VKB_TEXTURE_TYPE_DEPTH 0x1u
+#define VKB_TEXTURE_TYPE_RGBA 0x2u
 
 class VkBTexture
 {
 public:
 
   int width, height, channels;
-  VkImage textureImage;
-  VkDeviceMemory textureImageMemory;
-  VkImageView textureImageView; //How you access the image, rather than going through byte offsets from the raw image
+  VkImage image;
+  VkDeviceMemory imageMemory;
+  VkImageView imageView; //How you access the image, rather than going through byte offsets from the raw image
   VkSampler textureSampler;
 
-  
+  VkFormat format;
+  VkImageTiling tiling;
+  VkImageUsageFlags usage;
+  VkMemoryPropertyFlags properties;
+  VkImageAspectFlags aspectFlags;
+  VkDeviceSize imageSize;
+
+  void createTextureImage(VkBTextureType type,
+			  uint32_t w, uint32_t h,
+			  void* pixels
+			  );
+  void createTextureImage(VkBTextureType type, const char* path);
+
   void destroy();
-
+  void setPropertiesFromType(VkBTextureType type);
   void initSampler();
-  void createTextureImageView();
-  static VkImageView createImageView(VkImage image, VkFormat format);
-  void createTextureImage(const char* path) ;
+  void createImageView();
 
-  static void createImage(void* pixels,
-			  uint32_t width, uint32_t height,
-			  VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-			  VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory);
-
-  
-  static void createDeviceMemory(VkImage& image,
-				 VkDeviceMemory& imageMemory,
-				 VkMemoryPropertyFlags properties);
+  void createDeviceMemory();
 
 
   static void copyStagingToImage(VkBuffer buffer,
@@ -41,9 +47,7 @@ public:
 				    VkImageLayout newLayout);
 
   
-  static void createDeviceImage(VkImage& image,
-				uint32_t width, uint32_t height,
-				VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage);
+  void createDeviceImage();
 
   static void transferTextureToStaging(VkBuffer* stagingBuffer,
 				       VkDeviceMemory* stagingBufferMemory,

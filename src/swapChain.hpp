@@ -63,6 +63,6 @@ public:
   VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window);
 
   void createImageViews();
-  void createFramebuffers(VkBRenderPass renderPass);
+  void createFramebuffers(VkBRenderPass renderPass, VkImageView& depth);
   
 };

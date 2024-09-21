@@ -179,6 +179,30 @@ src/DeviceSelection.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.s
 .PHONY : src/DeviceSelection.cpp.s
 
+src/OBJLoader.o: src/OBJLoader.cpp.o
+.PHONY : src/OBJLoader.o
+
+# target to build an object file
+src/OBJLoader.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/OBJLoader.cpp.o
+.PHONY : src/OBJLoader.cpp.o
+
+src/OBJLoader.i: src/OBJLoader.cpp.i
+.PHONY : src/OBJLoader.i
+
+# target to preprocess a source file
+src/OBJLoader.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/OBJLoader.cpp.i
+.PHONY : src/OBJLoader.cpp.i
+
+src/OBJLoader.s: src/OBJLoader.cpp.s
+.PHONY : src/OBJLoader.s
+
+# target to generate assembly for a file
+src/OBJLoader.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/OBJLoader.cpp.s
+.PHONY : src/OBJLoader.cpp.s
+
 src/VkBBuffer.o: src/VkBBuffer.cpp.o
 .PHONY : src/VkBBuffer.o
 
@@ -481,6 +505,9 @@ help:
 	@echo "... src/DeviceSelection.o"
 	@echo "... src/DeviceSelection.i"
 	@echo "... src/DeviceSelection.s"
+	@echo "... src/OBJLoader.o"
+	@echo "... src/OBJLoader.i"
+	@echo "... src/OBJLoader.s"
 	@echo "... src/VkBBuffer.o"
 	@echo "... src/VkBBuffer.i"
 	@echo "... src/VkBBuffer.s"

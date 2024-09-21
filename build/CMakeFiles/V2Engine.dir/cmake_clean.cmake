@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.o"
   "CMakeFiles/V2Engine.dir/src/DeviceSelection.cpp.o.d"
+  "CMakeFiles/V2Engine.dir/src/OBJLoader.cpp.o"
+  "CMakeFiles/V2Engine.dir/src/OBJLoader.cpp.o.d"
   "CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o"
   "CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o.d"
   "CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o"

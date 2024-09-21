@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glfw-3.4/include -I/home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/stb -I/home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm
+CXX_INCLUDES = -I/home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glfw-3.4/include -I/home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/tinyobjloader -I/home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/stb -I/home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm
 
 CXX_FLAGS = -g
 

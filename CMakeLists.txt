@@ -27,6 +27,7 @@ endif()
 
 add_subdirectory(libraries/glfw-3.4)
 include_directories(libraries/glfw-3.4/include)
+include_directories(libraries/tinyobjloader)
 include_directories(libraries/stb)
 #other libs
 find_package(Vulkan REQUIRED)

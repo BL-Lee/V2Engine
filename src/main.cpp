@@ -1,6 +1,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 #define STB_IMAGE_IMPLEMENTATION
+#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -53,6 +54,7 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBUniformBuffer.hpp"
 #include "VkBUniformPool.hpp"
 #include "VkBTexture.hpp"
+#include "OBJLoader.hpp"
 class V2Engine {
 public:
   
@@ -69,11 +71,12 @@ public:
   VkBUniformPool matrixPool;
 
   VkBDrawCommandBuffer commandBuffer;
-  VkBTexture texture;
+  VkBTexture depthTexture;
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
   VkFence inFlightFence;
   GLFWwindow* window;
+  Model* model;
   std::chrono::time_point<std::chrono::high_resolution_clock> fpsPrev;
 
   struct MVPMatrixUBO {
@@ -102,22 +105,6 @@ private:
   VkBSwapChain swapChain;
 
 
-  const std::vector<Vertex> vertices = {
-    {{-0.5f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0, 0.0}},
-    {{0.5f, -0.5f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0, 1.0}},
-    {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0, 1.0}},
-    {{-0.5f, 0.5f, 0.0f}, {1.0f, 1.0f, 1.0f}, {1.0, 0.0}},
-
-      {{-0.5f, -0.5f, 0.2f}, {1.0f, 0.0f, 0.0f}, {0.0, 0.0}},
-       {{0.5f, -0.5f, 0.2f}, {0.0f, 1.0f, 0.0f}, {1.0, 0.0}},
-       {{0.5f, 0.5f, 0.0f}, {0.0f, 0.0f, 1.0f}, {0.0, 1.0}},
-
-  };
-  const std::vector<uint32_t> indices = {
-    0, 2, 1, 2, 0, 3,
-    4,6,5
-  };
-  
   void initWindow() {
     glfwInit();
 
@@ -145,8 +132,10 @@ private:
     matrixPool.createDescriptorSetLayout();
     
     graphicsPipeline.createGraphicsPipeline(swapChain, renderPass, matrixPool.descriptorSetLayout);
-    
-    swapChain.createFramebuffers(renderPass);
+
+
+    depthTexture.createTextureImage(VKB_TEXTURE_TYPE_DEPTH, swapChain.extent.width, swapChain.extent.height, nullptr);    
+    swapChain.createFramebuffers(renderPass, depthTexture.imageView);
     std::cout << "Swap Chain image count: " << swapChain.imageViews.size() << std::endl;
 
 
@@ -156,13 +145,7 @@ private:
     createCommandPool(&transientCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
-        texture.createTextureImage("../textures/texture.jpg");
-    //Vertices and indices
-    vertexBuffer.create(vertices.size() * sizeof(Vertex),
-			indices.size() * sizeof(uint32_t));
-    vertexBuffer.fill(vertices.data(), vertices.size(),
-		      indices.data(), indices.size());
-    vertexBuffer.transferToDevice(transientCommandPool, graphicsQueue);
+    model = ModelImporter::loadOBJ("../models/room.obj", "../models/room.png");
 
     //Uniforms
     
@@ -171,8 +154,8 @@ private:
 				   swapChain.imageViews.size());
     triangleUBO.createUniformBuffers(physicalDevice, device, sizeof(MVPMatrixUBO),			     swapChain.imageViews.size());
     matrixPool.create(2, swapChain.imageViews.size());
-    matrixUBO.allocateDescriptorSets(device, matrixPool, texture.textureImageView, texture.textureSampler);
-    triangleUBO.allocateDescriptorSets(device, matrixPool,texture.textureImageView, texture.textureSampler);
+    matrixUBO.allocateDescriptorSets(device, matrixPool, model->textures.imageView, model->textures.textureSampler);
+    triangleUBO.allocateDescriptorSets(device, matrixPool, model->textures.imageView, model->textures.textureSampler);
     
     commandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
@@ -349,7 +332,7 @@ private:
 
     auto fpsNow = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(fpsNow - fpsPrev).count();
-    printf("\r%.8f %4.2f", time, 1.0f / time);
+    //    printf("\r%.8f %4.2f", time, 1.0f / time);
     fpsPrev = std::chrono::high_resolution_clock::now();
 
     //Wait for previous frame to finish
@@ -368,18 +351,19 @@ private:
 			swapChain.extent);
     commandBuffer.record(graphicsPipeline.pipeline,
 			 graphicsPipeline.layout,
-			 &vertexBuffer,
+			 &model->VBO,
 			 &matrixPool.descriptorSets[matrixUBO.indexIntoPool + imageIndex],
-			 0, 6
+			 0, model->VBO.indexCount
 			 );
 
     //Tri
+    /*
     commandBuffer.record(graphicsPipeline.pipeline,
 			 graphicsPipeline.layout,
 			 &vertexBuffer,
 			 &matrixPool.descriptorSets[triangleUBO.indexIntoPool + imageIndex],
 			 6, 3
-			 );
+			 );*/
     commandBuffer.end();
 
     VkSubmitInfo submitInfo{};
@@ -442,8 +426,9 @@ private:
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
-    texture.destroy();
-    vertexBuffer.destroy();
+    model->destroy();
+    free(model);
+    depthTexture.destroy();
     matrixUBO.destroy();
     triangleUBO.destroy();
     matrixPool.destroy();
