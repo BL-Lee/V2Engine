@@ -18,53 +18,39 @@
 //Assume one per image in flight
 
 void VkBUniformPool::create(uint32_t totalToStore, uint32_t totalFrames,
-			    size_t sizeOfUniform
+			    VkDeviceSize sizeOfUniform
 			    ) {
 
-  uniformSize = sizeOfUniform;
+  //Should global this
+  VkPhysicalDeviceProperties props;
+  vkGetPhysicalDeviceProperties(physicalDevice, &props);
+
+  uniformSize = sizeOfUniform < props.limits.minUniformBufferOffsetAlignment ? props.limits.minUniformBufferOffsetAlignment : sizeOfUniform;
 
   filledSets = 0;
   imagesInFlight = totalFrames;
-
-  totalSets = totalFrames * totalToStore;
-
+  totalSets = totalToStore;
+  imageCount = 0;
   //Allocate buffer and map to pointer
   uniformBuffers.resize(totalFrames);
   uniformBuffersMemory.resize(totalFrames);
   uniformBuffersMapped.resize(totalFrames);
+
+  descriptorSets.resize(totalFrames);
+  //descriptorLayoutBindings.resize(totalFrames);
+  
   for (size_t i = 0; i < totalFrames; i++) {
-    createBuffer(sizeOfUniform * totalToStore,
+    createBuffer(uniformSize * totalToStore,
 		 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
 		 uniformBuffers[i],
 		 uniformBuffersMemory[i]);
 	
-    vkMapMemory(device, uniformBuffersMemory[i], 0, sizeOfUniform * totalToStore, 0, &uniformBuffersMapped[i]);
+    vkMapMemory(device, uniformBuffersMemory[i], 0, uniformSize * totalToStore, 0, &uniformBuffersMapped[i]);
   }
 }
 
 void VkBUniformPool::createDescriptorSetLayout() {
-
-  //Might need to pass these in.. to say what the layout of these uniforms will be
-  /*
-  VkDescriptorSetLayoutBinding uboLayoutBinding{};
-  uboLayoutBinding.binding = 0; //It'll say where in the shader
-  uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  uboLayoutBinding.descriptorCount = 1;
-  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-  uboLayoutBinding.pImmutableSamplers = nullptr; // For texture stuff
-
-  VkDescriptorSetLayoutBinding samplerLayoutBinding{};
-  samplerLayoutBinding.binding = 1;
-  samplerLayoutBinding.descriptorCount = 1;
-  samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-  samplerLayoutBinding.pImmutableSamplers = nullptr;
-  samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-  std::array<VkDescriptorSetLayoutBinding, 2> bindings = {
-    uboLayoutBinding,
-    samplerLayoutBinding
-    };*/
   
   VkDescriptorSetLayoutCreateInfo layoutInfo{};
   layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
@@ -81,23 +67,22 @@ void VkBUniformPool::createDescriptorSetLayout() {
   
   VkDescriptorPoolSize poolSize{};
   poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-  poolSize.descriptorCount = (uint32_t)totalSets;
+  poolSize.descriptorCount = (uint32_t)totalSets * imagesInFlight;
 
-  //TODO: Should intuit this from the descriptorSetLayouts
   std::vector<VkDescriptorPoolSize> poolSizes{};
   poolSizes.resize(descriptorLayoutBindings.size());
   for (int i = 0; i < descriptorLayoutBindings.size(); i++)
     {
       poolSizes[i].type = descriptorLayoutBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ? 
 	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-      poolSizes[i].descriptorCount = totalSets;
+      poolSizes[i].descriptorCount = totalSets * imagesInFlight;
     }
   
   VkDescriptorPoolCreateInfo poolInfo{};
   poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
   poolInfo.poolSizeCount = (uint32_t)poolSizes.size(); //Number of pools to make
   poolInfo.pPoolSizes = poolSizes.data(); //Size info
-  poolInfo.maxSets = (uint32_t)totalSets; //Total we'll go up to?
+  poolInfo.maxSets = (uint32_t)totalSets * imagesInFlight; //Total we'll go up to?
 
   if (vkCreateDescriptorPool(device,
 			     &poolInfo,
@@ -106,27 +91,29 @@ void VkBUniformPool::createDescriptorSetLayout() {
     throw std::runtime_error("failed to create descriptor pool!");
   }
 
-  std::vector<VkDescriptorSetLayout> layouts(totalSets, descriptorSetLayout);
+  for (int i = 0; i < imagesInFlight; i++)
+    {
+      std::vector<VkDescriptorSetLayout> layouts(totalSets, descriptorSetLayout);
   
-  VkDescriptorSetAllocateInfo allocInfo{};
-  allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-  allocInfo.descriptorPool = descriptorPool;
-  allocInfo.descriptorSetCount = (uint32_t)totalSets;
-  allocInfo.pSetLayouts = layouts.data();
+      VkDescriptorSetAllocateInfo allocInfo{};
+      allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+      allocInfo.descriptorPool = descriptorPool;
+      allocInfo.descriptorSetCount = (uint32_t)totalSets;
+      allocInfo.pSetLayouts = layouts.data();
   
-  descriptorSets.resize(totalSets);
-  if (vkAllocateDescriptorSets(device,
-			       &allocInfo,
-			       descriptorSets.data()) != VK_SUCCESS) {
-      throw std::runtime_error("failed to allocate descriptor sets!");
-  }
-
+      descriptorSets[i].resize(totalSets);
+      if (vkAllocateDescriptorSets(device,
+				   &allocInfo,
+				   descriptorSets[i].data()) != VK_SUCCESS) {
+	throw std::runtime_error("failed to allocate descriptor sets!");
+      }
+    }
 }
 
 int VkBUniformPool::getDescriptorSetIndex()
 {
   filledSets++;
-  return (filledSets - 1) * imagesInFlight;
+  return (filledSets - 1);
 }
 
 VkDescriptorBufferInfo VkBUniformPool::getBufferInfo(int descriptorIndex, //Which buffer
@@ -156,6 +143,10 @@ VkDescriptorImageInfo VkBUniformPool::getImageBufferInfo(VkSampler sampler,
 
 void VkBUniformPool::addBuffer(int dstBinding, size_t bufferSize)
 {
+  //Should global this
+  VkPhysicalDeviceProperties props;
+  vkGetPhysicalDeviceProperties(physicalDevice, &props);
+
   
   //Need to know -> VkBuffer location, offset and range(Size) (for buffer)
   VkDescriptorSetLayoutBinding uboLayoutBinding{};
@@ -164,11 +155,13 @@ void VkBUniformPool::addBuffer(int dstBinding, size_t bufferSize)
   uboLayoutBinding.descriptorCount = 1; //To bet set when creating
   uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
   uboLayoutBinding.pImmutableSamplers = nullptr; // For texture stuff
+
+  size_t trueSize = bufferSize < props.limits.minUniformBufferOffsetAlignment ? props.limits.minUniformBufferOffsetAlignment : bufferSize;
   
   descriptorLayoutBindings.push_back(uboLayoutBinding);
   bufferOffsets.push_back(currentBufferOffset);
-  bufferSizes.push_back(bufferSize);
-  currentBufferOffset += bufferSize;
+  bufferSizes.push_back(trueSize);
+  currentBufferOffset += trueSize;
 }
 void VkBUniformPool::addImage(int dstBinding)
 {
@@ -182,6 +175,7 @@ void VkBUniformPool::addImage(int dstBinding)
   
   descriptorLayoutBindings.push_back(samplerLayoutBinding);
 
+  imageCount ++;
   
 }
 

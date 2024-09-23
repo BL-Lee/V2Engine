@@ -11,40 +11,63 @@ void VkBUniformBuffer::createUniformBuffers(size_t uSize,
 					    int maxFramesInFlight) {
 }
 
+//Location to memcpy to when updating
+void* VkBUniformBuffer::getBufferMemoryLocation(int imageIndex, int bufferIndex)
+{
+  return (void*)((uint8_t*)uniformPool.uniformBuffersMapped[imageIndex] + bufferInfo[bufferIndex].offset);
+}
 //TODO: to abstract
 void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool& descriptorPool,
-					      VkImageView textureImageView, //temp
-					      VkSampler textureSampler //temp
+					      VkImageView* textureImageView,  //arrays
+					      VkSampler* textureSampler 
 					      )
   {
-    indexIntoPool = descriptorPool.getDescriptorSetIndex();
+    uniformPool = descriptorPool;
+    indexIntoPool = descriptorPool.getDescriptorSetIndex();// This gets offset into pool
+
     for (size_t i = 0; i < descriptorPool.imagesInFlight; i++) {
-      //for (int j = 0; j < descriptorPool.
+      uint32_t imgCount = 0;      
+      std::vector<VkWriteDescriptorSet> descriptorWrites{};
+      descriptorWrites.resize(descriptorPool.descriptorLayoutBindings.size());
       
-      VkDescriptorBufferInfo bufferInfo = descriptorPool.getBufferInfo(0,0, i);
+      for (int j = 0; j < descriptorPool.descriptorLayoutBindings.size(); j++)
+	{
+	  VkDescriptorSetLayoutBinding binding = descriptorPool.descriptorLayoutBindings[j];
 
-      VkDescriptorImageInfo imageInfo = descriptorPool.getImageBufferInfo(textureSampler, textureImageView);
+	  if (binding.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+	    {
+	      VkDescriptorImageInfo t_imageInfo = descriptorPool.getImageBufferInfo(textureSampler[imgCount], textureImageView[imgCount]);
+	      
+	      if (i == 0)
+		  imageInfo.push_back(t_imageInfo);
 
-      std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
-      
-      descriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      descriptorWrites[0].dstSet = descriptorPool.descriptorSets[indexIntoPool + i];
-      descriptorWrites[0].dstBinding = 0;//Where in the shader
-      descriptorWrites[0].dstArrayElement = 0; //Descriptors can be arrays, so say the first
-      descriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-      descriptorWrites[0].descriptorCount = 1;
-      descriptorWrites[0].pBufferInfo = &bufferInfo;
-      descriptorWrites[0].pImageInfo = nullptr; // Optional
-      descriptorWrites[0].pTexelBufferView = nullptr; // Optional
+	      descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	      descriptorWrites[j].dstSet = descriptorPool.descriptorSets[i][indexIntoPool];
+	      descriptorWrites[j].dstBinding = binding.binding;//Where in the shader
+	      descriptorWrites[j].dstArrayElement = 0; //Descriptors can be arrays, so say the first
+	      descriptorWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	      descriptorWrites[j].descriptorCount = 1;
+	      descriptorWrites[j].pImageInfo = &t_imageInfo; // Optional
+	      imgCount++;
+	    }
+	  else
+	    {
+	      
+	      VkDescriptorBufferInfo t_bufferInfo = descriptorPool.getBufferInfo(indexIntoPool, 0, i); //Since just one buffer so far, but would switch 2nd one to which buffer this is in the uniform
+	      if (i == 0)
+		  bufferInfo.push_back(t_bufferInfo);
 
-      descriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      descriptorWrites[1].dstSet = descriptorPool.descriptorSets[indexIntoPool + i];
-      descriptorWrites[1].dstBinding = 1;//Where in the shader
-      descriptorWrites[1].dstArrayElement = 0; //Descriptors can be arrays, so say the first
-      descriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-      descriptorWrites[1].descriptorCount = 1;
-      descriptorWrites[1].pImageInfo = &imageInfo; // Optional
-      
+	      descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+	      descriptorWrites[j].dstSet = descriptorPool.descriptorSets[i][indexIntoPool];
+	      descriptorWrites[j].dstBinding = binding.binding;//Where in the shader
+	      descriptorWrites[j].dstArrayElement = 0; //Descriptors can be arrays, so say the first
+	      descriptorWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	      descriptorWrites[j].descriptorCount = 1;
+	      descriptorWrites[j].pBufferInfo = &t_bufferInfo;
+	      descriptorWrites[j].pImageInfo = nullptr; // Optional
+	      descriptorWrites[j].pTexelBufferView = nullptr; // Optional
+	    }
+	}
       vkUpdateDescriptorSets(device,
 			     (uint32_t)descriptorWrites.size(),
 			     descriptorWrites.data(),

@@ -9,7 +9,7 @@ class VkBUniformBuffer
   
 public:
   /*
-
+ (TODO: static one)
    DYNAMIC:
 
    HOST_COHERENT buffer(s)
@@ -39,28 +39,21 @@ public:
    
 
 */
-  //std::vector<VkBuffer> uniformBuffers;
-  //std::vector<VkDeviceMemory> uniformBuffersMemory;
   void* mappedBuffer;
-  //std::vector<void*> uniformBuffersMapped;
-
-  int framesInFlight; //Assume one per frame in flight
   size_t uniformSize;
   VkBUniformPool uniformPool;
   int indexIntoPool;
 
   std::vector<VkDescriptorBufferInfo> bufferInfo;
   std::vector<VkDescriptorImageInfo> imageInfo;
-  //VkWriteDescriptorSet[] descriptors;
   
   void destroy();
-
   void createUniformBuffers(size_t uniformSize,
 			    int maxFramesInFlight);
-  
+  void* getBufferMemoryLocation(int imageIndex, int bufferIndex);
   void allocateDescriptorSets(VkBUniformPool& descriptorPool,
-			      VkImageView textureImageView, //temp
-			      VkSampler textureSampler //temp
+			      VkImageView* textureImageView, //temp
+			      VkSampler* textureSampler //temp
 );
 
 };

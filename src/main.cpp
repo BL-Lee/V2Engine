@@ -67,7 +67,7 @@ public:
 
   VkBVertexBuffer vertexBuffer;
   VkBUniformBuffer matrixUBO;
-  VkBUniformBuffer triangleUBO;
+  VkBUniformBuffer ratUBO;
   VkBUniformPool matrixPool;
 
   VkBDrawCommandBuffer commandBuffer;
@@ -77,6 +77,7 @@ public:
   VkFence inFlightFence;
   GLFWwindow* window;
   Model* model;
+  Model* ratModel;
   std::chrono::time_point<std::chrono::high_resolution_clock> fpsPrev;
 
   struct MVPMatrixUBO {
@@ -129,7 +130,7 @@ private:
     
     renderPass.createRenderPass(swapChain.imageFormat);
     
-    matrixPool.create(2, swapChain.imageViews.size(), sizeof(MVPMatrixUBO));
+    matrixPool.create(4, swapChain.imageViews.size(), sizeof(MVPMatrixUBO));
     matrixPool.addBuffer(0, sizeof(MVPMatrixUBO));
     matrixPool.addImage(1);
     matrixPool.createDescriptorSetLayout();
@@ -149,12 +150,12 @@ private:
 		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
     model = ModelImporter::loadOBJ("../models/room.obj", "../models/room.png");
-
+    ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png");
     //Uniforms
     //matrixPool.create(2, swapChain.imageViews.size(), sizeof(MVPMatrixUBO));
     
-    matrixUBO.allocateDescriptorSets(matrixPool, model->textures.imageView, model->textures.textureSampler);
-    triangleUBO.allocateDescriptorSets(matrixPool, model->textures.imageView, model->textures.textureSampler);
+    matrixUBO.allocateDescriptorSets(matrixPool, &model->textures.imageView, &model->textures.textureSampler);
+    ratUBO.allocateDescriptorSets(matrixPool, &ratModel->textures.imageView, &ratModel->textures.textureSampler);
     
     commandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
@@ -320,10 +321,10 @@ private:
 				0.1f, 10.0f);
     ubo.proj[1][1] *= -1;
 
-    memcpy(matrixPool.uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    memcpy(matrixUBO.getBufferMemoryLocation(currentImage, 0), &ubo, sizeof(ubo));
 
-    //ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, glm::sin(time)));
-    //memcpy(matrixPool.uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    ubo.model = glm::rotate(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, glm::sin(time))), glm::vec3(0.5f, 0.5f, 0.5f)), glm::radians(90.0f), glm::vec3(1.0, 0, 0));
+    memcpy(ratUBO.getBufferMemoryLocation(currentImage,0), &ubo, sizeof(ubo));
     
   }
   
@@ -351,10 +352,16 @@ private:
     commandBuffer.record(graphicsPipeline.pipeline,
 			 graphicsPipeline.layout,
 			 &model->VBO,
-			 &matrixPool.descriptorSets[matrixUBO.indexIntoPool + imageIndex],
+			 &matrixPool.descriptorSets[imageIndex][matrixUBO.indexIntoPool],
 			 0, model->VBO.indexCount
 			 );
-
+    commandBuffer.record(graphicsPipeline.pipeline,
+			 graphicsPipeline.layout,
+			 &ratModel->VBO,
+			 &matrixPool.descriptorSets[imageIndex][ratUBO.indexIntoPool],
+			 0, ratModel->VBO.indexCount
+			 );
+    
     //Tri
     /*
     commandBuffer.record(graphicsPipeline.pipeline,
@@ -427,9 +434,12 @@ private:
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
     model->destroy();
     free(model);
+    ratModel->destroy();
+    free(ratModel);
+
     depthTexture.destroy();
     matrixUBO.destroy();
-    triangleUBO.destroy();
+    ratUBO.destroy();
     matrixPool.destroy();
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);

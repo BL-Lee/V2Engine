@@ -17,23 +17,33 @@ initialize()
 
 
    */
-  
-  std::vector<VkBuffer> uniformBuffers;
-  std::vector<VkDeviceMemory> uniformBuffersMemory;
-  std::vector<void*> uniformBuffersMapped;
   size_t uniformSize;
-  
-  VkDescriptorPool descriptorPool;
-  std::vector<VkDescriptorSet> descriptorSets;
   int imagesInFlight;
   int totalSets;
   int filledSets;
+  int imageCount; //Images in uniform
+
+  //Buffer Data for where it's stored
+  std::vector<VkBuffer> uniformBuffers; // 1 per frame in flight for now, but should dynamically allocate
+  std::vector<VkDeviceMemory> uniformBuffersMemory;
+  std::vector<void*> uniformBuffersMapped;
+
+  VkDescriptorPool descriptorPool;
+  
+  //
+  //how each of them are laid out
   VkDescriptorSetLayout descriptorSetLayout;
+
+  //[[frame_0], [frame_1]...]
+  std::vector<std::vector<VkDescriptorSet>> descriptorSets;
   std::vector<VkDescriptorSetLayoutBinding> descriptorLayoutBindings;
+
+  //Doesn't need to be 2d, since each frame will be parallel
   std::vector<size_t> bufferOffsets;
   std::vector<size_t> bufferSizes;
   
-  int currentBufferOffset = 0;
+  size_t currentBufferOffset = 0;
+  
   void initialize();
   void createDescriptorSetLayout();
   VkDescriptorBufferInfo getBufferInfo(int descriptorIndex,
