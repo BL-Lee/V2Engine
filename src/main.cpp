@@ -129,6 +129,9 @@ private:
     
     renderPass.createRenderPass(swapChain.imageFormat);
     
+    matrixPool.create(2, swapChain.imageViews.size(), sizeof(MVPMatrixUBO));
+    matrixPool.addBuffer(0, sizeof(MVPMatrixUBO));
+    matrixPool.addImage(1);
     matrixPool.createDescriptorSetLayout();
     
     graphicsPipeline.createGraphicsPipeline(swapChain, renderPass, matrixPool.descriptorSetLayout);
@@ -148,14 +151,10 @@ private:
     model = ModelImporter::loadOBJ("../models/room.obj", "../models/room.png");
 
     //Uniforms
+    //matrixPool.create(2, swapChain.imageViews.size(), sizeof(MVPMatrixUBO));
     
-    matrixUBO.createUniformBuffers(physicalDevice, device,
-				   sizeof(MVPMatrixUBO),
-				   swapChain.imageViews.size());
-    triangleUBO.createUniformBuffers(physicalDevice, device, sizeof(MVPMatrixUBO),			     swapChain.imageViews.size());
-    matrixPool.create(2, swapChain.imageViews.size());
-    matrixUBO.allocateDescriptorSets(device, matrixPool, model->textures.imageView, model->textures.textureSampler);
-    triangleUBO.allocateDescriptorSets(device, matrixPool, model->textures.imageView, model->textures.textureSampler);
+    matrixUBO.allocateDescriptorSets(matrixPool, model->textures.imageView, model->textures.textureSampler);
+    triangleUBO.allocateDescriptorSets(matrixPool, model->textures.imageView, model->textures.textureSampler);
     
     commandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
@@ -321,10 +320,10 @@ private:
 				0.1f, 10.0f);
     ubo.proj[1][1] *= -1;
 
-    memcpy(matrixUBO.uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    memcpy(matrixPool.uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
 
-    ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, glm::sin(time)));
-    memcpy(triangleUBO.uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
+    //ubo.model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, glm::sin(time)));
+    //memcpy(matrixPool.uniformBuffersMapped[currentImage], &ubo, sizeof(ubo));
     
   }
   

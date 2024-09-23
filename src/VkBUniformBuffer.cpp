@@ -4,54 +4,26 @@
 #include <array>
 #include <stdexcept>
 void VkBUniformBuffer::destroy() {
-  for (size_t i = 0; i < uniformBuffers.size(); i++) { //TODO: should just make this a constant
-    vkDestroyBuffer(device, uniformBuffers[i], nullptr);
-    vkFreeMemory(device, uniformBuffersMemory[i], nullptr);
-  }
 }
 
 
-void VkBUniformBuffer::createUniformBuffers(VkPhysicalDevice physicalDevice,
-					    VkDevice device,
-					    size_t uSize,
+void VkBUniformBuffer::createUniformBuffers(size_t uSize,
 					    int maxFramesInFlight) {
-  VkDeviceSize bufferSize = uSize;
-  uniformSize = uSize;
-  framesInFlight = maxFramesInFlight;
-  
-  uniformBuffers.resize(maxFramesInFlight);
-  uniformBuffersMemory.resize(maxFramesInFlight);
-  uniformBuffersMapped.resize(maxFramesInFlight);
-  
-  for (size_t i = 0; i < maxFramesInFlight; i++) {
-    createBuffer(bufferSize,
-		 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		 uniformBuffers[i],
-		 uniformBuffersMemory[i]);
-	
-    vkMapMemory(device, uniformBuffersMemory[i], 0, bufferSize, 0, &uniformBuffersMapped[i]);
-  }
 }
 
 //TODO: to abstract
-void VkBUniformBuffer::allocateDescriptorSets(VkDevice device,
-					      VkBUniformPool& descriptorPool,
+void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool& descriptorPool,
 					      VkImageView textureImageView, //temp
 					      VkSampler textureSampler //temp
 					      )
   {
     indexIntoPool = descriptorPool.getDescriptorSetIndex();
-    for (size_t i = 0; i < framesInFlight; i++) {
-      VkDescriptorBufferInfo bufferInfo{};
-      bufferInfo.buffer = uniformBuffers[i];
-      bufferInfo.offset = 0;
-      bufferInfo.range = uniformSize;
+    for (size_t i = 0; i < descriptorPool.imagesInFlight; i++) {
+      //for (int j = 0; j < descriptorPool.
+      
+      VkDescriptorBufferInfo bufferInfo = descriptorPool.getBufferInfo(0,0, i);
 
-      VkDescriptorImageInfo imageInfo{};
-      imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-      imageInfo.imageView = textureImageView;
-      imageInfo.sampler = textureSampler;
+      VkDescriptorImageInfo imageInfo = descriptorPool.getImageBufferInfo(textureSampler, textureImageView);
 
       std::array<VkWriteDescriptorSet, 2> descriptorWrites{};
       

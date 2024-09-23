@@ -2235,6 +2235,7 @@ CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o: ../src/VkBUniformPool.cpp \
   /usr/include/GL/glext.h \
   /usr/include/KHR/khrplatform.h \
   ../src/VkBUniformPool.hpp \
+  ../src/VkBBuffer.hpp \
   /usr/include/c++/11/stdexcept \
   /usr/include/c++/11/exception \
   /usr/include/c++/11/bits/exception_ptr.h \
