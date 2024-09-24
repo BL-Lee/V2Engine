@@ -175,7 +175,7 @@ void VkBUniformPool::addImage(int dstBinding)
   
   descriptorLayoutBindings.push_back(samplerLayoutBinding);
 
-  imageCount ++;
+  imageCount++;
   
 }
 

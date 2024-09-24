@@ -55,6 +55,7 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBUniformPool.hpp"
 #include "VkBTexture.hpp"
 #include "OBJLoader.hpp"
+#include "Camera.hpp"
 class V2Engine {
 public:
   
@@ -70,6 +71,8 @@ public:
   VkBUniformBuffer ratUBO;
   VkBUniformPool matrixPool;
 
+  VkBUniformPool cameraUniformPool;
+  Camera mainCamera;
   VkBDrawCommandBuffer commandBuffer;
   VkBTexture depthTexture;
   VkSemaphore imageAvailableSemaphore;
@@ -134,6 +137,14 @@ private:
     matrixPool.addBuffer(0, sizeof(MVPMatrixUBO));
     matrixPool.addImage(1);
     matrixPool.createDescriptorSetLayout();
+
+    cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*2 + sizeof(float)*2);
+    cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*2 + sizeof(float)*2);
+    cameraUniformPool.createDescriptorSetLayout();
+
+    mainCamera.init();
+    mainCamera.createPerspective(swapChain.extent.width, (float) swapChain.extent.height);
+    mainCamera.ubo.allocateDescriptorSets(cameraUniformPool, nullptr, nullptr);    
     
     graphicsPipeline.createGraphicsPipeline(swapChain, renderPass, matrixPool.descriptorSetLayout);
 
@@ -325,7 +336,8 @@ private:
 
     ubo.model = glm::rotate(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, glm::sin(time))), glm::vec3(0.5f, 0.5f, 0.5f)), glm::radians(90.0f), glm::vec3(1.0, 0, 0));
     memcpy(ratUBO.getBufferMemoryLocation(currentImage,0), &ubo, sizeof(ubo));
-    
+
+    mainCamera.updateMatrices(currentImage);
   }
   
   void drawFrame() {
@@ -346,9 +358,15 @@ private:
     updateProjectionMatrices(imageIndex);
     //plane
     vkResetCommandBuffer(commandBuffer.commandBuffer, 0);
+    
     commandBuffer.begin(renderPass.renderPass,
 			swapChain.framebuffers[imageIndex],
 			swapChain.extent);
+    
+    vkCmdBindDescriptorSets(commandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			    graphicsPipeline.layout,
+			    0, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
+
     commandBuffer.record(graphicsPipeline.pipeline,
 			 graphicsPipeline.layout,
 			 &model->VBO,
