@@ -3,7 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 
-
+#include "Input.hpp"
 
 extern VkDevice device;
 extern VkInstance instance;
@@ -16,3 +16,4 @@ extern VkQueue graphicsQueue;
 extern VkQueue presentQueue;
 extern VkCommandPool drawCommandPool;
 extern VkCommandPool transientCommandPool; //For short lived command buffers
+extern Input inputInfo;

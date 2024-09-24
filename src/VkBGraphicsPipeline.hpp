@@ -27,5 +27,5 @@ public:
   VkShaderModule createShaderModule(const std::vector<char>& code);
   void createGraphicsPipeline(VkBSwapChain& swapChain,
 			      VkBRenderPass renderPass,
-			      VkDescriptorSetLayout descriptorSetLayout);
+			      VkDescriptorSetLayout* descriptorSetLayouts);
 };

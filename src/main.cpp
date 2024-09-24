@@ -56,6 +56,8 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBTexture.hpp"
 #include "OBJLoader.hpp"
 #include "Camera.hpp"
+#include "Input.hpp"
+Input inputInfo = {};
 class V2Engine {
 public:
   
@@ -67,8 +69,6 @@ public:
   VkBRenderPass renderPass;
 
   VkBVertexBuffer vertexBuffer;
-  VkBUniformBuffer matrixUBO;
-  VkBUniformBuffer ratUBO;
   VkBUniformPool matrixPool;
 
   VkBUniformPool cameraUniformPool;
@@ -79,16 +79,10 @@ public:
   VkSemaphore renderFinishedSemaphore;
   VkFence inFlightFence;
   GLFWwindow* window;
-  Model* model;
   Model* ratModel;
+  Model* cornellScene;
   std::chrono::time_point<std::chrono::high_resolution_clock> fpsPrev;
 
-  struct MVPMatrixUBO {
-    glm::mat4 model;
-    glm::mat4 view;
-    glm::mat4 proj;
-  };
-  
   void run() {
     fpsPrev = std::chrono::high_resolution_clock::now();
 #if NDEBUG_MODE
@@ -108,6 +102,13 @@ private:
   DebugUtils debugUtils;
   VkBSwapChain swapChain;
 
+  static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+  {
+    if (action == GLFW_PRESS)
+      inputInfo.keysPressed[key] = 1;
+    if (action == GLFW_RELEASE)
+      inputInfo.keysPressed[key] = 0;
+  }
 
   void initWindow() {
     glfwInit();
@@ -116,6 +117,8 @@ private:
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan Triangle", nullptr, nullptr);
+    glfwSetKeyCallback(window, key_callback);
+    
   }
   
   void initVulkan() {
@@ -133,20 +136,21 @@ private:
     
     renderPass.createRenderPass(swapChain.imageFormat);
     
-    matrixPool.create(4, swapChain.imageViews.size(), sizeof(MVPMatrixUBO));
-    matrixPool.addBuffer(0, sizeof(MVPMatrixUBO));
+    matrixPool.create(4, swapChain.imageViews.size(), sizeof(glm::mat4));
+    matrixPool.addBuffer(0, sizeof(glm::mat4));
     matrixPool.addImage(1);
     matrixPool.createDescriptorSetLayout();
 
-    cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*2 + sizeof(float)*2);
-    cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*2 + sizeof(float)*2);
+    cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*4 + sizeof(float)*2);
+    cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*4 + sizeof(float)*2);
     cameraUniformPool.createDescriptorSetLayout();
 
     mainCamera.init();
     mainCamera.createPerspective(swapChain.extent.width, (float) swapChain.extent.height);
-    mainCamera.ubo.allocateDescriptorSets(cameraUniformPool, nullptr, nullptr);    
-    
-    graphicsPipeline.createGraphicsPipeline(swapChain, renderPass, matrixPool.descriptorSetLayout);
+    mainCamera.ubo.allocateDescriptorSets(&cameraUniformPool, nullptr, nullptr);    
+
+    VkDescriptorSetLayout uniformLayouts[2] = {matrixPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
+    graphicsPipeline.createGraphicsPipeline(swapChain, renderPass, uniformLayouts);
 
 
     depthTexture.createTextureImage(VKB_TEXTURE_TYPE_DEPTH, swapChain.extent.width, swapChain.extent.height, nullptr);    
@@ -160,13 +164,11 @@ private:
     createCommandPool(&transientCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
 
-    model = ModelImporter::loadOBJ("../models/room.obj", "../models/room.png");
+    cornellScene = ModelImporter::loadOBJ("../models/cornell.obj", "../models/cornell.png");
     ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png");
-    //Uniforms
-    //matrixPool.create(2, swapChain.imageViews.size(), sizeof(MVPMatrixUBO));
     
-    matrixUBO.allocateDescriptorSets(matrixPool, &model->textures.imageView, &model->textures.textureSampler);
-    ratUBO.allocateDescriptorSets(matrixPool, &ratModel->textures.imageView, &ratModel->textures.textureSampler);
+    ratModel->modelUniform.allocateDescriptorSets(&matrixPool, &ratModel->textures.imageView, &ratModel->textures.textureSampler);
+    cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, &cornellScene->textures.imageView, &cornellScene->textures.textureSampler);
     
     commandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
@@ -186,13 +188,6 @@ private:
       throw std::runtime_error("failed to create semaphores!");
     }
   }
-
-  
-  
-
-
-
-
   
   //EXTENSIONS ----------------------------------------------------
   std::vector<const char*> getRequiredExtensions() {
@@ -208,9 +203,6 @@ private:
     
     return extensions;
   }
-
-
-  
   
 
   //INSTANCE -------------------------------------------------
@@ -321,31 +313,22 @@ private:
     auto currentTime = std::chrono::high_resolution_clock::now();
     float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
 
-    MVPMatrixUBO ubo{};
-    ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(90.0f),
-			    glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f),
-			   glm::vec3(0.0f, 0.0f, 0.0f),
-			   glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f),
-				swapChain.extent.width / (float) swapChain.extent.height,
-				0.1f, 10.0f);
-    ubo.proj[1][1] *= -1;
 
-    memcpy(matrixUBO.getBufferMemoryLocation(currentImage, 0), &ubo, sizeof(ubo));
+    glm::mat4 modelMat = glm::scale(glm::translate(glm::mat4(1.0f),
+					  glm::vec3(0.0, glm::sin(time), 0.0)),
+			   glm::vec3(0.5f, 0.5f, 0.5f));
+    
+    memcpy(ratModel->modelUniform.getBufferMemoryLocation(currentImage,0), &modelMat, sizeof(glm::mat4));
 
-    ubo.model = glm::rotate(glm::scale(glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, glm::sin(time))), glm::vec3(0.5f, 0.5f, 0.5f)), glm::radians(90.0f), glm::vec3(1.0, 0, 0));
-    memcpy(ratUBO.getBufferMemoryLocation(currentImage,0), &ubo, sizeof(ubo));
+    glm::mat4 identity = glm::rotate(glm::mat4(1.0f),
+				     glm::radians(-90.0f),
+				     glm::vec3(0.0f, 1.0f, 0.0f));
+    memcpy(cornellScene->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
 
     mainCamera.updateMatrices(currentImage);
   }
   
   void drawFrame() {
-
-    auto fpsNow = std::chrono::high_resolution_clock::now();
-    float time = std::chrono::duration<float, std::chrono::seconds::period>(fpsNow - fpsPrev).count();
-    //    printf("\r%.8f %4.2f", time, 1.0f / time);
-    fpsPrev = std::chrono::high_resolution_clock::now();
 
     //Wait for previous frame to finish
     vkWaitForFences(device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
@@ -365,29 +348,21 @@ private:
     
     vkCmdBindDescriptorSets(commandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			    graphicsPipeline.layout,
-			    0, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
+			    1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
 
     commandBuffer.record(graphicsPipeline.pipeline,
 			 graphicsPipeline.layout,
-			 &model->VBO,
-			 &matrixPool.descriptorSets[imageIndex][matrixUBO.indexIntoPool],
-			 0, model->VBO.indexCount
-			 );
-    commandBuffer.record(graphicsPipeline.pipeline,
-			 graphicsPipeline.layout,
 			 &ratModel->VBO,
-			 &matrixPool.descriptorSets[imageIndex][ratUBO.indexIntoPool],
+			 &matrixPool.descriptorSets[imageIndex][ratModel->modelUniform.indexIntoPool],
 			 0, ratModel->VBO.indexCount
 			 );
-    
-    //Tri
-    /*
     commandBuffer.record(graphicsPipeline.pipeline,
 			 graphicsPipeline.layout,
-			 &vertexBuffer,
-			 &matrixPool.descriptorSets[triangleUBO.indexIntoPool + imageIndex],
-			 6, 3
-			 );*/
+			 &cornellScene->VBO,
+			 &matrixPool.descriptorSets[imageIndex][cornellScene->modelUniform.indexIntoPool],
+			 0, cornellScene->VBO.indexCount
+			 );
+    
     commandBuffer.end();
 
     VkSubmitInfo submitInfo{};
@@ -420,10 +395,40 @@ private:
     vkQueuePresentKHR(presentQueue, &presentInfo);
 
   }
+
+  void processInputs()
+  {
+    
+    auto fpsNow = std::chrono::high_resolution_clock::now();
+    float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(fpsNow - fpsPrev).count();
+    //    printf("\r%.8f %4.2f", time, 1.0f / time);
+    fpsPrev = std::chrono::high_resolution_clock::now();
+
+    if (inputInfo.keysPressed[GLFW_KEY_A])
+      mainCamera.position += glm::vec3(-deltaTime * 3.0f, 0.0, 0.0);
+    if (inputInfo.keysPressed[GLFW_KEY_D])
+      mainCamera.position += glm::vec3(deltaTime * 3.0f, 0.0, 0.0);
+    
+    if (inputInfo.keysPressed[GLFW_KEY_W])
+      mainCamera.position += glm::vec3(0.0, 0.0, -deltaTime * 3.0f);
+    if (inputInfo.keysPressed[GLFW_KEY_S])
+      mainCamera.position += glm::vec3(0.0, 0.0, deltaTime * 3.0f);
+
+    if (inputInfo.keysPressed[GLFW_KEY_SPACE])
+      mainCamera.position += glm::vec3(0.0,  deltaTime * 3.0f, 0.0);
+    if (inputInfo.keysPressed[GLFW_KEY_LEFT_CONTROL])
+      mainCamera.position += glm::vec3(0.0, -deltaTime * 3.0f, 0.0);
+
+  }
+
+  
   void mainLoop() {
 
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents();
+
+      
+      processInputs();
       drawFrame();
     }
     vkDeviceWaitIdle(device);
@@ -450,14 +455,14 @@ private:
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
-    model->destroy();
-    free(model);
-    ratModel->destroy();
-    free(ratModel);
+
+    delete ratModel;
+    delete cornellScene;
+    
+    mainCamera.ubo.destroy();
+    cameraUniformPool.destroy();
 
     depthTexture.destroy();
-    matrixUBO.destroy();
-    ratUBO.destroy();
     matrixPool.destroy();
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);

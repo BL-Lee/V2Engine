@@ -2,16 +2,17 @@
 #include <tiny_obj_loader.h>
 
 #include "OBJLoader.hpp"
-
-void Model::destroy()
+#include <iostream>
+Model::~Model()
 {
+  modelUniform.destroy();
   VBO.destroy();
   textures.destroy();
 }
 
 Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath)
   {
-    Model* model = (Model*)malloc(sizeof(Model));
+    Model* model = new Model();
     
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -28,7 +29,7 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath)
 
     std::vector<Vertex> vertices;
     std::vector<uint32_t> indices;
-  
+    std::unordered_map<Vertex, uint32_t> uniqueVertices{};
     for (const auto& shape : shapes) {
       for (const auto& index : shape.mesh.indices) {
 	Vertex vertex{};
@@ -45,9 +46,13 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath)
 	};
 
 	vertex.colour = {1.0f, 1.0f, 1.0f};
-      
-	vertices.push_back(vertex);
-	indices.push_back(indices.size());
+
+	if (uniqueVertices.count(vertex) == 0) {
+            uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
+            vertices.push_back(vertex);
+        }
+	
+        indices.push_back(uniqueVertices[vertex]);
       }
     }
 
@@ -57,6 +62,7 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath)
 	     indices.data(), indices.size());
     model->VBO.transferToDevice(transientCommandPool, graphicsQueue);
     model->textures.createTextureImage(VKB_TEXTURE_TYPE_RGBA, texturePath);
-
+    std::cout << vertices.size() << ": VERTICES" << std::endl;
+    std::cout << indices.size() << ": INDICES" << std::endl;
     return model;
   }

@@ -1,12 +1,12 @@
 #version 450
 
-layout(binding = 0) uniform UniformBufferObject {
+layout(set=0, binding = 0) uniform UniformBufferObject {
     mat4 model;
-    mat4 view;
-    mat4 proj;
+    //mat4 view;
+    //mat4 proj;
 } ubo;
 
-layout(binding = 1) uniform cameraUniform {
+layout(set=1, binding = 1) uniform cameraUniform {
   mat4 view;
   mat4 proj;
   float nearClip;

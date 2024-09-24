@@ -4,6 +4,7 @@
 #include "VkBBuffer.hpp"
 #include <stdexcept>
 #include <array>
+#include <cmath>
 //General consensus is to break up descriptor sets (buffers?) into different sections
 /*
 
@@ -24,8 +25,9 @@ void VkBUniformPool::create(uint32_t totalToStore, uint32_t totalFrames,
   //Should global this
   VkPhysicalDeviceProperties props;
   vkGetPhysicalDeviceProperties(physicalDevice, &props);
-
-  uniformSize = sizeOfUniform < props.limits.minUniformBufferOffsetAlignment ? props.limits.minUniformBufferOffsetAlignment : sizeOfUniform;
+  
+  uniformSize = std::ceil((float)sizeOfUniform / props.limits.minUniformBufferOffsetAlignment) * props.limits.minUniformBufferOffsetAlignment;
+  
 
   filledSets = 0;
   imagesInFlight = totalFrames;
@@ -116,14 +118,14 @@ int VkBUniformPool::getDescriptorSetIndex()
   return (filledSets - 1);
 }
 
-VkDescriptorBufferInfo VkBUniformPool::getBufferInfo(int descriptorIndex, //Which buffer
+VkDescriptorBufferInfo VkBUniformPool::getBufferInfo(int indexIntoPool, //Which buffer
 						     int indexIntoDescriptor, //Which buffer in this UBO
 						     int frameIdx
 						     )
 {
   VkDescriptorBufferInfo bufferInfo{};
   bufferInfo.buffer = uniformBuffers[frameIdx]; //TODO: resizing and chunking
-  bufferInfo.offset = uniformSize * descriptorIndex + bufferOffsets[indexIntoDescriptor];
+  bufferInfo.offset = uniformSize * indexIntoPool + bufferOffsets[indexIntoDescriptor];
   bufferInfo.range = bufferSizes[indexIntoDescriptor];
 
   return bufferInfo;
@@ -156,7 +158,8 @@ void VkBUniformPool::addBuffer(int dstBinding, size_t bufferSize)
   uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
   uboLayoutBinding.pImmutableSamplers = nullptr; // For texture stuff
 
-  size_t trueSize = bufferSize < props.limits.minUniformBufferOffsetAlignment ? props.limits.minUniformBufferOffsetAlignment : bufferSize;
+  size_t trueSize = std::ceil((float)bufferSize / props.limits.minUniformBufferOffsetAlignment) * props.limits.minUniformBufferOffsetAlignment;
+  //  size_t trueSize = bufferSize < props.limits.minUniformBufferOffsetAlignment ? props.limits.minUniformBufferOffsetAlignment : bufferSize;
   
   descriptorLayoutBindings.push_back(uboLayoutBinding);
   bufferOffsets.push_back(currentBufferOffset);

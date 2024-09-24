@@ -436,6 +436,7 @@ CMakeFiles/V2Engine.dir/src/OBJLoader.cpp.o: ../src/OBJLoader.cpp \
   /usr/include/GL/gl.h \
   /usr/include/GL/glext.h \
   /usr/include/KHR/khrplatform.h \
+  ../src/Input.hpp \
   ../src/VkBVertexBuffer.hpp \
   ../src/Vertex.hpp \
   ../libraries/glm/glm/glm.hpp \
@@ -605,9 +606,65 @@ CMakeFiles/V2Engine.dir/src/OBJLoader.cpp.o: ../src/OBJLoader.cpp \
   ../libraries/glm/glm/detail/type_half.inl \
   ../libraries/glm/glm/integer.hpp \
   ../libraries/glm/glm/detail/func_integer.inl \
+  ../libraries/glm/glm/gtx/hash.hpp \
+  ../libraries/glm/glm/gtc/vec1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_float1.hpp \
+  ../libraries/glm/glm/ext/vector_float1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_double1.hpp \
+  ../libraries/glm/glm/ext/vector_double1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_int1.hpp \
+  ../libraries/glm/glm/ext/vector_int1_sized.hpp \
+  ../libraries/glm/glm/ext/vector_uint1.hpp \
+  ../libraries/glm/glm/ext/vector_uint1_sized.hpp \
+  ../libraries/glm/glm/gtc/quaternion.hpp \
+  ../libraries/glm/glm/gtc/constants.hpp \
+  ../libraries/glm/glm/ext/scalar_constants.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/ext/scalar_constants.inl \
+  ../libraries/glm/glm/gtc/constants.inl \
+  ../libraries/glm/glm/gtc/matrix_transform.hpp \
+  ../libraries/glm/glm/ext/matrix_projection.hpp \
+  ../libraries/glm/glm/ext/matrix_projection.inl \
+  ../libraries/glm/glm/ext/matrix_clip_space.hpp \
+  ../libraries/glm/glm/ext/matrix_clip_space.inl \
+  ../libraries/glm/glm/ext/matrix_transform.hpp \
+  ../libraries/glm/glm/ext/matrix_transform.inl \
+  ../libraries/glm/glm/gtc/matrix_transform.inl \
+  ../libraries/glm/glm/ext/vector_relational.hpp \
+  ../libraries/glm/glm/ext/vector_relational.inl \
+  ../libraries/glm/glm/detail/type_float.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/ext/quaternion_common.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.inl \
+  ../libraries/glm/glm/ext/quaternion_common.inl \
+  ../libraries/glm/glm/ext/quaternion_float.hpp \
+  ../libraries/glm/glm/detail/type_quat.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.inl \
+  ../libraries/glm/glm/detail/type_quat.inl \
+  ../libraries/glm/glm/ext/quaternion_float_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_double.hpp \
+  ../libraries/glm/glm/ext/quaternion_double_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.inl \
+  ../libraries/glm/glm/ext/quaternion_transform.hpp \
+  ../libraries/glm/glm/ext/quaternion_transform.inl \
+  ../libraries/glm/glm/gtc/quaternion.inl \
+  ../libraries/glm/glm/gtc/epsilon.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/gtc/epsilon.inl \
+  ../libraries/glm/glm/gtx/dual_quaternion.hpp \
+  ../libraries/glm/glm/gtx/dual_quaternion.inl \
+  ../libraries/glm/glm/gtx/hash.inl \
   ../src/VkBTexture.hpp \
   ../libraries/stb/stb_image.h \
-  /usr/include/c++/11/stdlib.h
+  /usr/include/c++/11/stdlib.h \
+  ../src/VkBUniformBuffer.hpp \
+  ../src/VkBUniformPool.hpp \
+  /usr/include/c++/11/iostream
 
 CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o: ../src/VkBBuffer.cpp \
   /usr/include/stdc-predef.h \
@@ -780,6 +837,7 @@ CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o: ../src/VkBBuffer.cpp \
   /usr/include/c++/11/bits/stl_vector.h \
   /usr/include/c++/11/bits/stl_bvector.h \
   /usr/include/c++/11/bits/vector.tcc \
+  ../src/Input.hpp \
   ../src/VkBSingleCommandBuffer.hpp
 
 CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o: ../src/VkBDrawCommandBuffer.cpp \
@@ -849,6 +907,7 @@ CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o: ../src/VkBDrawCommandBuf
   /usr/include/GL/gl.h \
   /usr/include/GL/glext.h \
   /usr/include/KHR/khrplatform.h \
+  ../src/Input.hpp \
   ../src/VkBDrawCommandBuffer.hpp \
   ../src/VkBVertexBuffer.hpp \
   ../src/Vertex.hpp \
@@ -1094,6 +1153,59 @@ CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o: ../src/VkBDrawCommandBuf
   ../libraries/glm/glm/detail/type_half.inl \
   ../libraries/glm/glm/integer.hpp \
   ../libraries/glm/glm/detail/func_integer.inl \
+  ../libraries/glm/glm/gtx/hash.hpp \
+  ../libraries/glm/glm/gtc/vec1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_float1.hpp \
+  ../libraries/glm/glm/ext/vector_float1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_double1.hpp \
+  ../libraries/glm/glm/ext/vector_double1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_int1.hpp \
+  ../libraries/glm/glm/ext/vector_int1_sized.hpp \
+  ../libraries/glm/glm/ext/vector_uint1.hpp \
+  ../libraries/glm/glm/ext/vector_uint1_sized.hpp \
+  ../libraries/glm/glm/gtc/quaternion.hpp \
+  ../libraries/glm/glm/gtc/constants.hpp \
+  ../libraries/glm/glm/ext/scalar_constants.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/ext/scalar_constants.inl \
+  ../libraries/glm/glm/gtc/constants.inl \
+  ../libraries/glm/glm/gtc/matrix_transform.hpp \
+  ../libraries/glm/glm/ext/matrix_projection.hpp \
+  ../libraries/glm/glm/ext/matrix_projection.inl \
+  ../libraries/glm/glm/ext/matrix_clip_space.hpp \
+  ../libraries/glm/glm/ext/matrix_clip_space.inl \
+  ../libraries/glm/glm/ext/matrix_transform.hpp \
+  ../libraries/glm/glm/ext/matrix_transform.inl \
+  ../libraries/glm/glm/gtc/matrix_transform.inl \
+  ../libraries/glm/glm/ext/vector_relational.hpp \
+  ../libraries/glm/glm/ext/vector_relational.inl \
+  ../libraries/glm/glm/detail/type_float.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/ext/quaternion_common.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.inl \
+  ../libraries/glm/glm/ext/quaternion_common.inl \
+  ../libraries/glm/glm/ext/quaternion_float.hpp \
+  ../libraries/glm/glm/detail/type_quat.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.inl \
+  ../libraries/glm/glm/detail/type_quat.inl \
+  ../libraries/glm/glm/ext/quaternion_float_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_double.hpp \
+  ../libraries/glm/glm/ext/quaternion_double_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.inl \
+  ../libraries/glm/glm/ext/quaternion_transform.hpp \
+  ../libraries/glm/glm/ext/quaternion_transform.inl \
+  ../libraries/glm/glm/gtc/quaternion.inl \
+  ../libraries/glm/glm/gtc/epsilon.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/gtc/epsilon.inl \
+  ../libraries/glm/glm/gtx/dual_quaternion.hpp \
+  ../libraries/glm/glm/gtx/dual_quaternion.inl \
+  ../libraries/glm/glm/gtx/hash.inl \
   /usr/include/c++/11/stdexcept \
   /usr/include/c++/11/exception \
   /usr/include/c++/11/bits/exception_ptr.h \
@@ -1560,7 +1672,61 @@ CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o: ../src/VkBGraphicsPipelin
   ../libraries/glm/glm/detail/type_half.inl \
   ../libraries/glm/glm/integer.hpp \
   ../libraries/glm/glm/detail/func_integer.inl \
+  ../libraries/glm/glm/gtx/hash.hpp \
+  ../libraries/glm/glm/gtc/vec1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_float1.hpp \
+  ../libraries/glm/glm/ext/vector_float1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_double1.hpp \
+  ../libraries/glm/glm/ext/vector_double1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_int1.hpp \
+  ../libraries/glm/glm/ext/vector_int1_sized.hpp \
+  ../libraries/glm/glm/ext/vector_uint1.hpp \
+  ../libraries/glm/glm/ext/vector_uint1_sized.hpp \
+  ../libraries/glm/glm/gtc/quaternion.hpp \
+  ../libraries/glm/glm/gtc/constants.hpp \
+  ../libraries/glm/glm/ext/scalar_constants.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/ext/scalar_constants.inl \
+  ../libraries/glm/glm/gtc/constants.inl \
+  ../libraries/glm/glm/gtc/matrix_transform.hpp \
+  ../libraries/glm/glm/ext/matrix_projection.hpp \
+  ../libraries/glm/glm/ext/matrix_projection.inl \
+  ../libraries/glm/glm/ext/matrix_clip_space.hpp \
+  ../libraries/glm/glm/ext/matrix_clip_space.inl \
+  ../libraries/glm/glm/ext/matrix_transform.hpp \
+  ../libraries/glm/glm/ext/matrix_transform.inl \
+  ../libraries/glm/glm/gtc/matrix_transform.inl \
+  ../libraries/glm/glm/ext/vector_relational.hpp \
+  ../libraries/glm/glm/ext/vector_relational.inl \
+  ../libraries/glm/glm/detail/type_float.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/ext/quaternion_common.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.inl \
+  ../libraries/glm/glm/ext/quaternion_common.inl \
+  ../libraries/glm/glm/ext/quaternion_float.hpp \
+  ../libraries/glm/glm/detail/type_quat.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.inl \
+  ../libraries/glm/glm/detail/type_quat.inl \
+  ../libraries/glm/glm/ext/quaternion_float_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_double.hpp \
+  ../libraries/glm/glm/ext/quaternion_double_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.inl \
+  ../libraries/glm/glm/ext/quaternion_transform.hpp \
+  ../libraries/glm/glm/ext/quaternion_transform.inl \
+  ../libraries/glm/glm/gtc/quaternion.inl \
+  ../libraries/glm/glm/gtc/epsilon.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/gtc/epsilon.inl \
+  ../libraries/glm/glm/gtx/dual_quaternion.hpp \
+  ../libraries/glm/glm/gtx/dual_quaternion.inl \
+  ../libraries/glm/glm/gtx/hash.inl \
   ../src/VkBGlobals.hpp \
+  ../src/Input.hpp \
   /usr/include/c++/11/fstream \
   /usr/include/c++/11/bits/codecvt.h \
   /usr/include/x86_64-linux-gnu/c++/11/bits/basic_file.h \
@@ -1738,6 +1904,7 @@ CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o: ../src/VkBRenderPass.cpp \
   /usr/include/c++/11/bits/stl_vector.h \
   /usr/include/c++/11/bits/stl_bvector.h \
   /usr/include/c++/11/bits/vector.tcc \
+  ../src/Input.hpp \
   /usr/include/c++/11/array \
   /usr/include/c++/11/utility \
   /usr/include/c++/11/bits/stl_relops.h
@@ -1809,7 +1976,8 @@ CMakeFiles/V2Engine.dir/src/VkBSingleCommandBuffer.cpp.o: ../src/VkBSingleComman
   /usr/include/vulkan/vulkan_core.h \
   /usr/include/GL/gl.h \
   /usr/include/GL/glext.h \
-  /usr/include/KHR/khrplatform.h
+  /usr/include/KHR/khrplatform.h \
+  ../src/Input.hpp
 
 CMakeFiles/V2Engine.dir/src/VkBTexture.cpp.o: ../src/VkBTexture.cpp \
   /usr/include/stdc-predef.h \
@@ -1878,6 +2046,7 @@ CMakeFiles/V2Engine.dir/src/VkBTexture.cpp.o: ../src/VkBTexture.cpp \
   /usr/include/GL/gl.h \
   /usr/include/GL/glext.h \
   /usr/include/KHR/khrplatform.h \
+  ../src/Input.hpp \
   ../src/VkBTexture.hpp \
   ../libraries/stb/stb_image.h \
   /usr/include/stdio.h \
@@ -2060,6 +2229,7 @@ CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o: ../src/VkBUniformBuffer.cpp 
   ../src/VkBUniformPool.hpp \
   ../src/VkBBuffer.hpp \
   ../src/VkBGlobals.hpp \
+  ../src/Input.hpp \
   /usr/include/c++/11/array \
   /usr/include/c++/11/utility \
   /usr/include/c++/11/bits/stl_relops.h \
@@ -2234,6 +2404,7 @@ CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o: ../src/VkBUniformPool.cpp \
   /usr/include/GL/gl.h \
   /usr/include/GL/glext.h \
   /usr/include/KHR/khrplatform.h \
+  ../src/Input.hpp \
   ../src/VkBUniformPool.hpp \
   ../src/VkBBuffer.hpp \
   /usr/include/c++/11/stdexcept \
@@ -2341,7 +2512,32 @@ CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o: ../src/VkBUniformPool.cpp \
   /usr/include/c++/11/bits/basic_string.tcc \
   /usr/include/c++/11/array \
   /usr/include/c++/11/utility \
-  /usr/include/c++/11/bits/stl_relops.h
+  /usr/include/c++/11/bits/stl_relops.h \
+  /usr/include/c++/11/cmath \
+  /usr/include/math.h \
+  /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
+  /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
+  /usr/include/x86_64-linux-gnu/bits/fp-logb.h \
+  /usr/include/x86_64-linux-gnu/bits/fp-fast.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls.h \
+  /usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h \
+  /usr/include/x86_64-linux-gnu/bits/iscanonical.h \
+  /usr/include/c++/11/bits/specfun.h \
+  /usr/include/c++/11/limits \
+  /usr/include/c++/11/tr1/gamma.tcc \
+  /usr/include/c++/11/tr1/special_function_util.h \
+  /usr/include/c++/11/tr1/bessel_function.tcc \
+  /usr/include/c++/11/tr1/beta_function.tcc \
+  /usr/include/c++/11/tr1/ell_integral.tcc \
+  /usr/include/c++/11/tr1/exp_integral.tcc \
+  /usr/include/c++/11/tr1/hypergeometric.tcc \
+  /usr/include/c++/11/tr1/legendre_function.tcc \
+  /usr/include/c++/11/tr1/modified_bessel_func.tcc \
+  /usr/include/c++/11/tr1/poly_hermite.tcc \
+  /usr/include/c++/11/tr1/poly_laguerre.tcc \
+  /usr/include/c++/11/tr1/riemann_zeta.tcc
 
 CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o: ../src/VkBVertexBuffer.cpp \
   /usr/include/stdc-predef.h \
@@ -2653,6 +2849,59 @@ CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o: ../src/VkBVertexBuffer.cpp \
   ../libraries/glm/glm/detail/type_half.inl \
   ../libraries/glm/glm/integer.hpp \
   ../libraries/glm/glm/detail/func_integer.inl \
+  ../libraries/glm/glm/gtx/hash.hpp \
+  ../libraries/glm/glm/gtc/vec1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_float1.hpp \
+  ../libraries/glm/glm/ext/vector_float1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_double1.hpp \
+  ../libraries/glm/glm/ext/vector_double1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_int1.hpp \
+  ../libraries/glm/glm/ext/vector_int1_sized.hpp \
+  ../libraries/glm/glm/ext/vector_uint1.hpp \
+  ../libraries/glm/glm/ext/vector_uint1_sized.hpp \
+  ../libraries/glm/glm/gtc/quaternion.hpp \
+  ../libraries/glm/glm/gtc/constants.hpp \
+  ../libraries/glm/glm/ext/scalar_constants.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/ext/scalar_constants.inl \
+  ../libraries/glm/glm/gtc/constants.inl \
+  ../libraries/glm/glm/gtc/matrix_transform.hpp \
+  ../libraries/glm/glm/ext/matrix_projection.hpp \
+  ../libraries/glm/glm/ext/matrix_projection.inl \
+  ../libraries/glm/glm/ext/matrix_clip_space.hpp \
+  ../libraries/glm/glm/ext/matrix_clip_space.inl \
+  ../libraries/glm/glm/ext/matrix_transform.hpp \
+  ../libraries/glm/glm/ext/matrix_transform.inl \
+  ../libraries/glm/glm/gtc/matrix_transform.inl \
+  ../libraries/glm/glm/ext/vector_relational.hpp \
+  ../libraries/glm/glm/ext/vector_relational.inl \
+  ../libraries/glm/glm/detail/type_float.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/ext/quaternion_common.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.inl \
+  ../libraries/glm/glm/ext/quaternion_common.inl \
+  ../libraries/glm/glm/ext/quaternion_float.hpp \
+  ../libraries/glm/glm/detail/type_quat.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.inl \
+  ../libraries/glm/glm/detail/type_quat.inl \
+  ../libraries/glm/glm/ext/quaternion_float_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_double.hpp \
+  ../libraries/glm/glm/ext/quaternion_double_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.inl \
+  ../libraries/glm/glm/ext/quaternion_transform.hpp \
+  ../libraries/glm/glm/ext/quaternion_transform.inl \
+  ../libraries/glm/glm/gtc/quaternion.inl \
+  ../libraries/glm/glm/gtc/epsilon.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/gtc/epsilon.inl \
+  ../libraries/glm/glm/gtx/dual_quaternion.hpp \
+  ../libraries/glm/glm/gtx/dual_quaternion.inl \
+  ../libraries/glm/glm/gtx/hash.inl \
   ../src/VkBBuffer.hpp \
   /usr/include/c++/11/stdexcept \
   /usr/include/c++/11/exception \
@@ -2722,7 +2971,8 @@ CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o: ../src/VkBVertexBuffer.cpp \
   /usr/include/c++/11/cstring \
   /usr/include/string.h \
   /usr/include/strings.h \
-  ../src/VkBGlobals.hpp
+  ../src/VkBGlobals.hpp \
+  ../src/Input.hpp
 
 CMakeFiles/V2Engine.dir/src/main.cpp.o: ../src/main.cpp \
   /usr/include/stdc-predef.h \
@@ -3149,6 +3399,7 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: ../src/main.cpp \
   /usr/include/c++/11/ctime \
   /usr/include/c++/11/bits/parse_numbers.h \
   ../src/VkBGlobals.hpp \
+  ../src/Input.hpp \
   ../src/vkDebug.hpp \
   ../src/swapChain.hpp \
   ../src/VkBRenderPass.hpp \
@@ -3158,6 +3409,46 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: ../src/main.cpp \
   ../src/VkBDrawCommandBuffer.hpp \
   ../src/VkBVertexBuffer.hpp \
   ../src/Vertex.hpp \
+  ../libraries/glm/glm/gtx/hash.hpp \
+  ../libraries/glm/glm/gtc/vec1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1.hpp \
+  ../libraries/glm/glm/ext/vector_bool1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_float1.hpp \
+  ../libraries/glm/glm/ext/vector_float1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_double1.hpp \
+  ../libraries/glm/glm/ext/vector_double1_precision.hpp \
+  ../libraries/glm/glm/ext/vector_int1.hpp \
+  ../libraries/glm/glm/ext/vector_int1_sized.hpp \
+  ../libraries/glm/glm/ext/vector_uint1.hpp \
+  ../libraries/glm/glm/ext/vector_uint1_sized.hpp \
+  ../libraries/glm/glm/gtc/quaternion.hpp \
+  ../libraries/glm/glm/ext/vector_relational.hpp \
+  ../libraries/glm/glm/ext/vector_relational.inl \
+  ../libraries/glm/glm/detail/type_float.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/ext/quaternion_common.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_geometric.inl \
+  ../libraries/glm/glm/ext/quaternion_common.inl \
+  ../libraries/glm/glm/ext/quaternion_float.hpp \
+  ../libraries/glm/glm/detail/type_quat.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.hpp \
+  ../libraries/glm/glm/ext/quaternion_relational.inl \
+  ../libraries/glm/glm/detail/type_quat.inl \
+  ../libraries/glm/glm/ext/quaternion_float_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_double.hpp \
+  ../libraries/glm/glm/ext/quaternion_double_precision.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.hpp \
+  ../libraries/glm/glm/ext/quaternion_trigonometric.inl \
+  ../libraries/glm/glm/ext/quaternion_transform.hpp \
+  ../libraries/glm/glm/ext/quaternion_transform.inl \
+  ../libraries/glm/glm/gtc/quaternion.inl \
+  ../libraries/glm/glm/gtc/epsilon.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/gtc/epsilon.inl \
+  ../libraries/glm/glm/gtx/dual_quaternion.hpp \
+  ../libraries/glm/glm/gtx/dual_quaternion.inl \
+  ../libraries/glm/glm/gtx/hash.inl \
   ../src/VkBUniformBuffer.hpp \
   ../src/VkBUniformPool.hpp \
   ../src/VkBTexture.hpp \
@@ -3168,7 +3459,8 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: ../src/main.cpp \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/xmmintrin.h \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/mmintrin.h \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/mm_malloc.h \
-  ../src/OBJLoader.hpp
+  ../src/OBJLoader.hpp \
+  ../src/Camera.hpp
 
 CMakeFiles/V2Engine.dir/src/swapChain.cpp.o: ../src/swapChain.cpp \
   /usr/include/stdc-predef.h \
@@ -3370,6 +3662,7 @@ CMakeFiles/V2Engine.dir/src/swapChain.cpp.o: ../src/swapChain.cpp \
   /usr/include/c++/11/pstl/execution_defs.h \
   /usr/include/c++/11/limits \
   ../src/VkBGlobals.hpp \
+  ../src/Input.hpp \
   ../src/VkBTexture.hpp \
   ../libraries/stb/stb_image.h \
   /usr/include/c++/11/stdlib.h
@@ -3578,25 +3871,7 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/c++/11/ctime:
 
-../libraries/glm/glm/gtc/matrix_transform.inl:
-
-../libraries/glm/glm/ext/matrix_transform.inl:
-
-../libraries/glm/glm/ext/matrix_clip_space.inl:
-
-../libraries/glm/glm/ext/matrix_projection.inl:
-
-../libraries/glm/glm/ext/scalar_constants.inl:
-
-../libraries/glm/glm/ext/scalar_constants.hpp:
-
-../libraries/glm/glm/ext/matrix_projection.hpp:
-
-../libraries/glm/glm/gtc/matrix_transform.hpp:
-
 ../src/main.cpp:
-
-../src/VkBUniformPool.hpp:
 
 /usr/include/c++/11/ratio:
 
@@ -3607,6 +3882,60 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 ../src/VkBBuffer.cpp:
 
 ../libraries/stb/stb_image.h:
+
+../libraries/glm/glm/gtx/hash.inl:
+
+../src/VkBUniformPool.hpp:
+
+../libraries/glm/glm/gtx/dual_quaternion.inl:
+
+../libraries/glm/glm/ext/quaternion_transform.hpp:
+
+../libraries/glm/glm/ext/quaternion_double_precision.hpp:
+
+../libraries/glm/glm/ext/quaternion_double.hpp:
+
+../libraries/glm/glm/detail/type_quat.inl:
+
+../libraries/glm/glm/ext/quaternion_relational.hpp:
+
+../libraries/glm/glm/detail/type_float.hpp:
+
+../libraries/glm/glm/ext/vector_relational.inl:
+
+../libraries/glm/glm/gtc/matrix_transform.inl:
+
+../libraries/glm/glm/ext/matrix_transform.inl:
+
+../libraries/glm/glm/ext/matrix_clip_space.inl:
+
+../libraries/glm/glm/ext/matrix_projection.inl:
+
+../libraries/glm/glm/ext/matrix_projection.hpp:
+
+../libraries/glm/glm/gtc/matrix_transform.hpp:
+
+../libraries/glm/glm/ext/scalar_constants.inl:
+
+../libraries/glm/glm/ext/scalar_constants.hpp:
+
+../libraries/glm/glm/ext/quaternion_common.inl:
+
+../libraries/glm/glm/ext/vector_uint1.hpp:
+
+../libraries/glm/glm/ext/vector_double1.hpp:
+
+../libraries/glm/glm/ext/vector_float1_precision.hpp:
+
+../libraries/glm/glm/ext/quaternion_relational.inl:
+
+../libraries/glm/glm/ext/vector_float1.hpp:
+
+../libraries/glm/glm/ext/vector_bool1.hpp:
+
+../libraries/glm/glm/gtc/vec1.hpp:
+
+../libraries/glm/glm/gtx/hash.hpp:
 
 ../libraries/glm/glm/detail/type_half.inl:
 
@@ -3636,7 +3965,11 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 ../libraries/glm/glm/ext/matrix_float4x2_precision.hpp:
 
+../libraries/glm/glm/ext/vector_double1_precision.hpp:
+
 ../libraries/glm/glm/ext/matrix_float4x2.hpp:
+
+../libraries/glm/glm/ext/vector_uint1_sized.hpp:
 
 ../libraries/glm/glm/detail/type_mat4x2.hpp:
 
@@ -3669,6 +4002,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 ../libraries/glm/glm/detail/type_mat3x3.hpp:
 
 ../libraries/glm/glm/ext/matrix_double3x3.hpp:
+
+../libraries/glm/glm/gtc/quaternion.hpp:
 
 ../libraries/glm/glm/mat3x3.hpp:
 
@@ -3726,6 +4061,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 ../libraries/glm/glm/vec4.hpp:
 
+../src/Camera.hpp:
+
 ../libraries/glm/glm/ext/vector_uint3_sized.hpp:
 
 ../libraries/glm/glm/ext/vector_int3_sized.hpp:
@@ -3768,6 +4105,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/lib/gcc/x86_64-linux-gnu/11/include/xmmintrin.h:
 
+../libraries/glm/glm/ext/quaternion_common.hpp:
+
 ../libraries/glm/glm/detail/type_vec3.hpp:
 
 ../libraries/glm/glm/ext/vector_bool3.hpp:
@@ -3804,6 +4143,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 ../src/VkBUniformPool.cpp:
 
+../libraries/glm/glm/detail/type_quat.hpp:
+
 ../libraries/glm/glm/detail/type_vec2.hpp:
 
 ../libraries/glm/glm/ext/vector_bool2.hpp:
@@ -3826,6 +4167,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/lib/gcc/x86_64-linux-gnu/11/include/limits.h:
 
+../libraries/glm/glm/gtc/quaternion.inl:
+
 ../libraries/glm/glm/ext/matrix_double2x2.hpp:
 
 ../libraries/glm/glm/simd/platform.h:
@@ -3835,6 +4178,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 ../libraries/glm/glm/detail/compute_common.hpp:
 
 ../libraries/glm/glm/detail/_fixes.hpp:
+
+../libraries/glm/glm/glm.hpp:
 
 /usr/include/c++/11/bits/stl_pair.h:
 
@@ -3857,6 +4202,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 ../libraries/glm/glm/ext/matrix_double3x2_precision.hpp:
 
 /usr/include/c++/11/backward/binders.h:
+
+../libraries/glm/glm/ext/quaternion_float.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/time.h:
 
@@ -3894,6 +4241,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/types/FILE.h:
 
+../libraries/glm/glm/ext/quaternion_float_precision.hpp:
+
 /usr/include/x86_64-linux-gnu/bits/types/wint_t.h:
 
 /usr/include/wchar.h:
@@ -3921,6 +4270,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 /usr/include/asm-generic/errno-base.h:
 
 /usr/include/x86_64-linux-gnu/bits/endianness.h:
+
+../libraries/glm/glm/gtx/dual_quaternion.hpp:
 
 /usr/include/c++/11/tr1/modified_bessel_func.tcc:
 
@@ -3967,6 +4318,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 /usr/include/vulkan/vulkan_core.h:
 
 /usr/include/c++/11/cctype:
+
+../libraries/glm/glm/ext/quaternion_geometric.hpp:
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/os_defines.h:
 
@@ -4094,6 +4447,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/c++/11/tuple:
 
+../libraries/glm/glm/gtc/epsilon.hpp:
+
 /usr/include/x86_64-linux-gnu/bits/types/clock_t.h:
 
 /usr/lib/gcc/x86_64-linux-gnu/11/include/stdint.h:
@@ -4106,7 +4461,13 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/time64.h:
 
+../libraries/glm/glm/ext/quaternion_geometric.inl:
+
 /usr/include/x86_64-linux-gnu/bits/types/struct_timeval.h:
+
+../libraries/glm/glm/ext/vector_int1.hpp:
+
+../libraries/glm/glm/ext/vector_bool1_precision.hpp:
 
 ../libraries/glm/glm/ext/vector_float3_precision.hpp:
 
@@ -4129,6 +4490,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 /usr/include/vulkan/vulkan.h:
 
 /usr/include/c++/11/chrono:
+
+../libraries/glm/glm/ext/quaternion_trigonometric.inl:
 
 /usr/include/x86_64-linux-gnu/bits/wordsize.h:
 
@@ -4164,7 +4527,11 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 ../src/VkBTexture.hpp:
 
+../libraries/glm/glm/ext/vector_int1_sized.hpp:
+
 /usr/include/x86_64-linux-gnu/bits/cpu-set.h:
+
+../libraries/glm/glm/ext/quaternion_trigonometric.hpp:
 
 /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h:
 
@@ -4252,6 +4619,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/atomic_word.h:
 
+../libraries/glm/glm/gtc/epsilon.inl:
+
 ../libraries/glm/glm/fwd.hpp:
 
 /usr/include/c++/11/bits/stl_set.h:
@@ -4270,9 +4639,9 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/byteswap.h:
 
-../libraries/glm/glm/gtc/constants.inl:
-
 ../src/VkBVertexBuffer.cpp:
+
+../libraries/glm/glm/gtc/constants.inl:
 
 /usr/include/x86_64-linux-gnu/bits/uintn-identity.h:
 
@@ -4350,8 +4719,6 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/c++/11/cstring:
 
-../libraries/glm/glm/glm.hpp:
-
 /usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h:
 
 ../libraries/tinyobjloader/tiny_obj_loader.h:
@@ -4401,6 +4768,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 /usr/include/c++/11/bits/specfun.h:
 
 /usr/include/c++/11/limits:
+
+../libraries/glm/glm/ext/vector_relational.hpp:
 
 /usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
 
@@ -4454,6 +4823,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/c++/11/cwctype:
 
+../libraries/glm/glm/ext/quaternion_transform.inl:
+
 ../libraries/glm/glm/detail/func_integer.inl:
 
 ../libraries/glm/glm/ext/matrix_float2x2_precision.hpp:
@@ -4495,3 +4866,5 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 ../src/VkBGraphicsPipeline.hpp:
 
 /usr/include/c++/11/sstream:
+
+../src/Input.hpp:

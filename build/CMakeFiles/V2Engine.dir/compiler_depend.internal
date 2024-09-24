@@ -438,6 +438,7 @@ CMakeFiles/V2Engine.dir/src/OBJLoader.cpp.o
  /usr/include/GL/gl.h
  /usr/include/GL/glext.h
  /usr/include/KHR/khrplatform.h
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBVertexBuffer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Vertex.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/glm.hpp
@@ -607,9 +608,65 @@ CMakeFiles/V2Engine.dir/src/OBJLoader.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_half.inl
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/integer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/func_integer.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/vec1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/constants.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/scalar_constants.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/scalar_constants.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/constants.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/matrix_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_projection.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_projection.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_clip_space.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_clip_space.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/matrix_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.inl
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBTexture.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/stb/stb_image.h
  /usr/include/c++/11/stdlib.h
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformBuffer.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.hpp
+ /usr/include/c++/11/iostream
 
 CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBBuffer.cpp
@@ -783,6 +840,7 @@ CMakeFiles/V2Engine.dir/src/VkBBuffer.cpp.o
  /usr/include/c++/11/bits/stl_vector.h
  /usr/include/c++/11/bits/stl_bvector.h
  /usr/include/c++/11/bits/vector.tcc
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBSingleCommandBuffer.hpp
 
 CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o
@@ -853,6 +911,7 @@ CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o
  /usr/include/GL/gl.h
  /usr/include/GL/glext.h
  /usr/include/KHR/khrplatform.h
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBDrawCommandBuffer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBVertexBuffer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Vertex.hpp
@@ -1098,6 +1157,59 @@ CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_half.inl
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/integer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/func_integer.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/vec1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/constants.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/scalar_constants.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/scalar_constants.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/constants.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/matrix_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_projection.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_projection.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_clip_space.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_clip_space.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/matrix_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.inl
  /usr/include/c++/11/stdexcept
  /usr/include/c++/11/exception
  /usr/include/c++/11/bits/exception_ptr.h
@@ -1565,7 +1677,61 @@ CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_half.inl
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/integer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/func_integer.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/vec1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/constants.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/scalar_constants.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/scalar_constants.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/constants.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/matrix_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_projection.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_projection.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_clip_space.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_clip_space.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/matrix_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.inl
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGlobals.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /usr/include/c++/11/fstream
  /usr/include/c++/11/bits/codecvt.h
  /usr/include/x86_64-linux-gnu/c++/11/bits/basic_file.h
@@ -1744,6 +1910,7 @@ CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.o
  /usr/include/c++/11/bits/stl_vector.h
  /usr/include/c++/11/bits/stl_bvector.h
  /usr/include/c++/11/bits/vector.tcc
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /usr/include/c++/11/array
  /usr/include/c++/11/utility
  /usr/include/c++/11/bits/stl_relops.h
@@ -1817,6 +1984,7 @@ CMakeFiles/V2Engine.dir/src/VkBSingleCommandBuffer.cpp.o
  /usr/include/GL/gl.h
  /usr/include/GL/glext.h
  /usr/include/KHR/khrplatform.h
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
 
 CMakeFiles/V2Engine.dir/src/VkBTexture.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBTexture.cpp
@@ -1886,6 +2054,7 @@ CMakeFiles/V2Engine.dir/src/VkBTexture.cpp.o
  /usr/include/GL/gl.h
  /usr/include/GL/glext.h
  /usr/include/KHR/khrplatform.h
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBTexture.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/stb/stb_image.h
  /usr/include/stdio.h
@@ -2069,6 +2238,7 @@ CMakeFiles/V2Engine.dir/src/VkBUniformBuffer.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBBuffer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGlobals.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /usr/include/c++/11/array
  /usr/include/c++/11/utility
  /usr/include/c++/11/bits/stl_relops.h
@@ -2244,6 +2414,7 @@ CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o
  /usr/include/GL/gl.h
  /usr/include/GL/glext.h
  /usr/include/KHR/khrplatform.h
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBBuffer.hpp
  /usr/include/c++/11/stdexcept
@@ -2352,6 +2523,31 @@ CMakeFiles/V2Engine.dir/src/VkBUniformPool.cpp.o
  /usr/include/c++/11/array
  /usr/include/c++/11/utility
  /usr/include/c++/11/bits/stl_relops.h
+ /usr/include/c++/11/cmath
+ /usr/include/math.h
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h
+ /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h
+ /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h
+ /usr/include/x86_64-linux-gnu/bits/fp-logb.h
+ /usr/include/x86_64-linux-gnu/bits/fp-fast.h
+ /usr/include/x86_64-linux-gnu/bits/mathcalls-helper-functions.h
+ /usr/include/x86_64-linux-gnu/bits/mathcalls.h
+ /usr/include/x86_64-linux-gnu/bits/mathcalls-narrow.h
+ /usr/include/x86_64-linux-gnu/bits/iscanonical.h
+ /usr/include/c++/11/bits/specfun.h
+ /usr/include/c++/11/limits
+ /usr/include/c++/11/tr1/gamma.tcc
+ /usr/include/c++/11/tr1/special_function_util.h
+ /usr/include/c++/11/tr1/bessel_function.tcc
+ /usr/include/c++/11/tr1/beta_function.tcc
+ /usr/include/c++/11/tr1/ell_integral.tcc
+ /usr/include/c++/11/tr1/exp_integral.tcc
+ /usr/include/c++/11/tr1/hypergeometric.tcc
+ /usr/include/c++/11/tr1/legendre_function.tcc
+ /usr/include/c++/11/tr1/modified_bessel_func.tcc
+ /usr/include/c++/11/tr1/poly_hermite.tcc
+ /usr/include/c++/11/tr1/poly_laguerre.tcc
+ /usr/include/c++/11/tr1/riemann_zeta.tcc
 
 CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBVertexBuffer.cpp
@@ -2664,6 +2860,59 @@ CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_half.inl
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/integer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/func_integer.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/vec1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/constants.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/scalar_constants.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/scalar_constants.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/constants.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/matrix_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_projection.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_projection.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_clip_space.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_clip_space.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/matrix_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/matrix_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.inl
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBBuffer.hpp
  /usr/include/c++/11/stdexcept
  /usr/include/c++/11/exception
@@ -2734,6 +2983,7 @@ CMakeFiles/V2Engine.dir/src/VkBVertexBuffer.cpp.o
  /usr/include/string.h
  /usr/include/strings.h
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGlobals.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
 
 CMakeFiles/V2Engine.dir/src/main.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/main.cpp
@@ -3161,6 +3411,7 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o
  /usr/include/c++/11/ctime
  /usr/include/c++/11/bits/parse_numbers.h
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGlobals.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/vkDebug.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/swapChain.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBRenderPass.hpp
@@ -3170,6 +3421,46 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBDrawCommandBuffer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBVertexBuffer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Vertex.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/vec1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_bool1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_float1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_double1_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_int1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_uint1_sized.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/vector_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_geometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_common.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_relational.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/type_quat.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_float_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_double_precision.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_trigonometric.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/ext/quaternion_transform.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/detail/setup.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtc/epsilon.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/dual_quaternion.inl
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/glm/glm/gtx/hash.inl
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformBuffer.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBUniformPool.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBTexture.hpp
@@ -3181,6 +3472,7 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o
  /usr/lib/gcc/x86_64-linux-gnu/11/include/mmintrin.h
  /usr/lib/gcc/x86_64-linux-gnu/11/include/mm_malloc.h
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/OBJLoader.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Camera.hpp
 
 CMakeFiles/V2Engine.dir/src/swapChain.cpp.o
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/swapChain.cpp
@@ -3383,6 +3675,7 @@ CMakeFiles/V2Engine.dir/src/swapChain.cpp.o
  /usr/include/c++/11/pstl/execution_defs.h
  /usr/include/c++/11/limits
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBGlobals.hpp
+ /home/benlee/Desktop/RandomCodingTests/V2Engine/src/Input.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/src/VkBTexture.hpp
  /home/benlee/Desktop/RandomCodingTests/V2Engine/libraries/stb/stb_image.h
  /usr/include/c++/11/stdlib.h

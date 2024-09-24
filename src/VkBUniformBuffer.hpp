@@ -41,7 +41,7 @@ public:
 */
   void* mappedBuffer;
   size_t uniformSize;
-  VkBUniformPool uniformPool;
+  VkBUniformPool* uniformPool;
   int indexIntoPool;
 
   std::vector<VkDescriptorBufferInfo> bufferInfo;
@@ -51,7 +51,7 @@ public:
   void createUniformBuffers(size_t uniformSize,
 			    int maxFramesInFlight);
   void* getBufferMemoryLocation(int imageIndex, int bufferIndex);
-  void allocateDescriptorSets(VkBUniformPool& descriptorPool,
+  void allocateDescriptorSets(VkBUniformPool* descriptorPool,
 			      VkImageView* textureImageView, //temp
 			      VkSampler* textureSampler //temp
 );
