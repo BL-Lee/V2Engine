@@ -25,6 +25,9 @@ QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surfa
       if (presentSupport) {
 	indices.presentFamily = i;
       }
+      if (queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+	indices.computeFamily = i;
+      }
 
       if (indices.isComplete()) {
 	break;

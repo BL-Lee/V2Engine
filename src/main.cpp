@@ -32,8 +32,10 @@ VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 VkDevice device = VK_NULL_HANDLE;
 VkQueue graphicsQueue;
 VkQueue presentQueue;
+VkQueue computeQueue;
 VkCommandPool drawCommandPool;
 VkCommandPool transientCommandPool; //For short lived command buffers
+int USE_RASTER = 1; //Swap between ray and raster
 
 
 #define NDEBUG_MODE 0
@@ -70,7 +72,10 @@ public:
 
   VkBVertexBuffer vertexBuffer;
   VkBUniformPool matrixPool;
-
+  
+  VkBUniformPool computeInputAssemblerPool;
+  VkBUniformBuffer computeVertexUniform;
+  
   VkBUniformPool cameraUniformPool;
   Camera mainCamera;
   VkBDrawCommandBuffer commandBuffer;
@@ -144,6 +149,11 @@ private:
     cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*4 + sizeof(float)*2);
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*4 + sizeof(float)*2);
     cameraUniformPool.createDescriptorSetLayout();
+    
+  VkBUniformPool computeInputAssemblerPool;
+  VkBUniformBuffer computeVertexUniform;
+
+  computeInputAssemblerPool.create(1, 
 
     mainCamera.init();
     mainCamera.createPerspective(swapChain.extent.width, (float) swapChain.extent.height);
@@ -255,7 +265,37 @@ private:
     }
   }
 
+  void createComputePipeline(VkDescriptorSetLayout* descriptorSetLayouts) {
+      //Shader stuff
+    auto computeShaderCode = readShader("../src/shaders/ray.spv");
+    VkShaderModule computeShaderModule = createShaderModule(computeShaderCode);
 
+    VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
+    computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    computeShaderStageInfo.module = computeShaderModule;
+    computeShaderStageInfo.pName = "main";
+
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.setLayoutCount = 2;
+    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+
+    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &computePipelineLayout) != VK_SUCCESS) {
+      throw std::runtime_error("failed to create compute pipeline layout!");
+    }
+    
+    VkComputePipelineCreateInfo pipelineInfo{};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.layout = computePipelineLayout;
+    pipelineInfo.stage = computeShaderStageInfo;
+
+    if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &computePipeline) != VK_SUCCESS) {
+      throw std::runtime_error("failed to create compute pipeline!");
+    }    
+  }
+
+  
   //Logical device -------------------------------------------------
   void createLogicalDevice() {
     QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
@@ -300,6 +340,7 @@ private:
 
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
+    vkGetDeviceQueue(device, indices.computeFamily.value(), 0, &computeQueue);
     
     
   }
@@ -340,53 +381,58 @@ private:
     
     updateProjectionMatrices(imageIndex);
     //plane
-    vkResetCommandBuffer(commandBuffer.commandBuffer, 0);
+    if (USE_RASTER)
+      {
+	vkResetCommandBuffer(commandBuffer.commandBuffer, 0);
     
-    commandBuffer.begin(renderPass.renderPass,
-			swapChain.framebuffers[imageIndex],
-			swapChain.extent);
+	commandBuffer.begin(renderPass.renderPass,
+			    swapChain.framebuffers[imageIndex],
+			    swapChain.extent);
     
-    vkCmdBindDescriptorSets(commandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			    graphicsPipeline.layout,
-			    1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+				graphicsPipeline.layout,
+				1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
 
-    commandBuffer.record(graphicsPipeline.pipeline,
-			 graphicsPipeline.layout,
-			 &ratModel->VBO,
-			 &matrixPool.descriptorSets[imageIndex][ratModel->modelUniform.indexIntoPool],
-			 0, ratModel->VBO.indexCount
-			 );
-    commandBuffer.record(graphicsPipeline.pipeline,
-			 graphicsPipeline.layout,
-			 &cornellScene->VBO,
-			 &matrixPool.descriptorSets[imageIndex][cornellScene->modelUniform.indexIntoPool],
-			 0, cornellScene->VBO.indexCount
-			 );
+	commandBuffer.record(graphicsPipeline.pipeline,
+			     graphicsPipeline.layout,
+			     &ratModel->VBO,
+			     &matrixPool.descriptorSets[imageIndex][ratModel->modelUniform.indexIntoPool],
+			     0, ratModel->VBO.indexCount
+			     );
+	commandBuffer.record(graphicsPipeline.pipeline,
+			     graphicsPipeline.layout,
+			     &cornellScene->VBO,
+			     &matrixPool.descriptorSets[imageIndex][cornellScene->modelUniform.indexIntoPool],
+			     0, cornellScene->VBO.indexCount
+			     );
     
-    commandBuffer.end();
+	commandBuffer.end();
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-    VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};
-    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &commandBuffer.commandBuffer;
-	
-    VkSemaphore signalSemaphores[] = {renderFinishedSemaphore};
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores; // What semaphores to signal to say we've finished execution of this command buffer
-
-    if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
-      throw std::runtime_error("failed to submit draw command buffer!");
+	//Syncronization info for graphics 
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	VkSemaphore waitSemaphores[] = {imageAvailableSemaphore}; //Wait for this before submitting draw
+	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
+	VkSemaphore signalSemaphores[] = {renderFinishedSemaphore}; //Signal to this when drawing is done
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &commandBuffer.commandBuffer;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+    
+	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+	  throw std::runtime_error("failed to submit draw command buffer!");
+	}
+      }
+    else { //Ray
+      
     }
-
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     presentInfo.waitSemaphoreCount = 1;
+    VkSemaphore signalSemaphores[] = {renderFinishedSemaphore}; //Signal to this when drawing is done
     presentInfo.pWaitSemaphores = signalSemaphores; //what semaphore to wait for before showing screen
     VkSwapchainKHR swapChains[] = {swapChain.swapChain};
     presentInfo.swapchainCount = 1;

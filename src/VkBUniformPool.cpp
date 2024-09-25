@@ -52,6 +52,27 @@ void VkBUniformPool::create(uint32_t totalToStore, uint32_t totalFrames,
   }
 }
 
+void VkBUniformPool::create(uint32_t totalToStore, uint32_t totalFrames,
+			    VkBuffer* overrideBuffers, VkDeviceSize bufferSize
+			    ) {
+
+  //Should global this
+  VkPhysicalDeviceProperties props;
+  vkGetPhysicalDeviceProperties(physicalDevice, &props);
+  
+  filledSets = 0;
+  imagesInFlight = totalFrames;
+  totalSets = totalToStore;
+  imageCount = 0;
+
+  for (int i = 0; i < totalFrames; i++)
+    {
+      uniformBuffers[i] = overrideBuffers[i];
+    }
+  
+  descriptorSets.resize(totalFrames);
+}
+
 void VkBUniformPool::createDescriptorSetLayout() {
   
   VkDescriptorSetLayoutCreateInfo layoutInfo{};
@@ -75,8 +96,7 @@ void VkBUniformPool::createDescriptorSetLayout() {
   poolSizes.resize(descriptorLayoutBindings.size());
   for (int i = 0; i < descriptorLayoutBindings.size(); i++)
     {
-      poolSizes[i].type = descriptorLayoutBindings[i].descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ? 
-	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER : VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      poolSizes[i].type = descriporLayoutBindings[i].descriptorType;
       poolSizes[i].descriptorCount = totalSets * imagesInFlight;
     }
   
@@ -140,8 +160,30 @@ VkDescriptorImageInfo VkBUniformPool::getImageBufferInfo(VkSampler sampler,
   bufferInfo.sampler = sampler;
   return bufferInfo;
 }
+VkDescriptorImageInfo VkBUniformPool::getStorageBufferInfo()
+{
+  VkDescriptorImageInfo bufferInfo{};
+  bufferInfo = shaderStorageBuffers[(i - 1) % MAX_FRAMES_IN_FLIGHT];
+  bufferInfo.offset = 0;
+  bufferInfo.range = sizeof(Particle) * PARTICLE_COUNT;
+  return bufferInfo;
+}
 
+void VkBUniformPool::addStorageBuffer(int dstBinding)
+{
+   //Should global this
+  VkPhysicalDeviceProperties props;
+  vkGetPhysicalDeviceProperties(physicalDevice, &props);
 
+  VkDescriptorSetLayoutBinding uboLayoutBinding{};
+  uboLayoutBinding.binding = dstBinding; //It'll say where in the shader
+  uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+  uboLayoutBinding.descriptorCount = 1; //To bet set when creating
+  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT; //Should specify this.
+  uboLayoutBinding.pImmutableSamplers = nullptr; // For texture stuff
+
+  descriptorLayoutBindings.push_back(uboLayoutBinding);
+}
 
 void VkBUniformPool::addBuffer(int dstBinding, size_t bufferSize)
 {
@@ -155,7 +197,7 @@ void VkBUniformPool::addBuffer(int dstBinding, size_t bufferSize)
   uboLayoutBinding.binding = dstBinding; //It'll say where in the shader
   uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   uboLayoutBinding.descriptorCount = 1; //To bet set when creating
-  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT; //Should specify this.
   uboLayoutBinding.pImmutableSamplers = nullptr; // For texture stuff
 
   size_t trueSize = std::ceil((float)bufferSize / props.limits.minUniformBufferOffsetAlignment) * props.limits.minUniformBufferOffsetAlignment;

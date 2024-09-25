@@ -14,6 +14,7 @@ extern std::vector<const char*> deviceExtensions;
 
 extern VkQueue graphicsQueue;
 extern VkQueue presentQueue;
+extern VkQueue computeQueue;
 extern VkCommandPool drawCommandPool;
 extern VkCommandPool transientCommandPool; //For short lived command buffers
 extern Input inputInfo;

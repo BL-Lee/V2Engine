@@ -24,7 +24,7 @@ public:
   */
   VkPipelineLayout layout;
   static std::vector<char> readShader(const std::string& filename);
-  VkShaderModule createShaderModule(const std::vector<char>& code);
+  static VkShaderModule createShaderModule(const std::vector<char>& code);
   void createGraphicsPipeline(VkBSwapChain& swapChain,
 			      VkBRenderPass renderPass,
 			      VkDescriptorSetLayout* descriptorSetLayouts);

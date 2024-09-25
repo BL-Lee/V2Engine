@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <limits>
 #include "VkBGlobals.hpp"
-#include "VkBTexture.hpp"
+
 void VkBSwapChain::createSwapChain(VkSurfaceKHR surface, GLFWwindow* window) {
   SwapChainSupportDetails swapChainSupport = querySwapChainSupport(physicalDevice, surface);
 
@@ -28,11 +28,11 @@ void VkBSwapChain::createSwapChain(VkSurfaceKHR surface, GLFWwindow* window) {
   createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
   QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
-  uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+  uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value(), indices.computeFamily.value()};
 
   if (indices.graphicsFamily != indices.presentFamily) {
     createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT; //Images can be used across queues without explicit ownership transfers
-    createInfo.queueFamilyIndexCount = 2;
+    createInfo.queueFamilyIndexCount = 3;
     createInfo.pQueueFamilyIndices = queueFamilyIndices;
   } else {
     createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
