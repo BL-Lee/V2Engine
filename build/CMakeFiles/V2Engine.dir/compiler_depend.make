@@ -3662,10 +3662,7 @@ CMakeFiles/V2Engine.dir/src/swapChain.cpp.o: ../src/swapChain.cpp \
   /usr/include/c++/11/pstl/execution_defs.h \
   /usr/include/c++/11/limits \
   ../src/VkBGlobals.hpp \
-  ../src/Input.hpp \
-  ../src/VkBTexture.hpp \
-  ../libraries/stb/stb_image.h \
-  /usr/include/c++/11/stdlib.h
+  ../src/Input.hpp
 
 CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
   /usr/include/stdc-predef.h \

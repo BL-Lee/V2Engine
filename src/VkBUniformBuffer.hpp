@@ -53,7 +53,9 @@ public:
   void* getBufferMemoryLocation(int imageIndex, int bufferIndex);
   void allocateDescriptorSets(VkBUniformPool* descriptorPool,
 			      VkImageView* textureImageView, //temp
-			      VkSampler* textureSampler //temp
+			      VkSampler* textureSampler, //temp,
+			      VkBuffer* buffers
+			      
 );
 
 };

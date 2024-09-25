@@ -17,9 +17,14 @@
 */
 
 //Assume one per image in flight
-
 void VkBUniformPool::create(uint32_t totalToStore, uint32_t totalFrames,
 			    VkDeviceSize sizeOfUniform
+			    ) {
+  create(totalToStore, totalFrames, sizeOfUniform, false);
+}
+
+void VkBUniformPool::create(uint32_t totalToStore, uint32_t totalFrames,
+			    VkDeviceSize sizeOfUniform, bool skipBufferCreation
 			    ) {
 
   //Should global this
@@ -39,38 +44,18 @@ void VkBUniformPool::create(uint32_t totalToStore, uint32_t totalFrames,
   uniformBuffersMapped.resize(totalFrames);
 
   descriptorSets.resize(totalFrames);
-  //descriptorLayoutBindings.resize(totalFrames);
-  
-  for (size_t i = 0; i < totalFrames; i++) {
-    createBuffer(uniformSize * totalToStore,
-		 VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-		 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-		 uniformBuffers[i],
-		 uniformBuffersMemory[i]);
+  if (!skipBufferCreation)
+    {   
+      for (size_t i = 0; i < totalFrames; i++) {
+	createBuffer(uniformSize * totalToStore,
+		     VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+		     VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		     uniformBuffers[i],
+		     uniformBuffersMemory[i]);
 	
-    vkMapMemory(device, uniformBuffersMemory[i], 0, uniformSize * totalToStore, 0, &uniformBuffersMapped[i]);
-  }
-}
-
-void VkBUniformPool::create(uint32_t totalToStore, uint32_t totalFrames,
-			    VkBuffer* overrideBuffers, VkDeviceSize bufferSize
-			    ) {
-
-  //Should global this
-  VkPhysicalDeviceProperties props;
-  vkGetPhysicalDeviceProperties(physicalDevice, &props);
-  
-  filledSets = 0;
-  imagesInFlight = totalFrames;
-  totalSets = totalToStore;
-  imageCount = 0;
-
-  for (int i = 0; i < totalFrames; i++)
-    {
-      uniformBuffers[i] = overrideBuffers[i];
+	vkMapMemory(device, uniformBuffersMemory[i], 0, uniformSize * totalToStore, 0, &uniformBuffersMapped[i]);
+      }
     }
-  
-  descriptorSets.resize(totalFrames);
 }
 
 void VkBUniformPool::createDescriptorSetLayout() {
@@ -96,7 +81,7 @@ void VkBUniformPool::createDescriptorSetLayout() {
   poolSizes.resize(descriptorLayoutBindings.size());
   for (int i = 0; i < descriptorLayoutBindings.size(); i++)
     {
-      poolSizes[i].type = descriporLayoutBindings[i].descriptorType;
+      poolSizes[i].type = descriptorLayoutBindings[i].descriptorType;
       poolSizes[i].descriptorCount = totalSets * imagesInFlight;
     }
   
@@ -160,16 +145,16 @@ VkDescriptorImageInfo VkBUniformPool::getImageBufferInfo(VkSampler sampler,
   bufferInfo.sampler = sampler;
   return bufferInfo;
 }
-VkDescriptorImageInfo VkBUniformPool::getStorageBufferInfo()
+VkDescriptorBufferInfo VkBUniformPool::getStorageBufferInfo(VkBuffer storageBuffer, int index)
 {
-  VkDescriptorImageInfo bufferInfo{};
-  bufferInfo = shaderStorageBuffers[(i - 1) % MAX_FRAMES_IN_FLIGHT];
+  VkDescriptorBufferInfo bufferInfo{};
+  bufferInfo.buffer = storageBuffer;
   bufferInfo.offset = 0;
-  bufferInfo.range = sizeof(Particle) * PARTICLE_COUNT;
+  bufferInfo.range = storageBufferSizes[index];
   return bufferInfo;
 }
 
-void VkBUniformPool::addStorageBuffer(int dstBinding)
+void VkBUniformPool::addStorageBuffer(int dstBinding, size_t size)
 {
    //Should global this
   VkPhysicalDeviceProperties props;
@@ -181,7 +166,7 @@ void VkBUniformPool::addStorageBuffer(int dstBinding)
   uboLayoutBinding.descriptorCount = 1; //To bet set when creating
   uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT; //Should specify this.
   uboLayoutBinding.pImmutableSamplers = nullptr; // For texture stuff
-
+  storageBufferSizes.push_back(size);
   descriptorLayoutBindings.push_back(uboLayoutBinding);
 }
 

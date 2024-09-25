@@ -67,6 +67,8 @@ public:
   VkSurfaceKHR surface;
   
   VkBGraphicsPipeline graphicsPipeline;
+  VkPipelineLayout computePipelineLayout;
+  VkPipeline computePipeline;
   
   VkBRenderPass renderPass;
 
@@ -149,15 +151,10 @@ private:
     cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*4 + sizeof(float)*2);
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*4 + sizeof(float)*2);
     cameraUniformPool.createDescriptorSetLayout();
-    
-  VkBUniformPool computeInputAssemblerPool;
-  VkBUniformBuffer computeVertexUniform;
-
-  computeInputAssemblerPool.create(1, 
 
     mainCamera.init();
     mainCamera.createPerspective(swapChain.extent.width, (float) swapChain.extent.height);
-    mainCamera.ubo.allocateDescriptorSets(&cameraUniformPool, nullptr, nullptr);    
+    mainCamera.ubo.allocateDescriptorSets(&cameraUniformPool, nullptr, nullptr, nullptr);    
 
     VkDescriptorSetLayout uniformLayouts[2] = {matrixPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
     graphicsPipeline.createGraphicsPipeline(swapChain, renderPass, uniformLayouts);
@@ -177,8 +174,24 @@ private:
     cornellScene = ModelImporter::loadOBJ("../models/cornell.obj", "../models/cornell.png");
     ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png");
     
-    ratModel->modelUniform.allocateDescriptorSets(&matrixPool, &ratModel->textures.imageView, &ratModel->textures.textureSampler);
-    cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, &cornellScene->textures.imageView, &cornellScene->textures.textureSampler);
+    ratModel->modelUniform.allocateDescriptorSets(&matrixPool, &ratModel->textures.imageView, &ratModel->textures.textureSampler, nullptr);
+    cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, &cornellScene->textures.imageView, &cornellScene->textures.textureSampler, nullptr);
+
+
+
+
+    computeInputAssemblerPool.create(1, swapChain.imageViews.size(), 0, true);
+    
+    computeInputAssemblerPool.addStorageBuffer(0, cornellScene->VBO.vertexCount * sizeof(Vertex));
+    computeInputAssemblerPool.addStorageBuffer(1, cornellScene->VBO.indexCount * sizeof(uint32_t));
+    computeInputAssemblerPool.createDescriptorSetLayout();
+    VkBuffer storageBuffers[] = {cornellScene->VBO.buffer, cornellScene->VBO.indexBuffer};
+    computeVertexUniform.allocateDescriptorSets(&computeInputAssemblerPool,
+						nullptr, nullptr,
+						storageBuffers
+						);
+  
+
     
     commandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
@@ -267,8 +280,8 @@ private:
 
   void createComputePipeline(VkDescriptorSetLayout* descriptorSetLayouts) {
       //Shader stuff
-    auto computeShaderCode = readShader("../src/shaders/ray.spv");
-    VkShaderModule computeShaderModule = createShaderModule(computeShaderCode);
+    auto computeShaderCode = VkBGraphicsPipeline::readShader("../src/shaders/ray.spv");
+    VkShaderModule computeShaderModule = VkBGraphicsPipeline::createShaderModule(computeShaderCode);
 
     VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
     computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -279,7 +292,7 @@ private:
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 2;
-    pipelineLayoutInfo.pSetLayouts = &descriptorSetLayout;
+    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts;
 
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &computePipelineLayout) != VK_SUCCESS) {
       throw std::runtime_error("failed to create compute pipeline layout!");
@@ -501,7 +514,9 @@ private:
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
-
+    computeInputAssemblerPool.destroy();
+    computeVertexUniform.destroy();
+      
     delete ratModel;
     delete cornellScene;
     

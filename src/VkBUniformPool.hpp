@@ -37,7 +37,8 @@ initialize()
   //[[frame_0], [frame_1]...]
   std::vector<std::vector<VkDescriptorSet>> descriptorSets;
   std::vector<VkDescriptorSetLayoutBinding> descriptorLayoutBindings;
-
+  std::vector<VkBuffer> storageBuffers;
+  std::vector<size_t> storageBufferSizes;
   //Doesn't need to be 2d, since each frame will be parallel
   std::vector<size_t> bufferOffsets;
   std::vector<size_t> bufferSizes;
@@ -50,9 +51,14 @@ initialize()
 				       int indexIntoDescriptor, int);
   VkDescriptorImageInfo getImageBufferInfo(VkSampler sampler,
 					    VkImageView imageView);
+  VkDescriptorBufferInfo getStorageBufferInfo(VkBuffer buffer, int index);
   void addBuffer(int, size_t);
+  void addStorageBuffer(int dstBinding, size_t size);
   void addImage(int dstBinding);
   void destroy();
   void create(uint32_t totalToStore, uint32_t duplicateCount, size_t sizeOfUniform);
+  void create(uint32_t totalToStore, uint32_t totalFrames,
+	      VkDeviceSize sizeOfUniform, bool skipBufferCreation);
+
   int getDescriptorSetIndex();
 };
