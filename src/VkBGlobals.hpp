@@ -17,4 +17,5 @@ extern VkQueue presentQueue;
 extern VkQueue computeQueue;
 extern VkCommandPool drawCommandPool;
 extern VkCommandPool transientCommandPool; //For short lived command buffers
+extern VkCommandPool computeCommandPool; 
 extern Input inputInfo;

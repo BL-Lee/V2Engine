@@ -35,6 +35,7 @@ VkQueue presentQueue;
 VkQueue computeQueue;
 VkCommandPool drawCommandPool;
 VkCommandPool transientCommandPool; //For short lived command buffers
+VkCommandPool computeCommandPool;
 int USE_RASTER = 1; //Swap between ray and raster
 
 
@@ -77,6 +78,8 @@ public:
   
   VkBUniformPool computeInputAssemblerPool;
   VkBUniformBuffer computeVertexUniform;
+  VkCommandBuffer computeCommandBuffer;
+
   
   VkBUniformPool cameraUniformPool;
   Camera mainCamera;
@@ -170,6 +173,8 @@ private:
 		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     createCommandPool(&transientCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+    createCommandPool(&computeCommandPool, device, physicalDevice, surface,
+		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
 
     cornellScene = ModelImporter::loadOBJ("../models/cornell.obj", "../models/cornell.png");
     ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png");
@@ -177,22 +182,20 @@ private:
     ratModel->modelUniform.allocateDescriptorSets(&matrixPool, &ratModel->textures.imageView, &ratModel->textures.textureSampler, nullptr);
     cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, &cornellScene->textures.imageView, &cornellScene->textures.textureSampler, nullptr);
 
-
-
-
     computeInputAssemblerPool.create(1, swapChain.imageViews.size(), 0, true);
     
     computeInputAssemblerPool.addStorageBuffer(0, cornellScene->VBO.vertexCount * sizeof(Vertex));
     computeInputAssemblerPool.addStorageBuffer(1, cornellScene->VBO.indexCount * sizeof(uint32_t));
+    computeInputAssemblerPool.addImage(2);
     computeInputAssemblerPool.createDescriptorSetLayout();
     VkBuffer storageBuffers[] = {cornellScene->VBO.buffer, cornellScene->VBO.indexBuffer};
     computeVertexUniform.allocateDescriptorSets(&computeInputAssemblerPool,
-						nullptr, nullptr,
+						swapChain.images, nullptr,
 						storageBuffers
 						);
-  
 
-    
+    VkDescriptorSetLayout computeUniformLayouts[2] = {computeInputAssemblerPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
+    createComputePipeline(computeUniformLayouts);
     commandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
 	
@@ -291,7 +294,7 @@ private:
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 2;
+    pipelineLayoutInfo.setLayoutCount = 3;
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts;
 
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &computePipelineLayout) != VK_SUCCESS) {
@@ -305,7 +308,18 @@ private:
 
     if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &computePipeline) != VK_SUCCESS) {
       throw std::runtime_error("failed to create compute pipeline!");
-    }    
+    }
+    
+    VkCommandBufferAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = computeCommandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+
+    if (vkAllocateCommandBuffers(device, &allocInfo, &computeCommandBuffer) != VK_SUCCESS) {
+      throw std::runtime_error("failed to allocate command buffers!");
+    }
+
   }
 
   
@@ -440,7 +454,7 @@ private:
 	}
       }
     else { //Ray
-      
+      	vkResetCommandBuffer(computeCommandBuffer, 0);
     }
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

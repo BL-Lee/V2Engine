@@ -30,7 +30,6 @@ initialize()
 
   VkDescriptorPool descriptorPool;
   
-  //
   //how each of them are laid out
   VkDescriptorSetLayout descriptorSetLayout;
 
