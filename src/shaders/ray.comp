@@ -24,6 +24,7 @@ layout(binding = 2, rgba8) uniform image2D frameBuffer;
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 
 void main() {
-  vec4 pixel = vec4(gl_GlobalInvocationID.xy,1.0, 1.0);
+  vec4 offset = _MainCamera.view * vec4(gl_GlobalInvocationID.xy / 800.0,0.0, 1.0);
+  vec4 pixel = vec4(offset.xyz, 1.0);
   imageStore(frameBuffer, ivec2(gl_GlobalInvocationID.xy), pixel);
 }

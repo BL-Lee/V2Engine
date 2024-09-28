@@ -28,37 +28,44 @@ void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool* descriptorPool,
     indexIntoPool = descriptorPool->getDescriptorSetIndex();// This gets offset into pool
     //bufferInfo = std::vector<VkDescriptorBufferInfo>();
     for (size_t i = 0; i < descriptorPool->imagesInFlight; i++) {
-      uint32_t imgCount = 0;
+      uint32_t imageCount = 0;
       uint32_t storageCount = 0;
+      uint32_t bufferCount = 0;
+      //The resizing changes memory locations.
       std::vector<VkWriteDescriptorSet> descriptorWrites{};
-      std::vector<VkDescriptorImageInfo> imageInfoBuffer{};
-      std::vector<VkDescriptorBufferInfo> bufferInfoBuffer{};
-      std::vector<VkDescriptorBufferInfo> storageBufferInfoBuffer{};
+      VkDescriptorImageInfo imageInfoBuffer[4]; //TODO make dynamic?
+      VkDescriptorBufferInfo bufferInfoBuffer[4];
+      VkDescriptorBufferInfo storageBufferInfoBuffer[4];
       descriptorWrites.resize(descriptorPool->descriptorLayoutBindings.size());
-      imageInfoBuffer.resize(descriptorPool->descriptorLayoutBindings.size());
-      bufferInfoBuffer.resize(descriptorPool->descriptorLayoutBindings.size());
-      storageBufferInfoBuffer.resize(descriptorPool->descriptorLayoutBindings.size());
 
       for (int j = 0; j < descriptorPool->descriptorLayoutBindings.size(); j++)
 	{
 
 	  VkDescriptorSetLayoutBinding binding = descriptorPool->descriptorLayoutBindings[j];
-	  if (binding.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+	  if (binding.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER ||
+	      binding.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+	      )
 	    {
-	      VkDescriptorImageInfo t_imageInfo = descriptorPool->getImageBufferInfo(textureSampler[imgCount], textureImageView[imgCount]);
-	      
+	      VkDescriptorImageInfo t_imageInfo{};
+	      if (binding.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+		t_imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	      else if (binding.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
+		t_imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+	      t_imageInfo.imageView = textureImageView[imageCount];
+	      t_imageInfo.sampler = textureSampler[imageCount];
+
 	      if (i == 0)
 		  imageInfo.push_back(t_imageInfo);
 
-	      imageInfoBuffer.push_back(t_imageInfo);
+	      imageInfoBuffer[imageCount] = t_imageInfo;
 	      descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	      descriptorWrites[j].dstSet = descriptorPool->descriptorSets[i][indexIntoPool];
 	      descriptorWrites[j].dstBinding = binding.binding;//Where in the shader
 	      descriptorWrites[j].dstArrayElement = 0; //Descriptors can be arrays, so say the first
-	      descriptorWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	      descriptorWrites[j].descriptorType = binding.descriptorType;
 	      descriptorWrites[j].descriptorCount = 1;
 	      descriptorWrites[j].pImageInfo = &imageInfo[imageInfo.size()-1]; 
-	      imgCount++;
+	      imageCount++;
 	    }
 	  else if  (binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
 	    {
@@ -67,14 +74,14 @@ void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool* descriptorPool,
 	      if (i == 0)
 		  bufferInfo.push_back(t_bufferInfo);
 
-	      bufferInfoBuffer.push_back(t_bufferInfo);
+	      bufferInfoBuffer[bufferCount] = t_bufferInfo;
 	      descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	      descriptorWrites[j].dstSet = descriptorPool->descriptorSets[i][indexIntoPool];
 	      descriptorWrites[j].dstBinding = binding.binding;//Where in the shader
 	      descriptorWrites[j].dstArrayElement = 0; //Descriptors can be arrays, so say the first
 	      descriptorWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	      descriptorWrites[j].descriptorCount = 1;
-	      descriptorWrites[j].pBufferInfo = &bufferInfoBuffer[bufferInfoBuffer.size()-1];
+	      descriptorWrites[j].pBufferInfo = &bufferInfoBuffer[bufferCount];
 	      descriptorWrites[j].pImageInfo = nullptr; // Optional
 	      descriptorWrites[j].pTexelBufferView = nullptr; // Optional
 	    }
@@ -85,10 +92,10 @@ void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool* descriptorPool,
 	      if (i == 0)
 		  bufferInfo.push_back(t_bufferInfo);
 
-	      storageBufferInfoBuffer.push_back(t_bufferInfo);
+	      storageBufferInfoBuffer[storageCount] = t_bufferInfo;
 	      descriptorWrites[j].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 	      descriptorWrites[j].dstSet = descriptorPool->descriptorSets[i][indexIntoPool];
-	      descriptorWrites[j].pBufferInfo = &storageBufferInfoBuffer[storageBufferInfoBuffer.size()-1];
+	      descriptorWrites[j].pBufferInfo = &storageBufferInfoBuffer[storageCount];
 	      descriptorWrites[j].dstBinding = binding.binding;//Where in the shader
 	      descriptorWrites[j].dstArrayElement = 0; //Descriptors can be arrays, so say the first
 	      descriptorWrites[j].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;

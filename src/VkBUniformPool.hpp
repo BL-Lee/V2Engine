@@ -53,7 +53,7 @@ initialize()
   VkDescriptorBufferInfo getStorageBufferInfo(VkBuffer buffer, int index);
   void addBuffer(int, size_t);
   void addStorageBuffer(int dstBinding, size_t size);
-  void addImage(int dstBinding);
+  void addImage(int dstBinding, VkDescriptorType type);
   void destroy();
   void create(uint32_t totalToStore, uint32_t duplicateCount, size_t sizeOfUniform);
   void create(uint32_t totalToStore, uint32_t totalFrames,

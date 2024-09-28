@@ -61,7 +61,7 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath)
     model->VBO.fill(vertices.data(), vertices.size(),
 	     indices.data(), indices.size());
     model->VBO.transferToDevice(transientCommandPool, graphicsQueue);
-    model->textures.createTextureImage(VKB_TEXTURE_TYPE_RGBA, texturePath);
+    model->textures.createTextureImage(VKB_TEXTURE_TYPE_SAMPLED_RGBA, texturePath);
     std::cout << vertices.size() << ": VERTICES" << std::endl;
     std::cout << indices.size() << ": INDICES" << std::endl;
     return model;

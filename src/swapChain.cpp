@@ -25,7 +25,7 @@ void VkBSwapChain::createSwapChain(VkSurfaceKHR surface, GLFWwindow* window) {
   createInfo.imageColorSpace = surfaceFormat.colorSpace;
   createInfo.imageExtent = extent;
   createInfo.imageArrayLayers = 1;
-  createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
   QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
   uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value(), indices.computeFamily.value()};
@@ -57,7 +57,6 @@ void VkBSwapChain::createSwapChain(VkSurfaceKHR surface, GLFWwindow* window) {
   imageFormat = surfaceFormat.format;
     
 }
-
 VkBSwapChain::SwapChainSupportDetails VkBSwapChain::querySwapChainSupport(VkPhysicalDevice device, VkSurfaceKHR surface) {
   VkBSwapChain::SwapChainSupportDetails details;
 
@@ -76,9 +75,6 @@ VkBSwapChain::SwapChainSupportDetails VkBSwapChain::querySwapChainSupport(VkPhys
     details.presentModes.resize(presentModeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &presentModeCount, details.presentModes.data());     
   }
-
-    
-    
   return details;
 }
 
@@ -87,7 +83,7 @@ VkSurfaceFormatKHR VkBSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSur
   //Should switch to float later
     
   for (const auto& availableFormat : availableFormats) {
-    if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
+    if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
 	availableFormat.colorSpace ==
 	VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
       return availableFormat;
@@ -99,8 +95,8 @@ VkSurfaceFormatKHR VkBSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSur
     
 VkPresentModeKHR VkBSwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
   //return VK_PRESENT_MODE_IMMEDIATE_KHR;
-  //return VK_PRESENT_MODE_MAILBOX_KHR; // triple buffering
-  return VK_PRESENT_MODE_FIFO_KHR; //double buffering basically (why jittery?)
+  return VK_PRESENT_MODE_MAILBOX_KHR; // triple buffering
+  //return VK_PRESENT_MODE_FIFO_KHR; //double buffering basically (why jittery?)
   //Look back in the tutorial if you want mailbox (triple buffering) or immediate mode (single buffering)
 }
 

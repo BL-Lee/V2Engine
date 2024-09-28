@@ -193,15 +193,15 @@ void VkBUniformPool::addBuffer(int dstBinding, size_t bufferSize)
   bufferSizes.push_back(trueSize);
   currentBufferOffset += trueSize;
 }
-void VkBUniformPool::addImage(int dstBinding)
+void VkBUniformPool::addImage(int dstBinding, VkDescriptorType type)
 {
   //Need to know -> Image layout, imageview and sampler (when creating for buffer)
   VkDescriptorSetLayoutBinding samplerLayoutBinding{};
   samplerLayoutBinding.binding = dstBinding;
   samplerLayoutBinding.descriptorCount = 1;//To bet set when creating
-  samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+  samplerLayoutBinding.descriptorType = type;
   samplerLayoutBinding.pImmutableSamplers = nullptr;
-  samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+  samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT;
   
   descriptorLayoutBindings.push_back(samplerLayoutBinding);
 

@@ -3,7 +3,8 @@
 
 typedef uint32_t VkBTextureType;
 #define VKB_TEXTURE_TYPE_DEPTH 0x1u
-#define VKB_TEXTURE_TYPE_RGBA 0x2u
+#define VKB_TEXTURE_TYPE_SAMPLED_RGBA 0x2u
+#define VKB_TEXTURE_TYPE_STORAGE_RGBA 0x3u
 
 class VkBTexture
 {

@@ -17,14 +17,14 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
 
-const uint32_t WINDOW_WIDTH = 1600;
-const uint32_t WINDOW_HEIGHT = 1200;
+const uint32_t WINDOW_WIDTH = 800;
+const uint32_t WINDOW_HEIGHT = 800;
 
 std::vector<const char*> validationLayers = {
   "VK_LAYER_KHRONOS_validation"
 };
 std::vector<const char*> deviceExtensions = {
-  VK_KHR_SWAPCHAIN_EXTENSION_NAME
+  VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 VkInstance instance = VK_NULL_HANDLE;  
 
@@ -36,7 +36,7 @@ VkQueue computeQueue;
 VkCommandPool drawCommandPool;
 VkCommandPool transientCommandPool; //For short lived command buffers
 VkCommandPool computeCommandPool;
-int USE_RASTER = 1; //Swap between ray and raster
+int USE_RASTER = 0; //Swap between ray and raster
 
 
 #define NDEBUG_MODE 0
@@ -52,6 +52,7 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBGraphicsPipeline.hpp"
 #include "VkBRenderPass.hpp"
 #include "VkBCommandPool.hpp"
+#include "VkBSingleCommandBuffer.hpp"
 #include "VkBDrawCommandBuffer.hpp"
 #include "VkBVertexBuffer.hpp"
 #include "VkBUniformBuffer.hpp"
@@ -76,14 +77,14 @@ public:
   VkBVertexBuffer vertexBuffer;
   VkBUniformPool matrixPool;
   
-  VkBUniformPool computeInputAssemblerPool;
+  VkBUniformPool computeInputAssemblerUniformPool;
   VkBUniformBuffer computeVertexUniform;
   VkCommandBuffer computeCommandBuffer;
-
+  VkBTexture computeTexture;
   
   VkBUniformPool cameraUniformPool;
   Camera mainCamera;
-  VkBDrawCommandBuffer commandBuffer;
+  VkBDrawCommandBuffer drawCommmandBuffer;
   VkBTexture depthTexture;
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
@@ -118,6 +119,9 @@ private:
       inputInfo.keysPressed[key] = 1;
     if (action == GLFW_RELEASE)
       inputInfo.keysPressed[key] = 0;
+    if (action == GLFW_PRESS && key == GLFW_KEY_R)
+      USE_RASTER = !USE_RASTER;
+    
   }
 
   void initWindow() {
@@ -148,7 +152,7 @@ private:
     
     matrixPool.create(4, swapChain.imageViews.size(), sizeof(glm::mat4));
     matrixPool.addBuffer(0, sizeof(glm::mat4));
-    matrixPool.addImage(1);
+    matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     matrixPool.createDescriptorSetLayout();
 
     cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*4 + sizeof(float)*2);
@@ -175,28 +179,34 @@ private:
 		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
     createCommandPool(&computeCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    computeTexture.createTextureImage(VKB_TEXTURE_TYPE_STORAGE_RGBA,
+				      swapChain.extent.width,
+				      swapChain.extent.height,
+				      nullptr);
+
 
     cornellScene = ModelImporter::loadOBJ("../models/cornell.obj", "../models/cornell.png");
     ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png");
     
     ratModel->modelUniform.allocateDescriptorSets(&matrixPool, &ratModel->textures.imageView, &ratModel->textures.textureSampler, nullptr);
+    
     cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, &cornellScene->textures.imageView, &cornellScene->textures.textureSampler, nullptr);
 
-    computeInputAssemblerPool.create(1, swapChain.imageViews.size(), 0, true);
+    computeInputAssemblerUniformPool.create(1, swapChain.imageViews.size(), 0, true);
     
-    computeInputAssemblerPool.addStorageBuffer(0, cornellScene->VBO.vertexCount * sizeof(Vertex));
-    computeInputAssemblerPool.addStorageBuffer(1, cornellScene->VBO.indexCount * sizeof(uint32_t));
-    computeInputAssemblerPool.addImage(2);
-    computeInputAssemblerPool.createDescriptorSetLayout();
+    computeInputAssemblerUniformPool.addStorageBuffer(0, cornellScene->VBO.vertexCount * sizeof(Vertex));
+    computeInputAssemblerUniformPool.addStorageBuffer(1, cornellScene->VBO.indexCount * sizeof(uint32_t));
+    computeInputAssemblerUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    computeInputAssemblerUniformPool.createDescriptorSetLayout();
     VkBuffer storageBuffers[] = {cornellScene->VBO.buffer, cornellScene->VBO.indexBuffer};
-    computeVertexUniform.allocateDescriptorSets(&computeInputAssemblerPool,
-						swapChain.images, nullptr,
+    computeVertexUniform.allocateDescriptorSets(&computeInputAssemblerUniformPool,
+						&computeTexture.imageView, &computeTexture.textureSampler,
 						storageBuffers
 						);
 
-    VkDescriptorSetLayout computeUniformLayouts[2] = {computeInputAssemblerPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
+    VkDescriptorSetLayout computeUniformLayouts[2] = {computeInputAssemblerUniformPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
     createComputePipeline(computeUniformLayouts);
-    commandBuffer.createCommandBuffer(drawCommandPool);
+    drawCommmandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
 	
   }
@@ -281,6 +291,115 @@ private:
     }
   }
 
+  void transitionSwapChainForComputeWrite(VkImage image, VkImage swapImage) {
+
+    VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
+    
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    
+    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0; //no mips and not an array 
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    
+    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+
+    barrier.srcAccessMask = 0;
+    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    vkCmdPipelineBarrier(
+    commandBuffer,
+    sourceStage, destinationStage,
+    0,
+    0, nullptr,
+    0, nullptr,
+    1, &barrier
+);
+
+    //        vKEndSingleTimeCommandBuffer(commandBuffer);
+
+    //    commandBuffer = vKBeginSingleTimeCommandBuffer();
+    
+    VkImageMemoryBarrier swapBarrier{};
+    swapBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    
+    swapBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    swapBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    swapBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    swapBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    
+    swapBarrier.image = swapImage;
+    swapBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    swapBarrier.subresourceRange.baseMipLevel = 0; //no mips and not an array 
+    swapBarrier.subresourceRange.levelCount = 1;
+    swapBarrier.subresourceRange.baseArrayLayer = 0;
+    swapBarrier.subresourceRange.layerCount = 1;
+
+    swapBarrier.srcAccessMask = 0;
+    swapBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    
+    vkCmdPipelineBarrier(
+    commandBuffer,
+    sourceStage, destinationStage,
+    0,
+    0, nullptr,
+    0, nullptr,
+    1, &swapBarrier
+);
+
+    vKEndSingleTimeCommandBuffer(commandBuffer);
+
+
+  }
+  
+  void transitionSwapChainForComputePresent(VkImage swapImage)
+  {
+    VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
+    
+    VkImageMemoryBarrier swapBarrier{};
+    swapBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    
+    swapBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+    swapBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    swapBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    swapBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    
+    swapBarrier.image = swapImage;
+    swapBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    swapBarrier.subresourceRange.baseMipLevel = 0; //no mips and not an array 
+    swapBarrier.subresourceRange.levelCount = 1;
+    swapBarrier.subresourceRange.baseArrayLayer = 0;
+    swapBarrier.subresourceRange.layerCount = 1;
+    
+    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+    swapBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    swapBarrier.dstAccessMask = 0;
+
+    
+    vkCmdPipelineBarrier(
+    commandBuffer,
+    sourceStage, destinationStage,
+    0,
+    0, nullptr,
+    0, nullptr,
+    1, &swapBarrier
+);
+
+    vKEndSingleTimeCommandBuffer(commandBuffer);
+    
+  }
+  
   void createComputePipeline(VkDescriptorSetLayout* descriptorSetLayouts) {
       //Shader stuff
     auto computeShaderCode = VkBGraphicsPipeline::readShader("../src/shaders/ray.spv");
@@ -294,7 +413,7 @@ private:
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 3;
+    pipelineLayoutInfo.setLayoutCount = 2;
     pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts;
 
     if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &computePipelineLayout) != VK_SUCCESS) {
@@ -309,6 +428,9 @@ private:
     if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &computePipeline) != VK_SUCCESS) {
       throw std::runtime_error("failed to create compute pipeline!");
     }
+
+    vkDestroyShaderModule(device, computeShaderModule, nullptr);
+
     
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -410,30 +532,30 @@ private:
     //plane
     if (USE_RASTER)
       {
-	vkResetCommandBuffer(commandBuffer.commandBuffer, 0);
+	vkResetCommandBuffer(drawCommmandBuffer.commandBuffer, 0);
     
-	commandBuffer.begin(renderPass.renderPass,
+	drawCommmandBuffer.begin(renderPass.renderPass,
 			    swapChain.framebuffers[imageIndex],
 			    swapChain.extent);
     
-	vkCmdBindDescriptorSets(commandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+	vkCmdBindDescriptorSets(drawCommmandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				graphicsPipeline.layout,
 				1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
 
-	commandBuffer.record(graphicsPipeline.pipeline,
+	drawCommmandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
 			     &ratModel->VBO,
 			     &matrixPool.descriptorSets[imageIndex][ratModel->modelUniform.indexIntoPool],
 			     0, ratModel->VBO.indexCount
 			     );
-	commandBuffer.record(graphicsPipeline.pipeline,
+	drawCommmandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
 			     &cornellScene->VBO,
 			     &matrixPool.descriptorSets[imageIndex][cornellScene->modelUniform.indexIntoPool],
 			     0, cornellScene->VBO.indexCount
 			     );
     
-	commandBuffer.end();
+	drawCommmandBuffer.end();
 
 	//Syncronization info for graphics 
 	VkSubmitInfo submitInfo{};
@@ -445,7 +567,7 @@ private:
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffer.commandBuffer;
+	submitInfo.pCommandBuffers = &drawCommmandBuffer.commandBuffer;
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
     
@@ -455,6 +577,85 @@ private:
       }
     else { //Ray
       	vkResetCommandBuffer(computeCommandBuffer, 0);
+	
+	transitionSwapChainForComputeWrite(computeTexture.image, swapChain.images[imageIndex]);
+	
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0; // Optional
+	beginInfo.pInheritanceInfo = nullptr; // Optional
+
+	vkBeginCommandBuffer(computeCommandBuffer, &beginInfo);
+	
+	vkCmdBindPipeline(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+	
+	vkCmdBindDescriptorSets(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+				computePipelineLayout,
+				1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
+
+	vkCmdBindDescriptorSets(computeCommandBuffer,
+				VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout,
+				0, 1,
+				&computeInputAssemblerUniformPool.descriptorSets[imageIndex][computeVertexUniform.indexIntoPool]
+				, 0, 0);
+	vkCmdDispatch(computeCommandBuffer, swapChain.extent.width / 32, swapChain.extent.height / 32,  1); //switch to swapchain width and height
+
+	
+	if (vkEndCommandBuffer(computeCommandBuffer) != VK_SUCCESS) {
+	  throw std::runtime_error("failed to record command buffer!");
+	}
+	
+	//Syncronization info for compute 
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	VkSemaphore waitSemaphores[] = {imageAvailableSemaphore}; //Wait for this before submitting draw
+	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
+	VkSemaphore signalSemaphores[] = {renderFinishedSemaphore}; //Signal to this when drawing is done
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &computeCommandBuffer;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+    
+
+	if (vkQueueSubmit(computeQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+	  throw std::runtime_error("failed to submit compute command buffer!");
+	};
+
+		
+	VkCommandBuffer transferCommandBuffer = vKBeginSingleTimeCommandBuffer();
+
+	VkImageCopy imageCopyInfo {};
+	VkExtent3D extent{};
+	extent.width = swapChain.extent.width;
+	extent.height = swapChain.extent.height;
+	extent.depth = 1;
+	imageCopyInfo.extent = extent;
+	VkImageSubresourceLayers resourceLayerInfo{};
+	resourceLayerInfo.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	resourceLayerInfo.mipLevel = 0;
+	resourceLayerInfo.baseArrayLayer = 0;
+	resourceLayerInfo.layerCount = 1;
+	VkOffset3D offset{};
+	offset.x = 0; offset.y = 0; offset.z = 0;
+	imageCopyInfo.srcSubresource = resourceLayerInfo;
+	imageCopyInfo.srcOffset = offset;
+	imageCopyInfo.dstSubresource = resourceLayerInfo;
+	imageCopyInfo.dstOffset = offset;
+	vkCmdCopyImage(
+		       transferCommandBuffer,
+		       computeTexture.image,
+		       VK_IMAGE_LAYOUT_GENERAL,
+		       swapChain.images[imageIndex],
+		       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		       1,
+		       &imageCopyInfo
+);
+	
+	vKEndSingleTimeCommandBuffer(transferCommandBuffer);
+	transitionSwapChainForComputePresent(swapChain.images[imageIndex]);
     }
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -474,7 +675,7 @@ private:
     
     auto fpsNow = std::chrono::high_resolution_clock::now();
     float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(fpsNow - fpsPrev).count();
-    //    printf("\r%.8f %4.2f", time, 1.0f / time);
+    printf("\r%.8f %4.2f", deltaTime, 1.0f / deltaTime);
     fpsPrev = std::chrono::high_resolution_clock::now();
 
     if (inputInfo.keysPressed[GLFW_KEY_A])
@@ -503,6 +704,8 @@ private:
       
       processInputs();
       drawFrame();
+      //glfwSetWindowShouldClose(window, GL_TRUE);
+
     }
     vkDeviceWaitIdle(device);
 
@@ -516,6 +719,7 @@ private:
 	
     vkDestroyCommandPool(device, drawCommandPool, nullptr);
     vkDestroyCommandPool(device, transientCommandPool, nullptr);
+    vkDestroyCommandPool(device, computeCommandPool, nullptr);
     
     for (auto framebuffer : swapChain.framebuffers) {
       vkDestroyFramebuffer(device, framebuffer, nullptr);
@@ -525,12 +729,16 @@ private:
     }
     vkDestroyPipeline(device, graphicsPipeline.pipeline, nullptr);	
     vkDestroyPipelineLayout(device, graphicsPipeline.layout, nullptr);
+    vkDestroyPipeline(device, computePipeline, nullptr);	
+    vkDestroyPipelineLayout(device, computePipelineLayout, nullptr);
+
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
-    computeInputAssemblerPool.destroy();
+
     computeVertexUniform.destroy();
-      
+    computeTexture.destroy();
+    computeInputAssemblerUniformPool.destroy();
     delete ratModel;
     delete cornellScene;
     

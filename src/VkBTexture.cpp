@@ -32,32 +32,46 @@ void VkBTexture::createImageView() {
 
 void VkBTexture::setPropertiesFromType(VkBTextureType type) {
   switch (type){
-    case VKB_TEXTURE_TYPE_DEPTH:
-      {
-	format = VK_FORMAT_D32_SFLOAT;
-	tiling = VK_IMAGE_TILING_OPTIMAL;
-	usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	imageSize = width * height * 4;
-	channels = 1;
-	aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
-      }break;
+  case VKB_TEXTURE_TYPE_DEPTH:
+    {
+      format = VK_FORMAT_D32_SFLOAT;
+      tiling = VK_IMAGE_TILING_OPTIMAL;
+      usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+      properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      imageSize = width * height * 4;
+      channels = 1;
+      aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }break;
     
-    case VKB_TEXTURE_TYPE_RGBA:
-      {
-	format = VK_FORMAT_R8G8B8A8_SRGB;
-	tiling = VK_IMAGE_TILING_OPTIMAL;
-	usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-	properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-	imageSize = width * height * 4;
-	channels = 4;
-	aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
-      }break;
-    default:
-      {
-	throw std::runtime_error("Invalid texture type VkBTexture.cpp");
-      }break;
-    }
+  case VKB_TEXTURE_TYPE_SAMPLED_RGBA:
+    {
+      format = VK_FORMAT_R8G8B8A8_SRGB;
+      tiling = VK_IMAGE_TILING_OPTIMAL;
+      usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+      properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      imageSize = width * height * 4;
+      channels = 4;
+      aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    }break;
+  case VKB_TEXTURE_TYPE_STORAGE_RGBA:
+    {
+      format = VK_FORMAT_R8G8B8A8_UNORM;
+      tiling = VK_IMAGE_TILING_OPTIMAL;
+      usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+	VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+	VK_IMAGE_USAGE_STORAGE_BIT;
+
+      properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      imageSize = width * height * 4;
+      channels = 4;
+      aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    }break;
+
+  default:
+    {
+      throw std::runtime_error("Invalid texture type VkBTexture.cpp");
+    }break;
+  }
 
 }
 
