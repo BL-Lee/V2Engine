@@ -6,9 +6,8 @@ public:
   //Keep these together
   glm::mat4 view;
   glm::mat4 projection;
-  glm::mat4 invView;
-  glm::mat4 invProjection;
-  float nearClip, farClip;
+  glm::mat4 invViewProj;
+  float width, height, nearClip, farClip;
   
   float fov;
   float aspectRatio;
@@ -24,11 +23,13 @@ public:
     direction = glm::vec3(0.0, 0.0, -1.0);
     fov = 45.0f;
     nearClip = 0.01f;
-    farClip = 1000.0f;
+    farClip = 100.0f;
     
   }
-  void createPerspective(float width, float height)
+  void createPerspective(float w, float h)
   {
+    width = w;
+    height = h;
     aspectRatio = width / height;
     init();
     projection = glm::perspective(glm::radians(fov),
@@ -41,9 +42,9 @@ public:
     view = glm::lookAt(position,
 		       direction + position,
 		       glm::vec3(0.0f, 1.0f, 0.0f));
-    
+    invViewProj = glm::inverse(projection * view);
     //Since theyre next to each other in the class, can memcpy from view    
-    memcpy(ubo.getBufferMemoryLocation(imageIndex,0), &view, sizeof(glm::mat4)* + sizeof(float)*2);
+    memcpy(ubo.getBufferMemoryLocation(imageIndex,0), &view, sizeof(glm::mat4)*3 + sizeof(float)*4);
   }
 
 };

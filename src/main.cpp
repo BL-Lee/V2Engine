@@ -15,6 +15,8 @@
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/rotate_vector.hpp>
 #include <chrono>
 
 const uint32_t WINDOW_WIDTH = 800;
@@ -38,6 +40,8 @@ VkCommandPool transientCommandPool; //For short lived command buffers
 VkCommandPool computeCommandPool;
 int USE_RASTER = 0; //Swap between ray and raster
 
+double mouseX = 0;
+double mouseY = 0;
 
 #define NDEBUG_MODE 0
 #if NDEBUG_MODE
@@ -132,7 +136,8 @@ private:
 
     window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan Triangle", nullptr, nullptr);
     glfwSetKeyCallback(window, key_callback);
-    
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    glfwGetCursorPos(window, &mouseX, &mouseY);
   }
   
   void initVulkan() {
@@ -155,8 +160,8 @@ private:
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     matrixPool.createDescriptorSetLayout();
 
-    cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*4 + sizeof(float)*2);
-    cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*4 + sizeof(float)*2);
+    cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
+    cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*3 + sizeof(float)*4);
     cameraUniformPool.createDescriptorSetLayout();
 
     mainCamera.init();
@@ -678,21 +683,41 @@ private:
     printf("\r%.8f %4.2f", deltaTime, 1.0f / deltaTime);
     fpsPrev = std::chrono::high_resolution_clock::now();
 
+    double xPos, yPos;
+    glfwGetCursorPos(window, &xPos, &yPos);
+
+    glm::vec2 mouseDiff = glm::vec2(mouseX, mouseY) - glm::vec2(xPos, yPos);
+
+    double cameraSensitivity = 1.0f;
+    mainCamera.direction = glm::rotate(mainCamera.direction,
+				       (float)(mouseDiff.x * cameraSensitivity * deltaTime),
+				       glm::vec3(0.0f, 1.0f, 0.0f));
+    mainCamera.direction = glm::rotate(mainCamera.direction,
+				       (float)(mouseDiff.y * cameraSensitivity * deltaTime),
+				       glm::cross(mainCamera.direction,
+						  glm::vec3(0.0f, 1.0f, 0.0f)));
+
+    mouseX = xPos; mouseY = yPos;
+
+
     if (inputInfo.keysPressed[GLFW_KEY_A])
-      mainCamera.position += glm::vec3(-deltaTime * 3.0f, 0.0, 0.0);
+      mainCamera.position -= glm::cross(mainCamera.direction * deltaTime * 3.0f,
+					glm::vec3(0.0, 1.0, 0.0));
     if (inputInfo.keysPressed[GLFW_KEY_D])
-      mainCamera.position += glm::vec3(deltaTime * 3.0f, 0.0, 0.0);
-    
+      mainCamera.position += glm::cross(mainCamera.direction * deltaTime * 3.0f,
+					glm::vec3(0.0, 1.0, 0.0));
+
     if (inputInfo.keysPressed[GLFW_KEY_W])
-      mainCamera.position += glm::vec3(0.0, 0.0, -deltaTime * 3.0f);
+      mainCamera.position += mainCamera.direction * deltaTime * 3.0f;
     if (inputInfo.keysPressed[GLFW_KEY_S])
-      mainCamera.position += glm::vec3(0.0, 0.0, deltaTime * 3.0f);
+      mainCamera.position -= mainCamera.direction * deltaTime * 3.0f;
 
     if (inputInfo.keysPressed[GLFW_KEY_SPACE])
       mainCamera.position += glm::vec3(0.0,  deltaTime * 3.0f, 0.0);
     if (inputInfo.keysPressed[GLFW_KEY_LEFT_CONTROL])
       mainCamera.position += glm::vec3(0.0, -deltaTime * 3.0f, 0.0);
 
+    
   }
 
   

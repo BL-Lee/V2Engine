@@ -10,9 +10,10 @@
 
 struct Vertex
 {
-  glm::vec3 pos;
-  glm::vec3 colour;
-  glm::vec2 texCoord;
+  //std140 vulkan requirements for storage buffer
+  alignas(sizeof(glm::vec4)) glm::vec3 pos;
+  alignas(sizeof(glm::vec4)) glm::vec3 colour;
+  alignas(sizeof(glm::vec2)) glm::vec2 texCoord;
 
   bool operator==(const Vertex& other) const {
     return pos == other.pos && colour == other.colour && texCoord == other.texCoord;

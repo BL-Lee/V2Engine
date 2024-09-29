@@ -55,7 +55,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
     }break;
   case VKB_TEXTURE_TYPE_STORAGE_RGBA:
     {
-      format = VK_FORMAT_R8G8B8A8_UNORM;
+      format = VK_FORMAT_B8G8R8A8_UNORM;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
 	VK_IMAGE_USAGE_TRANSFER_SRC_BIT |

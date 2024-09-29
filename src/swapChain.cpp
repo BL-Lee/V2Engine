@@ -25,7 +25,7 @@ void VkBSwapChain::createSwapChain(VkSurfaceKHR surface, GLFWwindow* window) {
   createInfo.imageColorSpace = surfaceFormat.colorSpace;
   createInfo.imageExtent = extent;
   createInfo.imageArrayLayers = 1;
-  createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+  createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT  | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
   QueueFamilyIndices indices = findQueueFamilies(physicalDevice, surface);
   uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value(), indices.computeFamily.value()};
@@ -83,9 +83,9 @@ VkSurfaceFormatKHR VkBSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSur
   //Should switch to float later
     
   for (const auto& availableFormat : availableFormats) {
-    if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM &&
-	availableFormat.colorSpace ==
-	VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+    if (availableFormat.format == VK_FORMAT_B8G8R8A8_UNORM
+	/*	availableFormat.colorSpace ==
+		VK_COLOR_SPACE_SRGB_NONLINEAR_KHR*/) {
       return availableFormat;
     }
   }

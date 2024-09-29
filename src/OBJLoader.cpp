@@ -46,13 +46,15 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath)
 	};
 
 	vertex.colour = {1.0f, 1.0f, 1.0f};
-
+	/*
 	if (uniqueVertices.count(vertex) == 0) {
             uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
             vertices.push_back(vertex);
         }
 	
-        indices.push_back(uniqueVertices[vertex]);
+        indices.push_back(uniqueVertices[vertex]);*/
+	vertices.push_back(vertex);
+	indices.push_back(indices.size());
       }
     }
 
