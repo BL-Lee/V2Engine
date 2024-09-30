@@ -1206,6 +1206,22 @@ CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o: ../src/VkBDrawCommandBuf
   ../libraries/glm/glm/gtx/dual_quaternion.hpp \
   ../libraries/glm/glm/gtx/dual_quaternion.inl \
   ../libraries/glm/glm/gtx/hash.inl \
+  ../src/OBJLoader.hpp \
+  ../src/VkBTexture.hpp \
+  ../libraries/stb/stb_image.h \
+  /usr/include/stdio.h \
+  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
+  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
+  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
+  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
+  /usr/include/c++/11/stdlib.h \
+  ../src/VkBUniformBuffer.hpp \
+  ../src/VkBUniformPool.hpp \
   /usr/include/c++/11/stdexcept \
   /usr/include/c++/11/exception \
   /usr/include/c++/11/bits/exception_ptr.h \
@@ -1217,12 +1233,8 @@ CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o: ../src/VkBDrawCommandBuf
   /usr/include/c++/11/bits/postypes.h \
   /usr/include/c++/11/cwchar \
   /usr/include/wchar.h \
-  /usr/lib/gcc/x86_64-linux-gnu/11/include/stdarg.h \
   /usr/include/x86_64-linux-gnu/bits/types/wint_t.h \
   /usr/include/x86_64-linux-gnu/bits/types/mbstate_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__mbstate_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__FILE.h \
-  /usr/include/x86_64-linux-gnu/bits/types/FILE.h \
   /usr/include/c++/11/bits/localefwd.h \
   /usr/include/x86_64-linux-gnu/c++/11/bits/c++locale.h \
   /usr/include/c++/11/clocale \
@@ -1255,12 +1267,6 @@ CMakeFiles/V2Engine.dir/src/VkBDrawCommandBuffer.cpp.o: ../src/VkBDrawCommandBuf
   /usr/include/c++/11/bits/string_view.tcc \
   /usr/include/c++/11/ext/string_conversions.h \
   /usr/include/c++/11/cstdio \
-  /usr/include/stdio.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__fpos_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/__fpos64_t.h \
-  /usr/include/x86_64-linux-gnu/bits/types/struct_FILE.h \
-  /usr/include/x86_64-linux-gnu/bits/types/cookie_io_functions_t.h \
-  /usr/include/x86_64-linux-gnu/bits/stdio_lim.h \
   /usr/include/c++/11/cerrno \
   /usr/include/errno.h \
   /usr/include/x86_64-linux-gnu/bits/errno.h \
@@ -3394,6 +3400,17 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: ../src/main.cpp \
   ../libraries/glm/glm/ext/matrix_transform.hpp \
   ../libraries/glm/glm/ext/matrix_transform.inl \
   ../libraries/glm/glm/gtc/matrix_transform.inl \
+  ../libraries/glm/glm/gtx/rotate_vector.hpp \
+  ../libraries/glm/glm/gtx/transform.hpp \
+  ../libraries/glm/glm/gtx/transform.inl \
+  ../libraries/glm/glm/gtc/epsilon.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/gtc/epsilon.inl \
+  ../libraries/glm/glm/ext/vector_relational.hpp \
+  ../libraries/glm/glm/ext/vector_relational.inl \
+  ../libraries/glm/glm/detail/type_float.hpp \
+  ../libraries/glm/glm/detail/setup.hpp \
+  ../libraries/glm/glm/gtx/rotate_vector.inl \
   /usr/include/c++/11/chrono \
   /usr/include/c++/11/ratio \
   /usr/include/c++/11/ctime \
@@ -3406,6 +3423,7 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: ../src/main.cpp \
   ../src/DeviceSelection.hpp \
   ../src/VkBGraphicsPipeline.hpp \
   ../src/VkBCommandPool.hpp \
+  ../src/VkBSingleCommandBuffer.hpp \
   ../src/VkBDrawCommandBuffer.hpp \
   ../src/VkBVertexBuffer.hpp \
   ../src/Vertex.hpp \
@@ -3422,10 +3440,6 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: ../src/main.cpp \
   ../libraries/glm/glm/ext/vector_uint1.hpp \
   ../libraries/glm/glm/ext/vector_uint1_sized.hpp \
   ../libraries/glm/glm/gtc/quaternion.hpp \
-  ../libraries/glm/glm/ext/vector_relational.hpp \
-  ../libraries/glm/glm/ext/vector_relational.inl \
-  ../libraries/glm/glm/detail/type_float.hpp \
-  ../libraries/glm/glm/detail/setup.hpp \
   ../libraries/glm/glm/ext/quaternion_common.hpp \
   ../libraries/glm/glm/ext/quaternion_geometric.hpp \
   ../libraries/glm/glm/ext/quaternion_geometric.inl \
@@ -3443,14 +3457,10 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: ../src/main.cpp \
   ../libraries/glm/glm/ext/quaternion_transform.hpp \
   ../libraries/glm/glm/ext/quaternion_transform.inl \
   ../libraries/glm/glm/gtc/quaternion.inl \
-  ../libraries/glm/glm/gtc/epsilon.hpp \
-  ../libraries/glm/glm/detail/setup.hpp \
-  ../libraries/glm/glm/gtc/epsilon.inl \
   ../libraries/glm/glm/gtx/dual_quaternion.hpp \
   ../libraries/glm/glm/gtx/dual_quaternion.inl \
   ../libraries/glm/glm/gtx/hash.inl \
-  ../src/VkBUniformBuffer.hpp \
-  ../src/VkBUniformPool.hpp \
+  ../src/OBJLoader.hpp \
   ../src/VkBTexture.hpp \
   ../libraries/stb/stb_image.h \
   /usr/include/c++/11/stdlib.h \
@@ -3459,7 +3469,8 @@ CMakeFiles/V2Engine.dir/src/main.cpp.o: ../src/main.cpp \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/xmmintrin.h \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/mmintrin.h \
   /usr/lib/gcc/x86_64-linux-gnu/11/include/mm_malloc.h \
-  ../src/OBJLoader.hpp \
+  ../src/VkBUniformBuffer.hpp \
+  ../src/VkBUniformPool.hpp \
   ../src/Camera.hpp
 
 CMakeFiles/V2Engine.dir/src/swapChain.cpp.o: ../src/swapChain.cpp \
@@ -3868,6 +3879,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/c++/11/ctime:
 
+../libraries/glm/glm/gtx/transform.hpp:
+
 ../src/main.cpp:
 
 /usr/include/c++/11/ratio:
@@ -3905,6 +3918,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 ../libraries/glm/glm/ext/matrix_transform.inl:
 
 ../libraries/glm/glm/ext/matrix_clip_space.inl:
+
+../libraries/glm/glm/gtx/rotate_vector.hpp:
 
 ../libraries/glm/glm/ext/matrix_projection.inl:
 
@@ -4306,6 +4321,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/typesizes.h:
 
+../libraries/glm/glm/gtx/transform.inl:
+
 /usr/include/x86_64-linux-gnu/bits/floatn-common.h:
 
 /usr/include/GL/gl.h:
@@ -4341,6 +4358,8 @@ CMakeFiles/V2Engine.dir/src/vkDebug.cpp.o: ../src/vkDebug.cpp \
 /usr/include/c++/11/cfloat:
 
 /usr/include/x86_64-linux-gnu/bits/stdint-intn.h:
+
+../libraries/glm/glm/gtx/rotate_vector.inl:
 
 /usr/include/x86_64-linux-gnu/bits/types.h:
 

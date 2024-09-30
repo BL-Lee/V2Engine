@@ -78,7 +78,7 @@ public:
   
   VkBRenderPass renderPass;
 
-  VkBVertexBuffer vertexBuffer;
+  VkBVertexBuffer staticVertexBuffer;
   VkBUniformPool matrixPool;
   
   VkBUniformPool computeInputAssemblerUniformPool;
@@ -96,6 +96,10 @@ public:
   GLFWwindow* window;
   Model* ratModel;
   Model* cornellScene;
+  Model* cornellLight;
+  Material emissive;
+  Material diffuse;
+  
   std::chrono::time_point<std::chrono::high_resolution_clock> fpsPrev;
 
   void run() {
@@ -125,7 +129,8 @@ private:
       inputInfo.keysPressed[key] = 0;
     if (action == GLFW_PRESS && key == GLFW_KEY_R)
       USE_RASTER = !USE_RASTER;
-    
+    if (action == GLFW_PRESS && key == GLFW_KEY_Q)
+      glfwSetWindowShouldClose(window, GL_TRUE);
   }
 
   void initWindow() {
@@ -155,7 +160,7 @@ private:
     
     renderPass.createRenderPass(swapChain.imageFormat);
     
-    matrixPool.create(4, swapChain.imageViews.size(), sizeof(glm::mat4));
+    matrixPool.create(5, swapChain.imageViews.size(), sizeof(glm::mat4));
     matrixPool.addBuffer(0, sizeof(glm::mat4));
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     matrixPool.createDescriptorSetLayout();
@@ -189,21 +194,28 @@ private:
 				      swapChain.extent.height,
 				      nullptr);
 
+    staticVertexBuffer.create(sizeof(Vertex) * 5000, sizeof(uint32_t) * 5000);
 
-    cornellScene = ModelImporter::loadOBJ("../models/cornell.obj", "../models/cornell.png");
-    ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png");
+    emissive.index = 0;
+    diffuse.index = 1;
+    cornellScene = ModelImporter::loadOBJ("../models/cornell.obj", "../models/cornell.png", &staticVertexBuffer, &diffuse);
+    cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &staticVertexBuffer, &emissive);
+
+    ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &staticVertexBuffer, &diffuse);
     
     ratModel->modelUniform.allocateDescriptorSets(&matrixPool, &ratModel->textures.imageView, &ratModel->textures.textureSampler, nullptr);
     
     cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, &cornellScene->textures.imageView, &cornellScene->textures.textureSampler, nullptr);
+    cornellLight->modelUniform.allocateDescriptorSets(&matrixPool, &cornellScene->textures.imageView, &cornellScene->textures.textureSampler, nullptr);
 
     computeInputAssemblerUniformPool.create(1, swapChain.imageViews.size(), 0, true);
     
-    computeInputAssemblerUniformPool.addStorageBuffer(0, cornellScene->VBO.vertexCount * sizeof(Vertex));
-    computeInputAssemblerUniformPool.addStorageBuffer(1, cornellScene->VBO.indexCount * sizeof(uint32_t));
+    computeInputAssemblerUniformPool.addStorageBuffer(0,
+						      (cornellScene->vertexCount + cornellLight->vertexCount) * sizeof(Vertex));
+    computeInputAssemblerUniformPool.addStorageBuffer(1, (cornellScene->indexCount + cornellLight->indexCount) * sizeof(uint32_t));
     computeInputAssemblerUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     computeInputAssemblerUniformPool.createDescriptorSetLayout();
-    VkBuffer storageBuffers[] = {cornellScene->VBO.buffer, cornellScene->VBO.indexBuffer};
+    VkBuffer storageBuffers[] = {staticVertexBuffer.vertexBuffer, staticVertexBuffer.indexBuffer};
     computeVertexUniform.allocateDescriptorSets(&computeInputAssemblerUniformPool,
 						&computeTexture.imageView, &computeTexture.textureSampler,
 						storageBuffers
@@ -365,6 +377,43 @@ private:
 
 
   }
+  void transitionSwapChainForComputeTransfer(VkImage image) {
+
+    VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
+    
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    
+    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
+    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0; //no mips and not an array 
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+    
+    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+
+    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    barrier.dstAccessMask = 0;
+
+    vkCmdPipelineBarrier(
+    commandBuffer,
+    sourceStage, destinationStage,
+    0,
+    0, nullptr,
+    0, nullptr,
+    1, &barrier
+);
+    vKEndSingleTimeCommandBuffer(commandBuffer);
+
+
+  }
   
   void transitionSwapChainForComputePresent(VkImage swapImage)
   {
@@ -515,10 +564,9 @@ private:
     
     memcpy(ratModel->modelUniform.getBufferMemoryLocation(currentImage,0), &modelMat, sizeof(glm::mat4));
 
-    glm::mat4 identity = glm::rotate(glm::mat4(1.0f),
-				     glm::radians(-90.0f),
-				     glm::vec3(0.0f, 1.0f, 0.0f));
+    glm::mat4 identity = glm::mat4(1.0f);
     memcpy(cornellScene->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
+    memcpy(cornellLight->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
 
     mainCamera.updateMatrices(currentImage);
   }
@@ -549,15 +597,21 @@ private:
 
 	drawCommmandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
-			     &ratModel->VBO,
+			     &staticVertexBuffer,
 			     &matrixPool.descriptorSets[imageIndex][ratModel->modelUniform.indexIntoPool],
-			     0, ratModel->VBO.indexCount
+ratModel
 			     );
 	drawCommmandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
-			     &cornellScene->VBO,
+			     &staticVertexBuffer,
 			     &matrixPool.descriptorSets[imageIndex][cornellScene->modelUniform.indexIntoPool],
-			     0, cornellScene->VBO.indexCount
+cornellScene
+			     );
+	drawCommmandBuffer.record(graphicsPipeline.pipeline,
+			     graphicsPipeline.layout,
+			     &staticVertexBuffer,
+			     &matrixPool.descriptorSets[imageIndex][cornellLight->modelUniform.indexIntoPool],
+cornellLight
 			     );
     
 	drawCommmandBuffer.end();
@@ -629,7 +683,7 @@ private:
 	  throw std::runtime_error("failed to submit compute command buffer!");
 	};
 
-		
+	transitionSwapChainForComputeTransfer(computeTexture.image);
 	VkCommandBuffer transferCommandBuffer = vKBeginSingleTimeCommandBuffer();
 
 	VkImageCopy imageCopyInfo {};
@@ -652,7 +706,7 @@ private:
 	vkCmdCopyImage(
 		       transferCommandBuffer,
 		       computeTexture.image,
-		       VK_IMAGE_LAYOUT_GENERAL,
+		       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		       swapChain.images[imageIndex],
 		       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		       1,
@@ -756,7 +810,7 @@ private:
     vkDestroyPipelineLayout(device, graphicsPipeline.layout, nullptr);
     vkDestroyPipeline(device, computePipeline, nullptr);	
     vkDestroyPipelineLayout(device, computePipelineLayout, nullptr);
-
+    staticVertexBuffer.destroy();
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
@@ -766,6 +820,7 @@ private:
     computeInputAssemblerUniformPool.destroy();
     delete ratModel;
     delete cornellScene;
+    delete cornellLight;
     
     mainCamera.ubo.destroy();
     cameraUniformPool.destroy();

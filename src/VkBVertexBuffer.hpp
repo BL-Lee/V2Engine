@@ -26,21 +26,29 @@ https://vulkan-tutorial.com/en/Vertex_buffers/Index_buffer
    */
   
   
-  VkBuffer buffer;
+  VkBuffer vertexBuffer;
   VkBuffer indexBuffer;
   VkBuffer stagingBuffer;
+  void* stagingBufferMapped;
   //VkMemoryRequirements memRequirements;
-  VkDeviceMemory bufferMemory;
+  VkDeviceMemory vertexBufferMemory;
   VkDeviceMemory stagingBufferMemory;
   VkDeviceMemory indexBufferMemory;
 
+  size_t maxVertexCount;
+  size_t maxIndexCount;
+
+  size_t stagingBufferSize;
   
   uint32_t vertexCount;
   uint32_t indexCount;
+
+  uint32_t meshesMapped;
   
   void create(size_t initialVertexSize, size_t initialIndexSize)  ;
   void destroy();
   void fill(const Vertex* vertices, uint32_t vertexCount,
-	    const uint32_t* indices, uint32_t indexCount);
-  void transferToDevice(VkCommandPool transientPool, VkQueue graphicsQueue);
+	    const uint32_t* indices, uint32_t indexCount,
+	    uint32_t*, uint32_t*
+	    );
 };

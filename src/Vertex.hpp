@@ -12,11 +12,11 @@ struct Vertex
 {
   //std140 vulkan requirements for storage buffer
   alignas(sizeof(glm::vec4)) glm::vec3 pos;
-  alignas(sizeof(glm::vec4)) glm::vec3 colour;
   alignas(sizeof(glm::vec2)) glm::vec2 texCoord;
+  alignas(sizeof(float)) uint32_t materialIndex;//for ray tracing
 
   bool operator==(const Vertex& other) const {
-    return pos == other.pos && colour == other.colour && texCoord == other.texCoord;
+    return pos == other.pos && texCoord == other.texCoord;
   }
 
   
@@ -40,16 +40,16 @@ struct Vertex
     attributeDescriptions[0].location = 0;
     attributeDescriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     attributeDescriptions[0].offset = offsetof(Vertex, pos);
-    
+
     attributeDescriptions[1].binding = 0; //Something about instances
     attributeDescriptions[1].location = 1; //Where in the shader it goes into
-    attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescriptions[1].offset = offsetof(Vertex, colour);
-
+    attributeDescriptions[1].format = VK_FORMAT_R32G32_SFLOAT;
+    attributeDescriptions[1].offset = offsetof(Vertex, texCoord);
+    
     attributeDescriptions[2].binding = 0; //Something about instances
     attributeDescriptions[2].location = 2; //Where in the shader it goes into
-    attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+    attributeDescriptions[2].format = VK_FORMAT_R32_UINT;
+    attributeDescriptions[2].offset = offsetof(Vertex, materialIndex);
 
     
     return attributeDescriptions;
@@ -60,7 +60,7 @@ namespace std {
   template<> struct hash<Vertex> {
     size_t operator()(Vertex const& vertex) const {
       return ((hash<glm::vec3>()(vertex.pos) ^
-	       (hash<glm::vec3>()(vertex.colour) << 1)) >> 1) ^
+	       (hash<uint32_t>()(vertex.materialIndex) << 1)) >> 1) ^
 	(hash<glm::vec2>()(vertex.texCoord) << 1);
     }
   };

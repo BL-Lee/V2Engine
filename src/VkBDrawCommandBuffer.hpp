@@ -2,6 +2,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 #include "VkBVertexBuffer.hpp"
+#include "OBJLoader.hpp"
 class VkBDrawCommandBuffer{
 
 public:
@@ -19,5 +20,12 @@ public:
   void begin(VkRenderPass renderPass,
 	     VkFramebuffer frameBuffer,
 	     VkExtent2D extent);
+
+  void record(VkPipeline pipeline,
+			     VkPipelineLayout pipelineLayout,
+			     VkBVertexBuffer* vertexBuffer,
+			     VkDescriptorSet* descriptorSet,
+			     Model* model
+	      );
 
 };

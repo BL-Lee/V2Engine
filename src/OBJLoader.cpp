@@ -3,14 +3,16 @@
 
 #include "OBJLoader.hpp"
 #include <iostream>
+
 Model::~Model()
 {
   modelUniform.destroy();
-  VBO.destroy();
   textures.destroy();
 }
 
-Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath)
+Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath,
+			      VkBVertexBuffer* VBO,
+			      Material* mat)
   {
     Model* model = new Model();
     
@@ -45,7 +47,7 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath)
 	  1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
 	};
 
-	vertex.colour = {1.0f, 1.0f, 1.0f};
+	vertex.materialIndex = mat->index;
 	/*
 	if (uniqueVertices.count(vertex) == 0) {
             uniqueVertices[vertex] = static_cast<uint32_t>(vertices.size());
@@ -57,12 +59,15 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath)
 	indices.push_back(indices.size());
       }
     }
-
-    model->VBO.create(vertices.size() * sizeof(Vertex),
-	       indices.size() * sizeof(uint32_t));
-    model->VBO.fill(vertices.data(), vertices.size(),
-	     indices.data(), indices.size());
-    model->VBO.transferToDevice(transientCommandPool, graphicsQueue);
+    model->indexCount = (uint32_t)indices.size();
+    model->vertexCount = (uint32_t)vertices.size();
+    /*VBO.create(vertices.size() * sizeof(Vertex),
+      indices.size() * sizeof(uint32_t));*/
+    VBO->fill(vertices.data(), vertices.size(),
+	      indices.data(), indices.size(),
+	      &model->startIndex,
+	      &model->vertexOffset);
+    //    model->VBO.transferToDevice(transientCommandPool, graphicsQueue);
     model->textures.createTextureImage(VKB_TEXTURE_TYPE_SAMPLED_RGBA, texturePath);
     std::cout << vertices.size() << ": VERTICES" << std::endl;
     std::cout << indices.size() << ": INDICES" << std::endl;

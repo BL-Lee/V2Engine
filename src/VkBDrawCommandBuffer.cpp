@@ -66,7 +66,7 @@ VkBDrawCommandBuffer::record(VkPipeline pipeline,
  
   vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
-  VkBuffer vertexBuffers[] = {vertexBuffer->buffer};
+  VkBuffer vertexBuffers[] = {vertexBuffer->vertexBuffer};
   VkDeviceSize offsets[] = {0};
   vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
@@ -78,6 +78,30 @@ VkBDrawCommandBuffer::record(VkPipeline pipeline,
 
 
   vkCmdDrawIndexed(commandBuffer, count, 1, offset, 0, 0);
+}
+void
+VkBDrawCommandBuffer::record(VkPipeline pipeline,
+			     VkPipelineLayout pipelineLayout,
+			     VkBVertexBuffer* vertexBuffer,
+			     VkDescriptorSet* descriptorSet,
+			     Model* model
+			     )
+{
+ 
+  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
+  VkBuffer vertexBuffers[] = {vertexBuffer->vertexBuffer};
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+  vkCmdBindIndexBuffer(commandBuffer, vertexBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+  
+  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			  pipelineLayout,
+			  0, 1, descriptorSet, 0, nullptr);
+
+
+  vkCmdDrawIndexed(commandBuffer, model->indexCount, 1, model->startIndex, model->vertexOffset, 0);
 }
 
 
