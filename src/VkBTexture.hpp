@@ -10,7 +10,7 @@ class VkBTexture
 {
 public:
 
-  int width, height, channels;
+  int width, height, depth, channels;
   VkImage image;
   VkDeviceMemory imageMemory;
   VkImageView imageView; //How you access the image, rather than going through byte offsets from the raw image
@@ -27,6 +27,11 @@ public:
 			  uint32_t w, uint32_t h,
 			  void* pixels
 			  );
+  void createTextureImage3D(VkBTextureType type,
+			    uint32_t w, uint32_t h, uint32_t d,
+			  void* pixels
+			  );
+  void transferPixels(void* pixels);
   void createTextureImage(VkBTextureType type, const char* path);
 
   void destroy();

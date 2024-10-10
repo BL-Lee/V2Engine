@@ -1,5 +1,6 @@
 #include "VkBGraphicsPipeline.hpp"
 #include "Vertex.hpp"
+#include "VkBShader.hpp"
 #include "VkBGlobals.hpp"
 #include <stdexcept>
 #include <fstream>
@@ -9,11 +10,8 @@ void VkBGraphicsPipeline::createGraphicsPipeline(VkBSwapChain& swapChain,
 						 VkDescriptorSetLayout* descriptorSetLayouts)
 {
       //Shader stuff
-    auto vertShaderCode = readShader("../src/shaders/vert.spv");
-    auto fragShaderCode = readShader("../src/shaders/frag.spv");
-	
-    VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-    VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+    VkShaderModule vertShaderModule = VkBShader::createShaderFromFile("../src/shaders/vert.spv");
+    VkShaderModule fragShaderModule = VkBShader::createShaderFromFile("../src/shaders/frag.spv");
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -172,38 +170,4 @@ void VkBGraphicsPipeline::createGraphicsPipeline(VkBSwapChain& swapChain,
 }
 
 
-
-std::vector<char>
-VkBGraphicsPipeline::readShader(const std::string& filename)
-{
-    std::ifstream file(filename, std::ios::ate | std::ios::binary);
-    if (!file.is_open()) {
-      throw std::runtime_error("Failed to open file");
-    }
-
-    size_t fileSize = (size_t)file.tellg();
-    std::vector<char> buffer(fileSize);
-
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-    file.close();
-
-    return buffer;
-}
-
-
-VkShaderModule
-VkBGraphicsPipeline::createShaderModule(const std::vector<char>& code)
-{
-  VkShaderModuleCreateInfo createInfo{};
-  createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  createInfo.codeSize = code.size();
-  createInfo.pCode = (const uint32_t*)code.data();
-
-  VkShaderModule shaderModule;
-  if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-    throw std::runtime_error("Failed to create shader module");
-  }
-  return shaderModule;
-}
 

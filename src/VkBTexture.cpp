@@ -17,7 +17,10 @@ void VkBTexture::createImageView() {
   VkImageViewCreateInfo viewInfo{};
   viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
   viewInfo.image = image;
-  viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+  if (depth > 1)
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+  else
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
   viewInfo.format = format;
   viewInfo.subresourceRange.aspectMask = aspectFlags;
   viewInfo.subresourceRange.baseMipLevel = 0; //Add mips later?
@@ -38,7 +41,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
       tiling = VK_IMAGE_TILING_OPTIMAL;
       usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-      imageSize = width * height * 4;
+      imageSize = width * height * depth * 4;
       channels = 1;
       aspectFlags = VK_IMAGE_ASPECT_DEPTH_BIT;
     }break;
@@ -49,7 +52,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
       tiling = VK_IMAGE_TILING_OPTIMAL;
       usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-      imageSize = width * height * 4;
+      imageSize = width * height * depth *4;
       channels = 4;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;
@@ -62,7 +65,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
 	VK_IMAGE_USAGE_STORAGE_BIT;
 
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-      imageSize = width * height * 4;
+      imageSize = width * height * depth * 4;
       channels = 4;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;
@@ -81,11 +84,39 @@ void VkBTexture::createTextureImage(VkBTextureType type,
 				    ) {
   width = w;
   height = h;
+  depth = 1;
   setPropertiesFromType(type);
   
   createDeviceImage();
   createDeviceMemory();
 
+  transferPixels(pixels);
+  createImageView();
+
+  initSampler();
+}
+
+void VkBTexture::createTextureImage3D(VkBTextureType type,
+				      uint32_t w, uint32_t h, uint32_t d,
+				    void* pixels
+				    ) {
+  
+  width = w;
+  height = h;
+  depth = d;
+  setPropertiesFromType(type);
+  
+  createDeviceImage();
+  createDeviceMemory();
+  transferPixels(pixels);
+  createImageView();
+
+  initSampler();
+}
+
+
+void VkBTexture::transferPixels(void* pixels)
+{
   if (pixels) //Copies to memory, but if null then we haven't filled it yet
     {
       VkBuffer stagingBuffer;
@@ -115,10 +146,10 @@ void VkBTexture::createTextureImage(VkBTextureType type,
     }
   else
     vkBindImageMemory(device, image, imageMemory, 0);  
-  createImageView();
 
-  initSampler();
 }
+
+
 
 void VkBTexture::createTextureImage(VkBTextureType type, const char* path) {
   stbi_uc* pixels = stbi_load(path, &width, &height, &channels, STBI_rgb_alpha);
@@ -272,10 +303,13 @@ void VkBTexture::createDeviceImage()
 {
   VkImageCreateInfo imageInfo{};
   imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-  imageInfo.imageType = VK_IMAGE_TYPE_2D;
+  if (depth > 1)
+    imageInfo.imageType = VK_IMAGE_TYPE_3D;
+  else
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
   imageInfo.extent.width = width;
   imageInfo.extent.height = height;
-  imageInfo.extent.depth = 1;
+  imageInfo.extent.depth = depth;
   imageInfo.mipLevels = 1;
   imageInfo.arrayLayers = 1;
   imageInfo.format = format;

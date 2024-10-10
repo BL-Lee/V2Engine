@@ -64,7 +64,7 @@ void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool* descriptorPool,
 	      descriptorWrites[j].dstArrayElement = 0; //Descriptors can be arrays, so say the first
 	      descriptorWrites[j].descriptorType = binding.descriptorType;
 	      descriptorWrites[j].descriptorCount = 1;
-	      descriptorWrites[j].pImageInfo = &imageInfo[imageInfo.size()-1]; 
+	      descriptorWrites[j].pImageInfo = &imageInfoBuffer[imageCount]; 
 	      imageCount++;
 	    }
 	  else if  (binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)

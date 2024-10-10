@@ -12,6 +12,7 @@ layout(set=1, binding = 1) uniform cameraUniform {
 
 struct Vertex {
   vec3 position;
+  vec3 normal;
   vec2 texCoord;
   uint materialIndex;
 };
@@ -57,11 +58,13 @@ float triangleTest(vec3 rayOrigin, vec3 rayDirection, vec3 v0, vec3 v1, vec3 v2,
 	      
   float denom = dot(normal, rayDirection);
 
-  float triangleOffset = -dot(normal, v0);; //like the planeDist but for the triangle
+  float triangleOffset = -dot(normal, v2); //like the planeDist but for the triangle
   float triangleDist = -(dot(normal, rayOrigin) + triangleOffset) / denom; 
 		
-  bool triangleHitMask = triangleDist > 0.001;
-		  
+  bool triangleHitMask = true;
+
+  if (triangleDist < 0.0001)
+    return FLT_MAX;
   vec3 planePoint = (rayDirection * triangleDist) + rayOrigin;
   
   vec3 edge0 = v1 - v0;
@@ -78,108 +81,94 @@ float triangleTest(vec3 rayOrigin, vec3 rayDirection, vec3 v0, vec3 v1, vec3 v2,
 
 
   if (triangleHitMask)
-      return triangleDist;
+    return triangleDist;
   else
-      return FLT_MAX;
+    return FLT_MAX;
 }
 float rand(vec2 co){
-  return (fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453) - 0.5) * 2.0;
+  return ((fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453))-0.5) * 2.0;
 }
-/*
-float triangleTest(vec3 rayOrigin, vec3 rayDirection, vec3 v0, vec3 v1, vec3 v2, vec3 normal)
-{
-    vec3 edge1 = v1 - v0;
-    vec3 edge2 = v2 - v0;
-    vec3 ray_cross_e2 = cross(rayDirection, edge2);
-    float det = dot(edge1, ray_cross_e2);
-    float epsilon = 0.00001;
-    if (det > -epsilon && det < epsilon)
-        return FLT_MAX;    // This ray is parallel to this triangle.
 
-    float inv_det = 1.0 / det;
-    vec3 s = rayOrigin - v0;
-    float u = inv_det * dot(s, ray_cross_e2);
 
-    if (u < 0 || u > 1)
-        return FLT_MAX;
 
-    vec3 s_cross_e1 = cross(s, edge1);
-    float v = inv_det * dot(rayDirection, s_cross_e1);
-
-    if (v < 0 || u + v > 1)
-        return FLT_MAX;
-
-    // At this stage we can compute t to find out where the intersection point is on the line.
-    float t = inv_det * dot(edge2, s_cross_e1);
-
-    if (t > epsilon) // ray intersection
-    {
-      return t;
-    }
-    else // This means that there is a line intersection but not a ray intersection.
-        return FLT_MAX;
-}
-*/
 #define MAX_BOUNCE 2
+#define SAMPLE_COUNT 1
 void main() {
 
   vec4 o = (_MainCamera.invViewProj * vec4(0.0, 0.0, 0.0, 1.0));
-  vec3 rayOrigin = (o / o.w).xyz;
+  vec3 origRayOrigin = (o / o.w).xyz;
   vec2 screenCoord = ((gl_GlobalInvocationID.xy / vec2(800.0,800.0)) - 0.5) * 2.0;
   vec4 d = _MainCamera.invViewProj * vec4(screenCoord, 1.0, 1.0);
-  vec3 rayDir = (d / d.w).xyz;
-  rayDir = normalize(rayDir - rayOrigin);
+  vec3 origRayDir = (d / d.w).xyz;
+  origRayDir = normalize(origRayDir - origRayOrigin);
 
 
   vec4 pixel = vec4(0.0);
   vec4 attenuation = vec4(1.0);
   
-      
+  int bounces = 0;
+  vec3 rayDir = origRayDir;
+  vec3 rayOrigin = origRayOrigin;
   for (int bounce = 0; bounce < MAX_BOUNCE; bounce++)
     {
       float dist = FLT_MAX;
-      vec3 bounceNormal = vec3(0.0);
-      vec4 emitColour = vec4(0.0);    
-      for (int i = 0; i < 132; i+=3)
-        {
-          vec3 normal = normalize(cross(vertices[i + 1].position - vertices[i + 0].position,
-                              vertices[i + 2].position - vertices[i + 0].position
-                                        ));
-          float testDist = triangleTest(rayOrigin, rayDir,
-                                        vertices[i].position, vertices[i+1].position, vertices[i+2].position,
-                                        normal);
-          if (testDist < dist)
-            {
-
-              if (vertices[i].materialIndex == 0) //emissive
-                {
-                  emitColour = vec4(1.0,0.0,0.0,1.0);
-                }
-              else
-                {
-                  attenuation *= 0.5;
-                }
-              dist = testDist;
-              bounceNormal = rayDir - 2 * normal * dot(rayDir, normal);
-
-            }
-        }
-      if (dist == FLT_MAX)
-        {
-          pixel = vec4(0.0);
-          break;
-        }
-      pixel += emitColour * attenuation + dist / 100.0;
-
-      vec3 randomBounce = vec3(rand(rayDir.xy),
-                                 rand(rayDir.xy),
-                                 rand(rayDir.xy));
-                          
+      vec3 bounceNormal = vec3(0.0,0.0,1.0);
+      vec4 emitColour = vec4(0.0);
+      uint matIndex = -1;
+      for (int i = 0; i < 136; i+=3)
+	{
+	  Vertex v0 = vertices[i + 0];
+	  Vertex v1 = vertices[i + 1];
+	  Vertex v2 = vertices[i + 2];
+	  // vec3 normal = vertices[i+0].normal;
+	  vec3 normal = normalize(cross(v1.position - v0.position,
+					v2.position - v0.position
+					));
+	  float testDist = triangleTest(rayOrigin, rayDir,
+					v0.position, v1.position, v2.position,
+					normal);
+	  if (testDist < dist )
+	    {
+	      matIndex = v0.materialIndex;
+	      dist = testDist;
+	      bounceNormal = rayDir - 2.0 * normal * dot(rayDir, normal);
+	      bounces++;
+	    }
+	}
+      if (dist == FLT_MAX) break;//pixel = vec4(-FLT_MAX);
       
+      if (matIndex == 0) //emissive
+	{
+	  emitColour = vec4(1.0,0.9,0.6,1.0);
+	}
+      else if (matIndex == 1) //diffuseGrey
+	{
+	  attenuation *= vec4(0.5,0.5,0.5,1.0);
+	}
+      else if (matIndex == 2) //red
+	{
+	  attenuation *= vec4(1.0,0.0,0.0,1.0);
+	}
+      else if (matIndex == 3) //green
+	{
+	  attenuation *= vec4(0.0,1.0,0.0,1.0);
+	}
+
+      pixel += (emitColour + 0.1) * attenuation;
+      //pixel = vec4(bounceNormal, 1.0);
+      //pixel.r = attenuation.r;
+      vec3 randomBounce = normalize(bounceNormal - vec3(rand(rayDir.xy),
+							rand(rayDir.xz),
+							rand(rayDir.zy)) / 50.0f);
+	      
       rayOrigin = rayOrigin + rayDir * dist;
-      rayDir = bounceNormal;
-      
+      rayDir = normalize(randomBounce);
     }
-  pixel = vec4(pow(pixel.xyz, vec3(1/2.2)),1.0);
+
+
+  //pixel /= SAMPLE_COUNT;
+  //pixel = vec4(pow(pixel.xyz, vec3(1/2.2)),1.0);
+
+  
   imageStore(frameBuffer, ivec2(gl_GlobalInvocationID.xy), pixel);
 }

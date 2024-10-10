@@ -38,7 +38,7 @@ VkQueue computeQueue;
 VkCommandPool drawCommandPool;
 VkCommandPool transientCommandPool; //For short lived command buffers
 VkCommandPool computeCommandPool;
-int USE_RASTER = 0; //Swap between ray and raster
+int USE_RASTER = 1; //Swap between ray and raster
 
 double mouseX = 0;
 double mouseY = 0;
@@ -62,9 +62,12 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBUniformBuffer.hpp"
 #include "VkBUniformPool.hpp"
 #include "VkBTexture.hpp"
+#include "VkBShader.hpp"
 #include "OBJLoader.hpp"
 #include "Camera.hpp"
 #include "Input.hpp"
+#include "VkBLightProbes.hpp"
+#include "VkBRayPipeline.hpp"
 Input inputInfo = {};
 class V2Engine {
 public:
@@ -73,19 +76,15 @@ public:
   VkSurfaceKHR surface;
   
   VkBGraphicsPipeline graphicsPipeline;
-  VkPipelineLayout computePipelineLayout;
-  VkPipeline computePipeline;
+  VkBRayPipeline rayPipeline;
+  VkBRayPipeline lightProbePipeline;
   
   VkBRenderPass renderPass;
 
   VkBVertexBuffer staticVertexBuffer;
   VkBUniformPool matrixPool;
   
-  VkBUniformPool computeInputAssemblerUniformPool;
-  VkBUniformBuffer computeVertexUniform;
-  VkCommandBuffer computeCommandBuffer;
-  VkBTexture computeTexture;
-  
+
   VkBUniformPool cameraUniformPool;
   Camera mainCamera;
   VkBDrawCommandBuffer drawCommmandBuffer;
@@ -96,9 +95,15 @@ public:
   GLFWwindow* window;
   Model* ratModel;
   Model* cornellScene;
+  Model* cornellLeftWall;
+  Model* cornellRightWall;
   Model* cornellLight;
   Material emissive;
-  Material diffuse;
+  Material diffuseGreen;
+  Material diffuseRed;
+  Material diffuseGrey;
+
+  VkBLightProbeInfo lightProbeInfo;
   
   std::chrono::time_point<std::chrono::high_resolution_clock> fpsPrev;
 
@@ -163,6 +168,7 @@ private:
     matrixPool.create(5, swapChain.imageViews.size(), sizeof(glm::mat4));
     matrixPool.addBuffer(0, sizeof(glm::mat4));
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     matrixPool.createDescriptorSetLayout();
 
     cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
@@ -189,40 +195,86 @@ private:
 		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
     createCommandPool(&computeCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    computeTexture.createTextureImage(VKB_TEXTURE_TYPE_STORAGE_RGBA,
+    rayPipeline.texture.createTextureImage(VKB_TEXTURE_TYPE_STORAGE_RGBA,
 				      swapChain.extent.width,
 				      swapChain.extent.height,
 				      nullptr);
+    lightProbeInfo.create();
+    lightProbePipeline.texture.createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_RGBA,
+						    lightProbeInfo.resolution,
+						    lightProbeInfo.resolution,
+						    lightProbeInfo.resolution,
+						    nullptr);
 
     staticVertexBuffer.create(sizeof(Vertex) * 5000, sizeof(uint32_t) * 5000);
+    
 
+    
     emissive.index = 0;
-    diffuse.index = 1;
-    cornellScene = ModelImporter::loadOBJ("../models/cornell.obj", "../models/cornell.png", &staticVertexBuffer, &diffuse);
+    diffuseGrey.index = 1;
+    diffuseGreen.index = 2;
+    diffuseRed.index = 3;
+    cornellScene = ModelImporter::loadOBJ("../models/cornell_nowalls.obj", "../models/cornell.png", &staticVertexBuffer, &diffuseGrey);
+    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &staticVertexBuffer, &diffuseGreen);
+    cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj", "../models/cornell.png", &staticVertexBuffer, &diffuseRed);
     cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &staticVertexBuffer, &emissive);
 
-    ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &staticVertexBuffer, &diffuse);
-    
-    ratModel->modelUniform.allocateDescriptorSets(&matrixPool, &ratModel->textures.imageView, &ratModel->textures.textureSampler, nullptr);
-    
-    cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, &cornellScene->textures.imageView, &cornellScene->textures.textureSampler, nullptr);
-    cornellLight->modelUniform.allocateDescriptorSets(&matrixPool, &cornellScene->textures.imageView, &cornellScene->textures.textureSampler, nullptr);
+    ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &staticVertexBuffer, &diffuseGrey);
 
-    computeInputAssemblerUniformPool.create(1, swapChain.imageViews.size(), 0, true);
+    VkImageView ratViews[] = {ratModel->textures.imageView, lightProbeInfo.radianceTexture.imageView};
+    VkSampler ratSamplers[] = {ratModel->textures.textureSampler, lightProbeInfo.radianceTexture.textureSampler};
+    ratModel->modelUniform.allocateDescriptorSets(&matrixPool, ratViews, ratSamplers, nullptr);
+    VkImageView cornellViews[] = {cornellScene->textures.imageView, lightProbeInfo.radianceTexture.imageView};
+    VkSampler cornellSamplers[] = {cornellScene->textures.textureSampler, lightProbeInfo.radianceTexture.textureSampler};
     
-    computeInputAssemblerUniformPool.addStorageBuffer(0,
-						      (cornellScene->vertexCount + cornellLight->vertexCount) * sizeof(Vertex));
-    computeInputAssemblerUniformPool.addStorageBuffer(1, (cornellScene->indexCount + cornellLight->indexCount) * sizeof(uint32_t));
-    computeInputAssemblerUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    computeInputAssemblerUniformPool.createDescriptorSetLayout();
+    cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
+    cornellLight->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
+    cornellLeftWall->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
+    cornellRightWall->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
+
+    lightProbePipeline.inputAssemblerUniformPool.create(1, swapChain.imageViews.size(), 0, true);
+    lightProbePipeline.inputAssemblerUniformPool.addStorageBuffer(0,
+							   (cornellScene->vertexCount +
+							    cornellLight->vertexCount +
+							    cornellRightWall->vertexCount +
+							    cornellLeftWall->vertexCount 
+							    ) * sizeof(Vertex));
+    lightProbePipeline.inputAssemblerUniformPool.addStorageBuffer(1, (cornellScene->indexCount +
+							       cornellLight->indexCount +
+							       cornellRightWall->indexCount +
+							       cornellLeftWall->indexCount 
+							       ) * sizeof(uint32_t));
+    lightProbePipeline.inputAssemblerUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    lightProbePipeline.inputAssemblerUniformPool.createDescriptorSetLayout();
+
+    rayPipeline.inputAssemblerUniformPool.create(1, swapChain.imageViews.size(), 0, true);
+    
+    rayPipeline.inputAssemblerUniformPool.addStorageBuffer(0,
+						      (cornellScene->vertexCount +
+						       cornellLight->vertexCount +
+						       cornellRightWall->vertexCount +
+						       cornellLeftWall->vertexCount 
+						       ) * sizeof(Vertex));
+    rayPipeline.inputAssemblerUniformPool.addStorageBuffer(1, (cornellScene->indexCount +
+							  cornellLight->indexCount +
+							  cornellRightWall->indexCount +
+							  cornellLeftWall->indexCount 
+							  ) * sizeof(uint32_t));
+    rayPipeline.inputAssemblerUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    rayPipeline.inputAssemblerUniformPool.createDescriptorSetLayout();
     VkBuffer storageBuffers[] = {staticVertexBuffer.vertexBuffer, staticVertexBuffer.indexBuffer};
-    computeVertexUniform.allocateDescriptorSets(&computeInputAssemblerUniformPool,
-						&computeTexture.imageView, &computeTexture.textureSampler,
-						storageBuffers
-						);
+    rayPipeline.vertexUniform.allocateDescriptorSets(&rayPipeline.inputAssemblerUniformPool,
+						     &rayPipeline.texture.imageView,
+						     &rayPipeline.texture.textureSampler,
+						     storageBuffers);
+    lightProbePipeline.vertexUniform.allocateDescriptorSets(&lightProbePipeline.inputAssemblerUniformPool,
+							    &lightProbePipeline.texture.imageView,
+							    &lightProbePipeline.texture.textureSampler,
+							    storageBuffers);
 
-    VkDescriptorSetLayout computeUniformLayouts[2] = {computeInputAssemblerUniformPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
-    createComputePipeline(computeUniformLayouts);
+    VkDescriptorSetLayout computeUniformLayouts[2] = {rayPipeline.inputAssemblerUniformPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
+    rayPipeline.createPipeline("../src/shaders/ray.spv",computeUniformLayouts, 2);
+    lightProbePipeline.createPipeline("../src/shaders/rayProbe.spv",&lightProbePipeline.inputAssemblerUniformPool.descriptorSetLayout, 1);
     drawCommmandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
 	
@@ -308,196 +360,6 @@ private:
     }
   }
 
-  void transitionSwapChainForComputeWrite(VkImage image, VkImage swapImage) {
-
-    VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
-    
-    VkImageMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    
-    barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    
-    barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseMipLevel = 0; //no mips and not an array 
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
-    
-    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-
-    barrier.srcAccessMask = 0;
-    barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-    vkCmdPipelineBarrier(
-    commandBuffer,
-    sourceStage, destinationStage,
-    0,
-    0, nullptr,
-    0, nullptr,
-    1, &barrier
-);
-
-    //        vKEndSingleTimeCommandBuffer(commandBuffer);
-
-    //    commandBuffer = vKBeginSingleTimeCommandBuffer();
-    
-    VkImageMemoryBarrier swapBarrier{};
-    swapBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    
-    swapBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    swapBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    swapBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    swapBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    
-    swapBarrier.image = swapImage;
-    swapBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    swapBarrier.subresourceRange.baseMipLevel = 0; //no mips and not an array 
-    swapBarrier.subresourceRange.levelCount = 1;
-    swapBarrier.subresourceRange.baseArrayLayer = 0;
-    swapBarrier.subresourceRange.layerCount = 1;
-
-    swapBarrier.srcAccessMask = 0;
-    swapBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-    
-    vkCmdPipelineBarrier(
-    commandBuffer,
-    sourceStage, destinationStage,
-    0,
-    0, nullptr,
-    0, nullptr,
-    1, &swapBarrier
-);
-
-    vKEndSingleTimeCommandBuffer(commandBuffer);
-
-
-  }
-  void transitionSwapChainForComputeTransfer(VkImage image) {
-
-    VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
-    
-    VkImageMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    
-    barrier.oldLayout = VK_IMAGE_LAYOUT_GENERAL;
-    barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    
-    barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseMipLevel = 0; //no mips and not an array 
-    barrier.subresourceRange.levelCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = 1;
-    
-    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-
-    barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    barrier.dstAccessMask = 0;
-
-    vkCmdPipelineBarrier(
-    commandBuffer,
-    sourceStage, destinationStage,
-    0,
-    0, nullptr,
-    0, nullptr,
-    1, &barrier
-);
-    vKEndSingleTimeCommandBuffer(commandBuffer);
-
-
-  }
-  
-  void transitionSwapChainForComputePresent(VkImage swapImage)
-  {
-    VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
-    
-    VkImageMemoryBarrier swapBarrier{};
-    swapBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    
-    swapBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-    swapBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    swapBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    swapBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    
-    swapBarrier.image = swapImage;
-    swapBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    swapBarrier.subresourceRange.baseMipLevel = 0; //no mips and not an array 
-    swapBarrier.subresourceRange.levelCount = 1;
-    swapBarrier.subresourceRange.baseArrayLayer = 0;
-    swapBarrier.subresourceRange.layerCount = 1;
-    
-    VkPipelineStageFlags sourceStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-    VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-
-    swapBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-    swapBarrier.dstAccessMask = 0;
-
-    
-    vkCmdPipelineBarrier(
-    commandBuffer,
-    sourceStage, destinationStage,
-    0,
-    0, nullptr,
-    0, nullptr,
-    1, &swapBarrier
-);
-
-    vKEndSingleTimeCommandBuffer(commandBuffer);
-    
-  }
-  
-  void createComputePipeline(VkDescriptorSetLayout* descriptorSetLayouts) {
-      //Shader stuff
-    auto computeShaderCode = VkBGraphicsPipeline::readShader("../src/shaders/ray.spv");
-    VkShaderModule computeShaderModule = VkBGraphicsPipeline::createShaderModule(computeShaderCode);
-
-    VkPipelineShaderStageCreateInfo computeShaderStageInfo{};
-    computeShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    computeShaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
-    computeShaderStageInfo.module = computeShaderModule;
-    computeShaderStageInfo.pName = "main";
-
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 2;
-    pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts;
-
-    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &computePipelineLayout) != VK_SUCCESS) {
-      throw std::runtime_error("failed to create compute pipeline layout!");
-    }
-    
-    VkComputePipelineCreateInfo pipelineInfo{};
-    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
-    pipelineInfo.layout = computePipelineLayout;
-    pipelineInfo.stage = computeShaderStageInfo;
-
-    if (vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &computePipeline) != VK_SUCCESS) {
-      throw std::runtime_error("failed to create compute pipeline!");
-    }
-
-    vkDestroyShaderModule(device, computeShaderModule, nullptr);
-
-    
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = computeCommandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
-
-    if (vkAllocateCommandBuffers(device, &allocInfo, &computeCommandBuffer) != VK_SUCCESS) {
-      throw std::runtime_error("failed to allocate command buffers!");
-    }
-
-  }
-
   
   //Logical device -------------------------------------------------
   void createLogicalDevice() {
@@ -567,6 +429,8 @@ private:
     glm::mat4 identity = glm::mat4(1.0f);
     memcpy(cornellScene->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
     memcpy(cornellLight->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
+    memcpy(cornellLeftWall->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
+    memcpy(cornellRightWall->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
 
     mainCamera.updateMatrices(currentImage);
   }
@@ -635,32 +499,32 @@ cornellLight
 	}
       }
     else { //Ray
-      	vkResetCommandBuffer(computeCommandBuffer, 0);
+      	vkResetCommandBuffer(rayPipeline.commandBuffer, 0);
 	
-	transitionSwapChainForComputeWrite(computeTexture.image, swapChain.images[imageIndex]);
+	rayPipeline.transitionSwapChainForComputeWrite(rayPipeline.texture.image, swapChain.images[imageIndex]);
 	
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = 0; // Optional
 	beginInfo.pInheritanceInfo = nullptr; // Optional
 
-	vkBeginCommandBuffer(computeCommandBuffer, &beginInfo);
+	vkBeginCommandBuffer(rayPipeline.commandBuffer, &beginInfo);
 	
-	vkCmdBindPipeline(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, computePipeline);
+	vkCmdBindPipeline(rayPipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, rayPipeline.pipeline);
 	
-	vkCmdBindDescriptorSets(computeCommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-				computePipelineLayout,
+	vkCmdBindDescriptorSets(rayPipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+				rayPipeline.pipelineLayout,
 				1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
 
-	vkCmdBindDescriptorSets(computeCommandBuffer,
-				VK_PIPELINE_BIND_POINT_COMPUTE, computePipelineLayout,
+	vkCmdBindDescriptorSets(rayPipeline.commandBuffer,
+				VK_PIPELINE_BIND_POINT_COMPUTE, rayPipeline.pipelineLayout,
 				0, 1,
-				&computeInputAssemblerUniformPool.descriptorSets[imageIndex][computeVertexUniform.indexIntoPool]
+				&rayPipeline.inputAssemblerUniformPool.descriptorSets[imageIndex][rayPipeline.vertexUniform.indexIntoPool]
 				, 0, 0);
-	vkCmdDispatch(computeCommandBuffer, swapChain.extent.width / 32, swapChain.extent.height / 32,  1); //switch to swapchain width and height
+	vkCmdDispatch(rayPipeline.commandBuffer, swapChain.extent.width / 32, swapChain.extent.height / 32,  1); //switch to swapchain width and height
 
 	
-	if (vkEndCommandBuffer(computeCommandBuffer) != VK_SUCCESS) {
+	if (vkEndCommandBuffer(rayPipeline.commandBuffer) != VK_SUCCESS) {
 	  throw std::runtime_error("failed to record command buffer!");
 	}
 	
@@ -674,7 +538,7 @@ cornellLight
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &computeCommandBuffer;
+	submitInfo.pCommandBuffers = &rayPipeline.commandBuffer;
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = signalSemaphores;
     
@@ -683,38 +547,10 @@ cornellLight
 	  throw std::runtime_error("failed to submit compute command buffer!");
 	};
 
-	transitionSwapChainForComputeTransfer(computeTexture.image);
-	VkCommandBuffer transferCommandBuffer = vKBeginSingleTimeCommandBuffer();
-
-	VkImageCopy imageCopyInfo {};
-	VkExtent3D extent{};
-	extent.width = swapChain.extent.width;
-	extent.height = swapChain.extent.height;
-	extent.depth = 1;
-	imageCopyInfo.extent = extent;
-	VkImageSubresourceLayers resourceLayerInfo{};
-	resourceLayerInfo.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	resourceLayerInfo.mipLevel = 0;
-	resourceLayerInfo.baseArrayLayer = 0;
-	resourceLayerInfo.layerCount = 1;
-	VkOffset3D offset{};
-	offset.x = 0; offset.y = 0; offset.z = 0;
-	imageCopyInfo.srcSubresource = resourceLayerInfo;
-	imageCopyInfo.srcOffset = offset;
-	imageCopyInfo.dstSubresource = resourceLayerInfo;
-	imageCopyInfo.dstOffset = offset;
-	vkCmdCopyImage(
-		       transferCommandBuffer,
-		       computeTexture.image,
-		       VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		       swapChain.images[imageIndex],
-		       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		       1,
-		       &imageCopyInfo
-);
-	
-	vKEndSingleTimeCommandBuffer(transferCommandBuffer);
-	transitionSwapChainForComputePresent(swapChain.images[imageIndex]);
+	rayPipeline.transitionSwapChainForComputeTransfer(rayPipeline.texture.image);
+	rayPipeline.copyTextureToSwapChain(swapChain.images[imageIndex],
+					   swapChain.extent.width,  swapChain.extent.height);
+	rayPipeline.transitionSwapChainForComputePresent(swapChain.images[imageIndex]);
     }
     VkPresentInfoKHR presentInfo{};
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -808,20 +644,19 @@ cornellLight
     }
     vkDestroyPipeline(device, graphicsPipeline.pipeline, nullptr);	
     vkDestroyPipelineLayout(device, graphicsPipeline.layout, nullptr);
-    vkDestroyPipeline(device, computePipeline, nullptr);	
-    vkDestroyPipelineLayout(device, computePipelineLayout, nullptr);
     staticVertexBuffer.destroy();
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
 
-    computeVertexUniform.destroy();
-    computeTexture.destroy();
-    computeInputAssemblerUniformPool.destroy();
+    rayPipeline.destroy();
+    lightProbePipeline.destroy();
     delete ratModel;
     delete cornellScene;
     delete cornellLight;
-    
+    delete cornellRightWall;
+    delete cornellLeftWall;
+    lightProbeInfo.destroy();
     mainCamera.ubo.destroy();
     cameraUniformPool.destroy();
 
