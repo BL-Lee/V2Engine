@@ -275,6 +275,54 @@ src/VkBGraphicsPipeline.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBGraphicsPipeline.cpp.s
 .PHONY : src/VkBGraphicsPipeline.cpp.s
 
+src/VkBLightProbes.o: src/VkBLightProbes.cpp.o
+.PHONY : src/VkBLightProbes.o
+
+# target to build an object file
+src/VkBLightProbes.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBLightProbes.cpp.o
+.PHONY : src/VkBLightProbes.cpp.o
+
+src/VkBLightProbes.i: src/VkBLightProbes.cpp.i
+.PHONY : src/VkBLightProbes.i
+
+# target to preprocess a source file
+src/VkBLightProbes.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBLightProbes.cpp.i
+.PHONY : src/VkBLightProbes.cpp.i
+
+src/VkBLightProbes.s: src/VkBLightProbes.cpp.s
+.PHONY : src/VkBLightProbes.s
+
+# target to generate assembly for a file
+src/VkBLightProbes.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBLightProbes.cpp.s
+.PHONY : src/VkBLightProbes.cpp.s
+
+src/VkBRayPipeline.o: src/VkBRayPipeline.cpp.o
+.PHONY : src/VkBRayPipeline.o
+
+# target to build an object file
+src/VkBRayPipeline.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRayPipeline.cpp.o
+.PHONY : src/VkBRayPipeline.cpp.o
+
+src/VkBRayPipeline.i: src/VkBRayPipeline.cpp.i
+.PHONY : src/VkBRayPipeline.i
+
+# target to preprocess a source file
+src/VkBRayPipeline.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRayPipeline.cpp.i
+.PHONY : src/VkBRayPipeline.cpp.i
+
+src/VkBRayPipeline.s: src/VkBRayPipeline.cpp.s
+.PHONY : src/VkBRayPipeline.s
+
+# target to generate assembly for a file
+src/VkBRayPipeline.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRayPipeline.cpp.s
+.PHONY : src/VkBRayPipeline.cpp.s
+
 src/VkBRenderPass.o: src/VkBRenderPass.cpp.o
 .PHONY : src/VkBRenderPass.o
 
@@ -298,6 +346,30 @@ src/VkBRenderPass.s: src/VkBRenderPass.cpp.s
 src/VkBRenderPass.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBRenderPass.cpp.s
 .PHONY : src/VkBRenderPass.cpp.s
+
+src/VkBShader.o: src/VkBShader.cpp.o
+.PHONY : src/VkBShader.o
+
+# target to build an object file
+src/VkBShader.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBShader.cpp.o
+.PHONY : src/VkBShader.cpp.o
+
+src/VkBShader.i: src/VkBShader.cpp.i
+.PHONY : src/VkBShader.i
+
+# target to preprocess a source file
+src/VkBShader.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBShader.cpp.i
+.PHONY : src/VkBShader.cpp.i
+
+src/VkBShader.s: src/VkBShader.cpp.s
+.PHONY : src/VkBShader.s
+
+# target to generate assembly for a file
+src/VkBShader.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/V2Engine.dir/build.make CMakeFiles/V2Engine.dir/src/VkBShader.cpp.s
+.PHONY : src/VkBShader.cpp.s
 
 src/VkBSingleCommandBuffer.o: src/VkBSingleCommandBuffer.cpp.o
 .PHONY : src/VkBSingleCommandBuffer.o
@@ -517,9 +589,18 @@ help:
 	@echo "... src/VkBGraphicsPipeline.o"
 	@echo "... src/VkBGraphicsPipeline.i"
 	@echo "... src/VkBGraphicsPipeline.s"
+	@echo "... src/VkBLightProbes.o"
+	@echo "... src/VkBLightProbes.i"
+	@echo "... src/VkBLightProbes.s"
+	@echo "... src/VkBRayPipeline.o"
+	@echo "... src/VkBRayPipeline.i"
+	@echo "... src/VkBRayPipeline.s"
 	@echo "... src/VkBRenderPass.o"
 	@echo "... src/VkBRenderPass.i"
 	@echo "... src/VkBRenderPass.s"
+	@echo "... src/VkBShader.o"
+	@echo "... src/VkBShader.i"
+	@echo "... src/VkBShader.s"
 	@echo "... src/VkBSingleCommandBuffer.o"
 	@echo "... src/VkBSingleCommandBuffer.i"
 	@echo "... src/VkBSingleCommandBuffer.s"

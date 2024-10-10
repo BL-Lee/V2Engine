@@ -42,7 +42,7 @@ int USE_RASTER = 1; //Swap between ray and raster
 
 double mouseX = 0;
 double mouseY = 0;
-
+bool cameraEnabled = 0;
 #define NDEBUG_MODE 0
 #if NDEBUG_MODE
 const bool enableVulkanValidationLayers = false;
@@ -83,7 +83,8 @@ public:
 
   VkBVertexBuffer staticVertexBuffer;
   VkBUniformPool matrixPool;
-  
+  VkBUniformBuffer lightProbeUniform;
+  VkBUniformPool lightProbeUniformPool;
 
   VkBUniformPool cameraUniformPool;
   Camera mainCamera;
@@ -91,6 +92,7 @@ public:
   VkBTexture depthTexture;
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
+  VkSemaphore probeInfoFinishedSemaphore;
   VkFence inFlightFence;
   GLFWwindow* window;
   Model* ratModel;
@@ -134,6 +136,9 @@ private:
       inputInfo.keysPressed[key] = 0;
     if (action == GLFW_PRESS && key == GLFW_KEY_R)
       USE_RASTER = !USE_RASTER;
+    if (action == GLFW_PRESS && key == GLFW_KEY_T)
+      cameraEnabled = !cameraEnabled;
+
     if (action == GLFW_PRESS && key == GLFW_KEY_Q)
       glfwSetWindowShouldClose(window, GL_TRUE);
   }
@@ -168,7 +173,7 @@ private:
     matrixPool.create(5, swapChain.imageViews.size(), sizeof(glm::mat4));
     matrixPool.addBuffer(0, sizeof(glm::mat4));
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    //    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     matrixPool.createDescriptorSetLayout();
 
     cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
@@ -206,6 +211,15 @@ private:
 						    lightProbeInfo.resolution,
 						    nullptr);
 
+    lightProbeUniformPool.create(1, swapChain.imageViews.size(), 0, true);
+    lightProbeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    lightProbeUniformPool.createDescriptorSetLayout();
+    lightProbeUniform.allocateDescriptorSets(&lightProbeUniformPool, &lightProbePipeline.texture.imageView, &lightProbePipeline.texture.textureSampler, nullptr);
+
+
+    
+
+
     staticVertexBuffer.create(sizeof(Vertex) * 5000, sizeof(uint32_t) * 5000);
     
 
@@ -220,13 +234,20 @@ private:
     cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &staticVertexBuffer, &emissive);
 
     ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &staticVertexBuffer, &diffuseGrey);
-
-    VkImageView ratViews[] = {ratModel->textures.imageView, lightProbeInfo.radianceTexture.imageView};
-    VkSampler ratSamplers[] = {ratModel->textures.textureSampler, lightProbeInfo.radianceTexture.textureSampler};
+    /*
+    VkImageView ratViews[] = {ratModel->textures.imageView, lightProbePipeline.texture.imageView};
+    VkSampler ratSamplers[] = {ratModel->textures.textureSampler, lightProbePipeline.texture.textureSampler};
     ratModel->modelUniform.allocateDescriptorSets(&matrixPool, ratViews, ratSamplers, nullptr);
-    VkImageView cornellViews[] = {cornellScene->textures.imageView, lightProbeInfo.radianceTexture.imageView};
-    VkSampler cornellSamplers[] = {cornellScene->textures.textureSampler, lightProbeInfo.radianceTexture.textureSampler};
-    
+    VkImageView cornellViews[] = {cornellScene->textures.imageView, lightProbePipeline.texture.imageView};
+    VkSampler cornellSamplers[] = {cornellScene->textures.textureSampler, lightProbePipeline.texture.textureSampler};
+    */
+
+    VkImageView ratViews[] = {ratModel->textures.imageView};
+    VkSampler ratSamplers[] = {ratModel->textures.textureSampler};
+    ratModel->modelUniform.allocateDescriptorSets(&matrixPool, ratViews, ratSamplers, nullptr);
+    VkImageView cornellViews[] = {cornellScene->textures.imageView};
+    VkSampler cornellSamplers[] = {cornellScene->textures.textureSampler};
+
     cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
     cornellLight->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
     cornellLeftWall->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
@@ -244,7 +265,7 @@ private:
 							       cornellRightWall->indexCount +
 							       cornellLeftWall->indexCount 
 							       ) * sizeof(uint32_t));
-    lightProbePipeline.inputAssemblerUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    //lightProbePipeline.inputAssemblerUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     lightProbePipeline.inputAssemblerUniformPool.createDescriptorSetLayout();
 
     rayPipeline.inputAssemblerUniformPool.create(1, swapChain.imageViews.size(), 0, true);
@@ -268,13 +289,16 @@ private:
 						     &rayPipeline.texture.textureSampler,
 						     storageBuffers);
     lightProbePipeline.vertexUniform.allocateDescriptorSets(&lightProbePipeline.inputAssemblerUniformPool,
-							    &lightProbePipeline.texture.imageView,
-							    &lightProbePipeline.texture.textureSampler,
-							    storageBuffers);
+							    nullptr,
+							    nullptr,
+							    //&lightProbePipeline.texture.imageView,
+							    //&lightProbePipeline.texture.textureSampler,
+    							    storageBuffers);
 
     VkDescriptorSetLayout computeUniformLayouts[2] = {rayPipeline.inputAssemblerUniformPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
     rayPipeline.createPipeline("../src/shaders/ray.spv",computeUniformLayouts, 2);
-    lightProbePipeline.createPipeline("../src/shaders/rayProbe.spv",&lightProbePipeline.inputAssemblerUniformPool.descriptorSetLayout, 1);
+    VkDescriptorSetLayout probeUniformLayouts[2] = {rayPipeline.inputAssemblerUniformPool.descriptorSetLayout, lightProbeUniformPool.descriptorSetLayout};
+    lightProbePipeline.createPipeline("../src/shaders/rayProbe.spv", probeUniformLayouts, 2);
     drawCommmandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
 	
@@ -286,9 +310,11 @@ private:
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; //Create it so it is already ready first time we wait for it
+    
 
     if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
+	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &probeInfoFinishedSemaphore) != VK_SUCCESS ||
 	vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
       throw std::runtime_error("failed to create semaphores!");
     }
@@ -444,6 +470,60 @@ private:
     //Get image index we'll draw to, indicating the semaphore for the presentation engine to signal when its done using it. After that we can write to it
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+    if (true)
+      {
+	vkResetCommandBuffer(lightProbePipeline.commandBuffer, 0);
+
+	VkCommandBufferBeginInfo beginInfo{};
+	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	beginInfo.flags = 0; // Optional
+	beginInfo.pInheritanceInfo = nullptr; // Optional
+
+	vkBeginCommandBuffer(lightProbePipeline.commandBuffer, &beginInfo);
+	
+	vkCmdBindPipeline(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, lightProbePipeline.pipeline);
+	
+	vkCmdBindDescriptorSets(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+				lightProbePipeline.pipelineLayout,
+				0, 1,
+				&rayPipeline.inputAssemblerUniformPool.descriptorSets[imageIndex][rayPipeline.vertexUniform.indexIntoPool]
+				, 0, 0);
+	vkCmdBindDescriptorSets(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+				lightProbePipeline.pipelineLayout,
+				1, 1,
+				&lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool]
+				, 0, 0);
+
+	vkCmdDispatch(lightProbePipeline.commandBuffer, lightProbeInfo.resolution / 8, lightProbeInfo.resolution / 8,  lightProbeInfo.resolution / 8);
+
+	
+	if (vkEndCommandBuffer(lightProbePipeline.commandBuffer) != VK_SUCCESS) {
+	  throw std::runtime_error("failed to record command buffer!");
+	}
+	
+	//Syncronization info for compute 
+	VkSubmitInfo submitInfo{};
+	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	VkSemaphore waitSemaphores[] = {imageAvailableSemaphore}; //Wait for this before submitting draw
+	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_NONE}; //Wait for this stage before writing to image
+	VkSemaphore signalSemaphores[] = {probeInfoFinishedSemaphore}; //Signal to this when drawing is done
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.pWaitDstStageMask = waitStages;
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &lightProbePipeline.commandBuffer;
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.pSignalSemaphores = signalSemaphores;
+    
+
+	if (vkQueueSubmit(computeQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+	  throw std::runtime_error("failed to submit compute command buffer!");
+	};
+
+	
+      }
+
     
     updateProjectionMatrices(imageIndex);
     //plane
@@ -483,7 +563,7 @@ cornellLight
 	//Syncronization info for graphics 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkSemaphore waitSemaphores[] = {imageAvailableSemaphore}; //Wait for this before submitting draw
+	VkSemaphore waitSemaphores[] = {probeInfoFinishedSemaphore}; //Wait for this before submitting draw
 	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
 	VkSemaphore signalSemaphores[] = {renderFinishedSemaphore}; //Signal to this when drawing is done
 	submitInfo.waitSemaphoreCount = 1;
@@ -572,21 +652,23 @@ cornellLight
     float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(fpsNow - fpsPrev).count();
     printf("\r%.8f %4.2f", deltaTime, 1.0f / deltaTime);
     fpsPrev = std::chrono::high_resolution_clock::now();
-
+    
     double xPos, yPos;
     glfwGetCursorPos(window, &xPos, &yPos);
 
-    glm::vec2 mouseDiff = glm::vec2(mouseX, mouseY) - glm::vec2(xPos, yPos);
+    if (cameraEnabled)
+      {
+	glm::vec2 mouseDiff = glm::vec2(mouseX, mouseY) - glm::vec2(xPos, yPos);
 
-    double cameraSensitivity = 1.0f;
-    mainCamera.direction = glm::rotate(mainCamera.direction,
-				       (float)(mouseDiff.x * cameraSensitivity * deltaTime),
-				       glm::vec3(0.0f, 1.0f, 0.0f));
-    mainCamera.direction = glm::rotate(mainCamera.direction,
-				       (float)(mouseDiff.y * cameraSensitivity * deltaTime),
-				       glm::cross(mainCamera.direction,
-						  glm::vec3(0.0f, 1.0f, 0.0f)));
-
+	double cameraSensitivity = 1.0f;
+	mainCamera.direction = glm::rotate(mainCamera.direction,
+					   (float)(mouseDiff.x * cameraSensitivity * deltaTime),
+					   glm::vec3(0.0f, 1.0f, 0.0f));
+	mainCamera.direction = glm::rotate(mainCamera.direction,
+					   (float)(mouseDiff.y * cameraSensitivity * deltaTime),
+					   glm::cross(mainCamera.direction,
+						      glm::vec3(0.0f, 1.0f, 0.0f)));
+      }
     mouseX = xPos; mouseY = yPos;
 
 
@@ -662,6 +744,7 @@ cornellLight
 
     depthTexture.destroy();
     matrixPool.destroy();
+    lightProbeUniformPool.destroy();
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     if (enableVulkanValidationLayers) {
