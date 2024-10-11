@@ -90,8 +90,7 @@ float rand(vec2 co){
 }
 
 
-
-#define MAX_BOUNCE 2
+#define MAX_BOUNCE 1
 #define SAMPLE_COUNT 1
 void main() {
 
@@ -120,10 +119,10 @@ void main() {
 	  Vertex v0 = vertices[i + 0];
 	  Vertex v1 = vertices[i + 1];
 	  Vertex v2 = vertices[i + 2];
-	  // vec3 normal = vertices[i+0].normal;
-	  vec3 normal = normalize(cross(v1.position - v0.position,
+	   vec3 normal = vertices[i+0].normal;
+	   /*vec3 normal = normalize(cross(v1.position - v0.position,
 					v2.position - v0.position
-					));
+					));*/
 	  float testDist = triangleTest(rayOrigin, rayDir,
 					v0.position, v1.position, v2.position,
 					normal);
@@ -154,7 +153,9 @@ void main() {
 	  attenuation *= vec4(0.0,1.0,0.0,1.0);
 	}
 
-      pixel += (emitColour + 0.1) * attenuation;
+      //pixel += (emitColour + 0.1) * attenuation;
+      pixel += vec4(rayOrigin + rayDir * dist,1.0);
+      break;
       //pixel = vec4(bounceNormal, 1.0);
       //pixel.r = attenuation.r;
       vec3 randomBounce = normalize(bounceNormal - vec3(rand(rayDir.xy),

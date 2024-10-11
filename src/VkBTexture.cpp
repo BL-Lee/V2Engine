@@ -56,6 +56,20 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
       channels = 4;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;
+  case VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA:
+    {
+      format = VK_FORMAT_R8G8B8A8_UNORM;
+      tiling = VK_IMAGE_TILING_OPTIMAL;
+      properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+	VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+	VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+      imageSize = width * height * depth *4;
+      channels = 4;
+      aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    }break;
+
   case VKB_TEXTURE_TYPE_STORAGE_RGBA:
     {
       format = VK_FORMAT_B8G8R8A8_UNORM;
@@ -145,7 +159,13 @@ void VkBTexture::transferPixels(void* pixels)
       vkFreeMemory(device, stagingBufferMemory, nullptr);
     }
   else
-    vkBindImageMemory(device, image, imageMemory, 0);  
+    {
+      vkBindImageMemory(device, image, imageMemory, 0);
+      if (usage & VK_IMAGE_USAGE_STORAGE_BIT)
+	transitionImageLayout(image, format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL);
+      
+
+    }
 
 }
 
@@ -170,8 +190,8 @@ void VkBTexture::initSampler() {
   
   VkSamplerCreateInfo samplerInfo{};
   samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-  samplerInfo.magFilter = VK_FILTER_LINEAR;
-  samplerInfo.minFilter = VK_FILTER_LINEAR;
+  samplerInfo.magFilter = VK_FILTER_NEAREST;
+  samplerInfo.minFilter = VK_FILTER_NEAREST;
   samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -275,6 +295,16 @@ void VkBTexture::transitionImageLayout(VkImage image, VkFormat format, VkImageLa
       destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
       
     }
+    //For storage images
+    else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_GENERAL) {
+      barrier.srcAccessMask = 0;
+      barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+      
+      sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+      destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+      
+    }
+
     //Make sure it waits for the transfer to happen before reading in shader
     else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
       barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;

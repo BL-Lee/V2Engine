@@ -175,6 +175,11 @@ private:
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     //    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     matrixPool.createDescriptorSetLayout();
+    
+    lightProbeUniformPool.create(1, swapChain.imageViews.size(), 0, true);
+    lightProbeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    lightProbeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    lightProbeUniformPool.createDescriptorSetLayout();
 
     cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*3 + sizeof(float)*4);
@@ -184,7 +189,7 @@ private:
     mainCamera.createPerspective(swapChain.extent.width, (float) swapChain.extent.height);
     mainCamera.ubo.allocateDescriptorSets(&cameraUniformPool, nullptr, nullptr, nullptr);    
 
-    VkDescriptorSetLayout uniformLayouts[2] = {matrixPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
+    VkDescriptorSetLayout uniformLayouts[3] = {matrixPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout, lightProbeUniformPool.descriptorSetLayout};
     graphicsPipeline.createGraphicsPipeline(swapChain, renderPass, uniformLayouts);
 
 
@@ -205,16 +210,16 @@ private:
 				      swapChain.extent.height,
 				      nullptr);
     lightProbeInfo.create();
-    lightProbePipeline.texture.createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_RGBA,
+    lightProbePipeline.texture.createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
 						    lightProbeInfo.resolution,
 						    lightProbeInfo.resolution,
 						    lightProbeInfo.resolution,
 						    nullptr);
 
-    lightProbeUniformPool.create(1, swapChain.imageViews.size(), 0, true);
-    lightProbeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    lightProbeUniformPool.createDescriptorSetLayout();
-    lightProbeUniform.allocateDescriptorSets(&lightProbeUniformPool, &lightProbePipeline.texture.imageView, &lightProbePipeline.texture.textureSampler, nullptr);
+    VkImageView probeViews[2] = {lightProbePipeline.texture.imageView, lightProbePipeline.texture.imageView};
+    VkSampler probeSamplers[2] = {lightProbePipeline.texture.textureSampler, lightProbePipeline.texture.textureSampler};
+    
+    lightProbeUniform.allocateDescriptorSets(&lightProbeUniformPool, probeViews, probeSamplers, nullptr);
 
 
     
@@ -473,6 +478,7 @@ private:
 
     if (true)
       {
+	lightProbeInfo.transitionImageToStorage(lightProbePipeline.texture.image);
 	vkResetCommandBuffer(lightProbePipeline.commandBuffer, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
@@ -495,7 +501,7 @@ private:
 				&lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool]
 				, 0, 0);
 
-	vkCmdDispatch(lightProbePipeline.commandBuffer, lightProbeInfo.resolution / 8, lightProbeInfo.resolution / 8,  lightProbeInfo.resolution / 8);
+	vkCmdDispatch(lightProbePipeline.commandBuffer, lightProbeInfo.resolution, lightProbeInfo.resolution,  lightProbeInfo.resolution);
 
 	
 	if (vkEndCommandBuffer(lightProbePipeline.commandBuffer) != VK_SUCCESS) {
@@ -506,7 +512,7 @@ private:
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	VkSemaphore waitSemaphores[] = {imageAvailableSemaphore}; //Wait for this before submitting draw
-	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_NONE}; //Wait for this stage before writing to image
+	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT}; //Wait for this stage before writing to image
 	VkSemaphore signalSemaphores[] = {probeInfoFinishedSemaphore}; //Signal to this when drawing is done
 	submitInfo.waitSemaphoreCount = 1;
 	submitInfo.pWaitSemaphores = waitSemaphores;
@@ -517,10 +523,10 @@ private:
 	submitInfo.pSignalSemaphores = signalSemaphores;
     
 
-	if (vkQueueSubmit(computeQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
+	if (vkQueueSubmit(computeQueue, 1, &submitInfo, nullptr) != VK_SUCCESS) {
 	  throw std::runtime_error("failed to submit compute command buffer!");
 	};
-
+	lightProbeInfo.transitionImageToSampled(lightProbePipeline.texture.image);
 	
       }
 
@@ -538,6 +544,9 @@ private:
 	vkCmdBindDescriptorSets(drawCommmandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				graphicsPipeline.layout,
 				1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
+	vkCmdBindDescriptorSets(drawCommmandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+				graphicsPipeline.layout,
+				2, 1, &lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool], 0, nullptr);
 
 	drawCommmandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
@@ -601,6 +610,7 @@ cornellLight
 				0, 1,
 				&rayPipeline.inputAssemblerUniformPool.descriptorSets[imageIndex][rayPipeline.vertexUniform.indexIntoPool]
 				, 0, 0);
+	
 	vkCmdDispatch(rayPipeline.commandBuffer, swapChain.extent.width / 32, swapChain.extent.height / 32,  1); //switch to swapchain width and height
 
 	
@@ -611,7 +621,7 @@ cornellLight
 	//Syncronization info for compute 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkSemaphore waitSemaphores[] = {imageAvailableSemaphore}; //Wait for this before submitting draw
+	VkSemaphore waitSemaphores[] = {probeInfoFinishedSemaphore}; //Wait for this before submitting draw
 	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
 	VkSemaphore signalSemaphores[] = {renderFinishedSemaphore}; //Signal to this when drawing is done
 	submitInfo.waitSemaphoreCount = 1;
@@ -712,6 +722,7 @@ cornellLight
   void cleanup() {
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
     vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
+    vkDestroySemaphore(device, probeInfoFinishedSemaphore, nullptr);
     vkDestroyFence(device, inFlightFence, nullptr);
 	
     vkDestroyCommandPool(device, drawCommandPool, nullptr);

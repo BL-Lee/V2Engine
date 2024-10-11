@@ -13,7 +13,11 @@ public:
   int resolution; //How many to put along each axis.
   int raysPerProbe;
 
+  //VkBUniformPool uniformPool;
+  //VkBUniformBuffer uniform;
+  
   void create();
   void destroy();
-  
+  void transitionImageToStorage(VkImage image);
+  void transitionImageToSampled(VkImage image);
 };
