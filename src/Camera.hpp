@@ -19,7 +19,7 @@ public:
 
   void init()
   {
-    position = glm::vec3(5.0, 1.0, 0.0);
+    position = glm::vec3(5.0, 0.0, 0.0);
     direction = glm::vec3(-1.0, 0.0, 0.0);
     fov = 45.0f;
     nearClip = 0.01f;
