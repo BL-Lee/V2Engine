@@ -2,7 +2,7 @@
 #include "VkBSingleCommandBuffer.hpp"
 void VkBLightProbeInfo::create()
   {
-    resolution = 10;
+    resolution = 64;
     gridDimensions = glm::vec3(2.0f,2.0f,2.0f);
     center = glm::vec3(0.0f,0.0f,0.0f);
     raysPerProbe = 20;

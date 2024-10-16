@@ -13,7 +13,7 @@ layout(std140, set = 0, binding = 0) readonly buffer Vertices {
 layout(std140, set = 0, binding = 1) readonly buffer Indices {
    uint indices[];
 };
-layout(set = 0, binding = 2, rgba8) uniform writeonly image2D frameBuffer; //Temp, its from the ray pipeline descriptor set
+layout(set = 0, binding = 2, rgba8) uniform writeonly image2D frameBuffer;//Temp
 layout(set = 1, binding = 0, rgba8) uniform writeonly image3D probeInfo;
 layout(set = 1, binding = 1) uniform sampler3D probeSampler;
 
@@ -98,13 +98,6 @@ void main() {
       float x = cos(theta) * radius;
       float z = sin(theta) * radius;
 
-
-	/*      vec3 rayDir = normalize(vec3(
-                              rand(vec2(p, offset.x)),
-                              cos(p) * 5,
-                              rand(vec2(p, offset.z))
-			      ));*/
-      //      vec3 rayDir = normalize(vec3(x,y,z));
       vec3 rayDir = dirs[s];
       //vec3 rayDir = normalize(phi + rho);
       for (int bounce = 0; bounce < MAX_BOUNCE; bounce++)

@@ -189,6 +189,7 @@ void VkBRayPipeline::transitionSwapChainForComputePresent(VkImage swapImage)
 
 
 void VkBRayPipeline::copyTextureToSwapChain(VkImage swapChainImage,
+					    VkImage sourceImage,
 			    uint32_t width, uint32_t height)
 {
   VkCommandBuffer transferCommandBuffer = vKBeginSingleTimeCommandBuffer();
@@ -212,10 +213,9 @@ void VkBRayPipeline::copyTextureToSwapChain(VkImage swapChainImage,
   imageCopyInfo.dstOffset = offset;
   vkCmdCopyImage(
 		 transferCommandBuffer,
-		 texture.image,
+		 sourceImage,
 		 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 		 swapChainImage,
-		 //		 swapChain.images[imageIndex],
 		 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		 1,
 		 &imageCopyInfo
@@ -228,8 +228,4 @@ void VkBRayPipeline::destroy()
 {
   vkDestroyPipeline(device, pipeline, nullptr);	
   vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
-  vertexUniform.destroy();
-  texture.destroy();
-  inputAssemblerUniformPool.destroy();
-
 }

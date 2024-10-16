@@ -86,6 +86,12 @@ public:
   VkBUniformBuffer lightProbeUniform;
   VkBUniformPool lightProbeUniformPool;
 
+  VkBUniformPool rayInputAssemblerPool;
+  VkBUniformPool rayTexturePool;
+  VkBUniformBuffer rayInputAssemblerBuffer;
+  VkBTexture rayBackBuffer;
+  VkBTexture lightProbeTexture;
+  
   VkBUniformPool cameraUniformPool;
   Camera mainCamera;
   VkBDrawCommandBuffer drawCommmandBuffer;
@@ -205,19 +211,19 @@ private:
 		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
     createCommandPool(&computeCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    rayPipeline.texture.createTextureImage(VKB_TEXTURE_TYPE_STORAGE_RGBA,
+    rayBackBuffer.createTextureImage(VKB_TEXTURE_TYPE_STORAGE_RGBA,
 				      swapChain.extent.width,
 				      swapChain.extent.height,
 				      nullptr);
     lightProbeInfo.create();
-    lightProbePipeline.texture.createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
+    lightProbeTexture.createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
 						    lightProbeInfo.resolution,
 						    lightProbeInfo.resolution,
 						    lightProbeInfo.resolution,
 						    nullptr);
 
-    VkImageView probeViews[2] = {lightProbePipeline.texture.imageView, lightProbePipeline.texture.imageView};
-    VkSampler probeSamplers[2] = {lightProbePipeline.texture.textureSampler, lightProbePipeline.texture.textureSampler};
+    VkImageView probeViews[2] = {lightProbeTexture.imageView, lightProbeTexture.imageView};
+    VkSampler probeSamplers[2] = {lightProbeTexture.textureSampler, lightProbeTexture.textureSampler};
     
     lightProbeUniform.allocateDescriptorSets(&lightProbeUniformPool, probeViews, probeSamplers, nullptr);
 
@@ -239,13 +245,6 @@ private:
     cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &staticVertexBuffer, &emissive);
 
     ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &staticVertexBuffer, &diffuseGrey);
-    /*
-    VkImageView ratViews[] = {ratModel->textures.imageView, lightProbePipeline.texture.imageView};
-    VkSampler ratSamplers[] = {ratModel->textures.textureSampler, lightProbePipeline.texture.textureSampler};
-    ratModel->modelUniform.allocateDescriptorSets(&matrixPool, ratViews, ratSamplers, nullptr);
-    VkImageView cornellViews[] = {cornellScene->textures.imageView, lightProbePipeline.texture.imageView};
-    VkSampler cornellSamplers[] = {cornellScene->textures.textureSampler, lightProbePipeline.texture.textureSampler};
-    */
 
     VkImageView ratViews[] = {ratModel->textures.imageView};
     VkSampler ratSamplers[] = {ratModel->textures.textureSampler};
@@ -258,51 +257,29 @@ private:
     cornellLeftWall->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
     cornellRightWall->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
 
-    /* lightProbePipeline.inputAssemblerUniformPool.create(1, swapChain.imageViews.size(), 0, true);
-    lightProbePipeline.inputAssemblerUniformPool.addStorageBuffer(0,
-							   (cornellScene->vertexCount +
-							    cornellLight->vertexCount +
-							    cornellRightWall->vertexCount +
-							    cornellLeftWall->vertexCount 
-							    ) * sizeof(Vertex));
-    lightProbePipeline.inputAssemblerUniformPool.addStorageBuffer(1, (cornellScene->indexCount +
-							       cornellLight->indexCount +
-							       cornellRightWall->indexCount +
-							       cornellLeftWall->indexCount 
-							       ) * sizeof(uint32_t));
-							       //lightProbePipeline.inputAssemblerUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-							       lightProbePipeline.inputAssemblerUniformPool.createDescriptorSetLayout();*/
-
-    rayPipeline.inputAssemblerUniformPool.create(1, swapChain.imageViews.size(), 0, true);
-    
-    rayPipeline.inputAssemblerUniformPool.addStorageBuffer(0,
+    rayInputAssemblerPool.create(1, swapChain.imageViews.size(), 0, true);
+    rayInputAssemblerPool.addStorageBuffer(0,
 						      (cornellScene->vertexCount +
 						       cornellLight->vertexCount +
 						       cornellRightWall->vertexCount +
 						       cornellLeftWall->vertexCount 
 						       ) * sizeof(Vertex));
-    rayPipeline.inputAssemblerUniformPool.addStorageBuffer(1, (cornellScene->indexCount +
+    rayInputAssemblerPool.addStorageBuffer(1, (cornellScene->indexCount +
 							  cornellLight->indexCount +
 							  cornellRightWall->indexCount +
 							  cornellLeftWall->indexCount 
 							  ) * sizeof(uint32_t));
-    rayPipeline.inputAssemblerUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    rayPipeline.inputAssemblerUniformPool.createDescriptorSetLayout();
+    rayInputAssemblerPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    rayInputAssemblerPool.createDescriptorSetLayout();
     VkBuffer storageBuffers[] = {staticVertexBuffer.vertexBuffer, staticVertexBuffer.indexBuffer};
-    rayPipeline.vertexUniform.allocateDescriptorSets(&rayPipeline.inputAssemblerUniformPool,
-						     &rayPipeline.texture.imageView,
-						     &rayPipeline.texture.textureSampler,
+    rayInputAssemblerBuffer.allocateDescriptorSets(&rayInputAssemblerPool,
+						     &rayBackBuffer.imageView,
+						     &rayBackBuffer.textureSampler,
 						     storageBuffers);
-    /*    lightProbePipeline.vertexUniform.allocateDescriptorSets(&lightProbePipeline.inputAssemblerUniformPool,
-							    nullptr,
-							    nullptr,
-							    //&lightProbePipeline.texture.imageView,
-							    //&lightProbePipeline.texture.textureSampler,
-    							    storageBuffers);
-    */
-    VkDescriptorSetLayout computeUniformLayouts[2] = {rayPipeline.inputAssemblerUniformPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
+    
+    VkDescriptorSetLayout computeUniformLayouts[2] = {rayInputAssemblerPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
     rayPipeline.createPipeline("../src/shaders/ray.spv",computeUniformLayouts, 2);
-    VkDescriptorSetLayout probeUniformLayouts[2] = {rayPipeline.inputAssemblerUniformPool.descriptorSetLayout, lightProbeUniformPool.descriptorSetLayout};
+    VkDescriptorSetLayout probeUniformLayouts[2] = {rayInputAssemblerPool.descriptorSetLayout, lightProbeUniformPool.descriptorSetLayout};
     lightProbePipeline.createPipeline("../src/shaders/rayProbe.spv", probeUniformLayouts, 2);
     drawCommmandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
@@ -478,7 +455,7 @@ private:
 
     if (true)
       {
-	lightProbeInfo.transitionImageToStorage(lightProbePipeline.texture.image);
+	lightProbeInfo.transitionImageToStorage(lightProbeTexture.image);
 	vkResetCommandBuffer(lightProbePipeline.commandBuffer, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
@@ -493,7 +470,7 @@ private:
 	vkCmdBindDescriptorSets(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
 				lightProbePipeline.pipelineLayout,
 				0, 1,
-				&rayPipeline.inputAssemblerUniformPool.descriptorSets[imageIndex][rayPipeline.vertexUniform.indexIntoPool]
+				&rayInputAssemblerPool.descriptorSets[imageIndex][rayInputAssemblerBuffer.indexIntoPool]
 				, 0, 0);
 	vkCmdBindDescriptorSets(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
 				lightProbePipeline.pipelineLayout,
@@ -501,7 +478,7 @@ private:
 				&lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool]
 				, 0, 0);
 
-	vkCmdDispatch(lightProbePipeline.commandBuffer, lightProbeInfo.resolution, lightProbeInfo.resolution,  lightProbeInfo.resolution);
+	vkCmdDispatch(lightProbePipeline.commandBuffer, lightProbeInfo.resolution / 8, lightProbeInfo.resolution / 8,  lightProbeInfo.resolution / 8);
 
 	
 	if (vkEndCommandBuffer(lightProbePipeline.commandBuffer) != VK_SUCCESS) {
@@ -526,7 +503,7 @@ private:
 	if (vkQueueSubmit(computeQueue, 1, &submitInfo, nullptr) != VK_SUCCESS) {
 	  throw std::runtime_error("failed to submit compute command buffer!");
 	};
-	lightProbeInfo.transitionImageToSampled(lightProbePipeline.texture.image);
+	lightProbeInfo.transitionImageToSampled(lightProbeTexture.image);
 	
       }
 
@@ -590,7 +567,7 @@ cornellLight
     else { //Ray
       	vkResetCommandBuffer(rayPipeline.commandBuffer, 0);
 	
-	rayPipeline.transitionSwapChainForComputeWrite(rayPipeline.texture.image, swapChain.images[imageIndex]);
+	rayPipeline.transitionSwapChainForComputeWrite(rayBackBuffer.image, swapChain.images[imageIndex]);
 	
 	VkCommandBufferBeginInfo beginInfo{};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -608,7 +585,7 @@ cornellLight
 	vkCmdBindDescriptorSets(rayPipeline.commandBuffer,
 				VK_PIPELINE_BIND_POINT_COMPUTE, rayPipeline.pipelineLayout,
 				0, 1,
-				&rayPipeline.inputAssemblerUniformPool.descriptorSets[imageIndex][rayPipeline.vertexUniform.indexIntoPool]
+				&rayInputAssemblerPool.descriptorSets[imageIndex][rayInputAssemblerBuffer.indexIntoPool]
 				, 0, 0);
 	
 	vkCmdDispatch(rayPipeline.commandBuffer, swapChain.extent.width / 32, swapChain.extent.height / 32,  1); //switch to swapchain width and height
@@ -637,8 +614,8 @@ cornellLight
 	  throw std::runtime_error("failed to submit compute command buffer!");
 	};
 
-	rayPipeline.transitionSwapChainForComputeTransfer(rayPipeline.texture.image);
-	rayPipeline.copyTextureToSwapChain(swapChain.images[imageIndex],
+	rayPipeline.transitionSwapChainForComputeTransfer(rayBackBuffer.image);
+	rayPipeline.copyTextureToSwapChain(swapChain.images[imageIndex], rayBackBuffer.image,
 					   swapChain.extent.width,  swapChain.extent.height);
 	rayPipeline.transitionSwapChainForComputePresent(swapChain.images[imageIndex]);
     }
@@ -756,6 +733,10 @@ cornellLight
     depthTexture.destroy();
     matrixPool.destroy();
     lightProbeUniformPool.destroy();
+    lightProbeTexture.destroy();
+    rayInputAssemblerBuffer.destroy();
+    rayInputAssemblerPool.destroy();
+    rayBackBuffer.destroy();
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
     if (enableVulkanValidationLayers) {
