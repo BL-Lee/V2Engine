@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh -x
 
 ../glslc ../src/shaders/triangle.vert -o ../src/shaders/vert.spv
 ../glslc ../src/shaders/triangle.frag -o ../src/shaders/frag.spv
