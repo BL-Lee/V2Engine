@@ -3,9 +3,13 @@
 void VkBLightProbeInfo::create()
   {
     resolution = 64;
-    gridDimensions = glm::vec3(2.0f,2.0f,2.0f);
-    center = glm::vec3(0.0f,0.0f,0.0f);
-    raysPerProbe = 20;
+
+    cascadeCount = 2;
+    
+    
+    gridDimensions = glm::vec3(2.0f,2.0f,2.0f);//Doesn't do anything yet. Is defined in the shader
+    center = glm::vec3(0.0f,0.0f,0.0f);//Doesn't do anything yet
+    raysPerProbe = 20; //Same
   }
 
 void VkBLightProbeInfo::transitionImageToSampled(VkImage image)

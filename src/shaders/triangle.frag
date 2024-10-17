@@ -17,8 +17,15 @@ void main() {
   //need -1:1 -> 0:1
   vec3 probeTexLocation = (worldPos - center) / width;
   probeTexLocation += 0.5;
-
-  outColor = texture(texSampler, fragTexCoord) * vec4((texture(probeSampler, probeTexLocation).rgb + 0.1),1.0);
+  //have 0-1
+  //Now 0-1 to divided for cascades
+  vec3 normalizedCoords = probeTexLocation;
+  probeTexLocation.z = 0;
+  vec2 gridCoord = vec2(int(normalizedCoords.y * 64) % 8, int(normalizedCoords.y * 8));
+  probeTexLocation.x = normalizedCoords.x / 8 + gridCoord.x / 8;
+  probeTexLocation.y = normalizedCoords.z / 8 + gridCoord.y / 8;
+  outColor = texture(texSampler, fragTexCoord)* vec4((texture(probeSampler, probeTexLocation).rgb + 0.1),1.0);
+  //outColor = vec4(probeTexLocation,1.0);
 
 
 }

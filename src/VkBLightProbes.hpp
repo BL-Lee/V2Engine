@@ -13,6 +13,9 @@ public:
   int resolution; //How many to put along each axis.
   int raysPerProbe;
 
+  int cascadeCount;
+  int baseRayCount; //TODO
+  int rayIncreasePerCascade; //TODO
   //VkBUniformPool uniformPool;
   //VkBUniformBuffer uniform;
   
