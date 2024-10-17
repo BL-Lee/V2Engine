@@ -62,14 +62,15 @@ void main() {
   vec4 pixel = vec4(0.0);
 
   vec3 dirs[14] = {
+
     normalize(vec3(0.0, 1.0, 0.0)),
     normalize(vec3(0.0, -1.0, 0.0)),
     normalize(vec3(0.0, 0.0, 1.0)),
     normalize(vec3(0.0, 0.0, -1.0)),
+    
     normalize(vec3(1.0, 0.0, 0.0)),
     normalize(vec3(-1.0, 0.0, 0.0)),
 
-      
     normalize(vec3(-1.0, -1.0, -1.0)),
     normalize(vec3(1.0, -1.0, -1.0)),
     normalize(vec3(-1.0, 1.0, -1.0)),
@@ -80,79 +81,71 @@ void main() {
     normalize(vec3(-1.0, 1.0, 1.0)),
     normalize(vec3(1.0, 1.0, 1.0))
 
-
+    
   };
 
   int cascadeIndex = int(gl_GlobalInvocationID.z);
-  int SAMPLE_COUNT = cascadeIndex == 0 ? 6 : 14;
-  for (int s = 0; s < SAMPLE_COUNT; s++)
-    {
-      vec4 radiance = vec4(0.0);
-      vec3 center = vec3(0.0, 1.0, 0.0);
-      vec3 width = vec3(2.2);
-
-      int gridSize = 64 / (cascadeIndex + 1);
-      int tilingCount = 8 / (cascadeIndex + 1);
-      vec3 invocationCoord = vec3(
-				  gl_GlobalInvocationID.x % gridSize, //TODO uniform of size
-				  gl_GlobalInvocationID.x / gridSize +
-				  (gl_GlobalInvocationID.y / gridSize) * tilingCount, //TODO uniform of size
-				  gl_GlobalInvocationID.y % gridSize //TODO uniform of size
-				  );
-      vec3 offset = invocationCoord;
-      offset /= gridSize;
-      offset -= 0.5;
-      offset *= width;
-      //      offset += center;
-      //pixel = vec4(offset, 1.0);
-      //break;
-
-      //imageCoords -> 0-1
-      //offset -= 0.5; //0-1 : -0.5 - 0.5
-      //offset *= width; //-0.5 - 0.5 : -width/2 : width/2
-
-      vec3 rayOrigin = center + offset;
-      vec3 rayDir = dirs[s];
-      for (int bounce = 0; bounce < MAX_BOUNCE; bounce++)
-	{
-	  float dist = FLT_MAX;
-	  vec3 bounceNormal =  vec3(0.0,0.0,1.0);
-	  vec4 emitColour = vec4(0.0);
-	  uint matIndex = -1;
-
-	  for (int i = 0; i < 136; i+=3)
-	    {
-	      Vertex v0 = vertices[i + 0];
-	      Vertex v1 = vertices[i + 1];
-	      Vertex v2 = vertices[i + 2];
-	      vec3 normal = v0.normal;
-	      float testDist = triangleTest(rayOrigin, rayDir,
-					    v0.position, v1.position, v2.position,
-					    normal);
-
-              vec3 avg = v0.position + v1.position + v2.position / 3.0;
-
-	      if (testDist < dist && dist > 0.0 && dot(normal, rayDir) < 0.0)
-		{
-		  matIndex = v0.materialIndex;
-		  dist = testDist;
-		  bounceNormal = rayDir - 2.0 * normal * dot(rayDir, normal);
-                }
-
-	    }
-
-          if (dist == FLT_MAX) break;//pixel = vec4(-FLT_MAX);
+  int SAMPLE_COUNT = cascadeIndex == 0 ? 4 : 8;
+  vec4 radiance = vec4(0.0);
+  vec3 center = vec3(0.0, 1.0, 0.0);
+  vec3 width = vec3(2.2);
       
-	  if (matIndex == 0) //emissive
-	    {
-	      emitColour = vec4(1.0,0.9,0.6,1.0);
-              pixel = emitColour;
-              //pixel = vec4(rayOrigin,1.0);
-              s = SAMPLE_COUNT;
-	      break;
-	    }
-	}
+  //determine what quadrant we're in
+  //Assume powers of two
+  int dirTilingCount = int(sqrt(SAMPLE_COUNT));
+  int dirIndex =int(
+    float(gl_GlobalInvocationID.x) / imageSize(probeInfo).x * dirTilingCount +
+    (float(gl_GlobalInvocationID.y) / imageSize(probeInfo).y * dirTilingCount) * dirTilingCount);
+
+  vec3 rayDir = dirs[dirIndex];
+
+  //Where inside this direction quadrant are we
+  ivec3 localInvocation = ivec3(gl_GlobalInvocationID % imageSize(probeInfo) / dirTilingCount);
+  
+  
+  int gridSize = 64;
+  int tilingCount = 8;
+  vec3 invocationCoord = vec3(
+                              localInvocation.x % gridSize, //TODO uniform of size
+                              localInvocation.x / gridSize +
+                              (localInvocation.y / gridSize) * tilingCount, //TODO uniform of size
+                              localInvocation.y % gridSize //TODO uniform of size
+                              );
+  vec3 offset = invocationCoord;
+  offset /= gridSize;
+  offset -= 0.5;
+  offset *= width;
+
+  vec3 rayOrigin = center + offset;
+  float dist = FLT_MAX;
+  vec4 emitColour = vec4(0.0);
+  uint matIndex = -1;
+
+  for (int i = 0; i < 136; i+=3)
+    {
+      Vertex v0 = vertices[i + 0];
+      Vertex v1 = vertices[i + 1];
+      Vertex v2 = vertices[i + 2];
+      vec3 normal = v0.normal;
+      float testDist = triangleTest(rayOrigin, rayDir,
+                                    v0.position, v1.position, v2.position,
+                                    normal);
+
+      vec3 avg = v0.position + v1.position + v2.position / 3.0;
+
+      if (testDist < dist && dist > 0.0 && dot(normal, rayDir) < 0.0)
+        {
+          matIndex = v0.materialIndex;
+          dist = testDist;
+        }
     }
+
+  if (matIndex == 0) //emissive
+    {
+      emitColour = vec4(1.0,0.9,0.6,1.0);
+      pixel = emitColour;
+    }
+
   pixel.a = 1.0;
   imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
 }

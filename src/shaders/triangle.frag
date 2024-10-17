@@ -21,9 +21,14 @@ void main() {
   //Now 0-1 to divided for cascades
   vec3 normalizedCoords = probeTexLocation;
   probeTexLocation.z = 0;
-  vec2 gridCoord = vec2(int(normalizedCoords.y * 64) % 8, int(normalizedCoords.y * 8));
-  probeTexLocation.x = normalizedCoords.x / 8 + gridCoord.x / 8;
-  probeTexLocation.y = normalizedCoords.z / 8 + gridCoord.y / 8;
+
+  int gridSize = 64;
+  int tilingCount = int(textureSize(probeSampler,0).x) / gridSize;
+
+  
+  vec2 gridCoord = vec2(int(normalizedCoords.y * gridSize) % tilingCount, int(normalizedCoords.y * 8));
+  probeTexLocation.x = normalizedCoords.x / tilingCount + gridCoord.x / tilingCount;
+  probeTexLocation.y = normalizedCoords.z / tilingCount + gridCoord.y / tilingCount;
   outColor = texture(texSampler, fragTexCoord)* vec4((texture(probeSampler, probeTexLocation).rgb + 0.1),1.0);
   //outColor = vec4(probeTexLocation,1.0);
 

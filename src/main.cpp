@@ -217,8 +217,8 @@ private:
 				      nullptr);
     lightProbeInfo.create();
     lightProbeTexture.createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
-					   lightProbeInfo.resolution * 8, //sqrt of 64
-					   lightProbeInfo.resolution * 8,
+					   lightProbeInfo.resolution * 8 * 2, //sqrt of 64 + dirs for first layer i guess
+					   lightProbeInfo.resolution * 8 * 2,
 					   lightProbeInfo.cascadeCount,
 					   nullptr);
 
@@ -478,7 +478,7 @@ private:
 				&lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool]
 				, 0, 0);
 
-	vkCmdDispatch(lightProbePipeline.commandBuffer, lightProbeTexture.width / 8, lightProbeTexture.height / 8,  lightProbeInfo.cascadeCount);
+	vkCmdDispatch(lightProbePipeline.commandBuffer, lightProbeTexture.width / 8, lightProbeTexture.height / 8, 1);// lightProbeInfo.cascadeCount);
 
 	
 	if (vkEndCommandBuffer(lightProbePipeline.commandBuffer) != VK_SUCCESS) {
