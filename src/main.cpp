@@ -478,7 +478,10 @@ private:
 				&lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool]
 				, 0, 0);
 
-	vkCmdDispatch(lightProbePipeline.commandBuffer, lightProbeTexture.width / 8, lightProbeTexture.height / 8, 1);// lightProbeInfo.cascadeCount);
+	vkCmdDispatch(lightProbePipeline.commandBuffer,
+		      lightProbeTexture.width / 8,
+		      lightProbeTexture.height / 8,
+		      lightProbeInfo.cascadeCount);
 
 	
 	if (vkEndCommandBuffer(lightProbePipeline.commandBuffer) != VK_SUCCESS) {

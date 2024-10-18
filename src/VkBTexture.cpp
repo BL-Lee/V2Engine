@@ -197,6 +197,7 @@ void VkBTexture::initSampler() {
   samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.anisotropyEnable = VK_FALSE;
   //samplerInfo.maxAnisotropy = physProperties.limits.maxSamplerAnisotropy; //Max quality.. maybe lower
+  
   samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
   samplerInfo.unnormalizedCoordinates = VK_FALSE; //If for some wicked reason thy wish to address thy texture with (0, texWidth) and (0,texHeight), henceforth set this to VK_TRUE
   
@@ -204,7 +205,7 @@ void VkBTexture::initSampler() {
   samplerInfo.compareEnable = VK_FALSE; 
   samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
 
-  samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+  samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
   samplerInfo.mipLodBias = 0.0f;
   samplerInfo.minLod = 0.0f;
   samplerInfo.maxLod = 0.0f;
