@@ -455,7 +455,7 @@ private:
 
     if (true)
       {
-	lightProbeInfo.transitionImageToStorage(lightProbeTexture.image);
+	//lightProbeInfo.transitionImageToStorage(lightProbeTexture.image);
 	vkResetCommandBuffer(lightProbePipeline.commandBuffer, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
@@ -506,7 +506,7 @@ private:
 	if (vkQueueSubmit(computeQueue, 1, &submitInfo, nullptr) != VK_SUCCESS) {
 	  throw std::runtime_error("failed to submit compute command buffer!");
 	};
-	lightProbeInfo.transitionImageToSampled(lightProbeTexture.image);
+	//lightProbeInfo.transitionImageToSampled(lightProbeTexture.image);
 	
       }
 

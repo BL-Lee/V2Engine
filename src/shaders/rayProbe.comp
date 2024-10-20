@@ -120,9 +120,12 @@ void main() {
   offset -= 0.5;
   offset *= width;
   
-  pixel = vec4(vec2(invocationCoord).xy / gridSize, gl_GlobalInvocationID.z,1.0);
-  imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
-  return;
+  //pixel = vec4(vec2(invocationCoord).xy / gridSize, gl_GlobalInvocationID.z,1.0);
+  //pixel = vec4(vec2(invocationCoord).xy / gridSize, 0.0,1.0);
+  //pixel = vec4(vec3(invocationCoord).xyz / gridSize,1.0);
+  //pixel = vec4(offset,1.0);
+  //imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
+  //return;
 
   vec3 rayOrigin = center + offset;
   float dist = FLT_MAX;

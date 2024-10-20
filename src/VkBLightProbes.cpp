@@ -2,7 +2,7 @@
 #include "VkBSingleCommandBuffer.hpp"
 void VkBLightProbeInfo::create()
   {
-    resolution = 64;
+    resolution = 32;
 
     cascadeCount = 2;
     

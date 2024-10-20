@@ -18,10 +18,12 @@ layout(location = 1) in vec3 normal;
 layout(location = 2) in vec2 texCoord;
 layout(location = 3) in uint materialIndex;
 layout(location = 0) out vec2 fragTexCoord;
-layout(location = 1) out vec3 worldPos;	
+layout(location = 1) out vec3 worldPos;
+layout(location = 2) out vec3 worldNormal;	
 
 void main() {
     gl_Position = _MainCamera.proj * _MainCamera.view * ubo.model * vec4(position, 1.0);
     worldPos = (ubo.model * vec4(position, 1.0)).xyz;
     fragTexCoord = texCoord;
+    worldNormal = (ubo.model * vec4(normal, 0.0)).xyz;
 }
