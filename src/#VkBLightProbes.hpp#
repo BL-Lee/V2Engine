@@ -3,8 +3,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+
 #include "VkBGlobals.hpp"
 #include "VkBTexture.hpp"
+#include "Vertex.hpp"
 class VkBLightProbeInfo
 {
 public:
@@ -16,6 +18,8 @@ public:
   int cascadeCount;
   int baseRayCount; //TODO
   int rayIncreasePerCascade; //TODO
+
+  LineVertex* debugLines;
   //VkBUniformPool uniformPool;
   //VkBUniformBuffer uniform;
   

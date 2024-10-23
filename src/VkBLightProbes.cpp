@@ -87,5 +87,9 @@ void VkBLightProbeInfo::transitionImageToStorage(VkImage image)
   vKEndSingleTimeCommandBuffer(commandBuffer);
 }
 
+void VkBLightProbeInfo::copyTextureToCPU(VkBTexture tex)
+{
+  
+}
 void VkBLightProbeInfo::destroy() {
 }

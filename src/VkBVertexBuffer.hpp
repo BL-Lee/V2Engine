@@ -51,4 +51,9 @@ https://vulkan-tutorial.com/en/Vertex_buffers/Index_buffer
 	    const uint32_t* indices, uint32_t indexCount,
 	    uint32_t*, uint32_t*
 	    );
+  void fill(const LineVertex* vertices, uint32_t vertexCount,
+	    const uint32_t* indices, uint32_t indexCount,
+	    uint32_t*, uint32_t*
+	    );
+
 };

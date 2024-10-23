@@ -60,9 +60,6 @@ void main() {
       int tilingCount = int(imageSize(probeInfo).x) / gridSize / dirTilingCount;
   
       //Coord in relation to whole quadrant
-      // vec2(int(normalizedCoords.y * 32) % 8, int(normalizedCoords.y * 8))
-      // (4,7)
-      // (0.9 / 8 + 4 / 8, 0.2 / 8 + 7/8)
       vec2 gridCoord = vec2(int(normalizedCoords.y * tilingCount * tilingCount) % tilingCount,
                             int(normalizedCoords.y * tilingCount));
       probeTexLocation.x = normalizedCoords.x / tilingCount + gridCoord.x / tilingCount;
@@ -72,20 +69,18 @@ void main() {
       vec3 quadrantLocalCoord = probeTexLocation / vec3(dirTilingCount, dirTilingCount, 1.0);
 
       
-        ivec3 coord = ivec3(ivec3(quadrantLocalCoord.xy * imageSize(probeInfo).xy, cascade));
-        for (int dir = 0; dir < dirCount; dir++)
+      ivec3 coord = ivec3(ivec3(quadrantLocalCoord.xy * imageSize(probeInfo).xy, cascade));
+      for (int dir = 0; dir < 1; dir++)//dirCount; dir++)
         {
           
           ivec3 quadrantOffset = ivec3(dir % gridSize,
                                        dir / gridSize,
                                        0);
-          //if (dot(worldNormal, dirs[dir]) > 0.0)
-          //  {
-              radiance += imageLoad(probeInfo, coord + quadrantOffset);
-              //  }
+          radiance = imageLoad(probeInfo, coord);
         }
     }
   radiance.a = 1.0;
   outColor = texture(texSampler, fragTexCoord) * radiance;
+  outColor = radiance;
 
 }

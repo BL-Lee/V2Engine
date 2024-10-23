@@ -64,7 +64,7 @@ VkBDrawCommandBuffer::record(VkPipeline pipeline,
 			     )
 {
  
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+
 
   VkBuffer vertexBuffers[] = {vertexBuffer->vertexBuffer};
   VkDeviceSize offsets[] = {0};
@@ -88,7 +88,6 @@ VkBDrawCommandBuffer::record(VkPipeline pipeline,
 			     )
 {
  
-  vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
   VkBuffer vertexBuffers[] = {vertexBuffer->vertexBuffer};
   VkDeviceSize offsets[] = {0};
