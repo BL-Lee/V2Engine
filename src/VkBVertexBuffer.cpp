@@ -9,9 +9,11 @@ VkBVertexBuffer::destroy()
 {
   vkDestroyBuffer(device, vertexBuffer, nullptr);
   vkFreeMemory(device, vertexBufferMemory, nullptr);
-  vkDestroyBuffer(device, indexBuffer, nullptr);
-  vkFreeMemory(device, indexBufferMemory, nullptr);
-
+  if (indexed)
+    {
+      vkDestroyBuffer(device, indexBuffer, nullptr);
+      vkFreeMemory(device, indexBufferMemory, nullptr);
+    }
   //Could delete earlier if we know we wont send more to this buffer
   vkDestroyBuffer(device, stagingBuffer, nullptr);
   vkUnmapMemory(device, stagingBufferMemory);
@@ -20,11 +22,39 @@ VkBVertexBuffer::destroy()
 }
 
 void
+VkBVertexBuffer::fill(const Vertex* vertices, uint32_t vCount, uint32_t* vertexOffset)
+{
+  if (indexed)
+    {
+      fprintf(stderr, "WARNING: attempting to fill indexed  vertex buffer with no indices\n");
+    }
+  
+  memcpy(stagingBufferMapped, vertices, vCount * sizeof(Vertex));
+  meshesMapped++;
+
+  //Transfer
+  copyBuffer(stagingBuffer, vertexBuffer, sizeof(Vertex) * vCount,
+	     transientCommandPool, graphicsQueue,
+	     0,//src offset
+	     vertexCount * sizeof(Vertex)//dst offset
+	     );
+  
+  vertexCount += vCount;
+
+  *vertexOffset = vertexCount - vCount;
+}
+
+
+void
 VkBVertexBuffer::fill(const Vertex* vertices, uint32_t vCount,
 		      const uint32_t* indices, uint32_t iCount,
 		      uint32_t* indexOffset, uint32_t* vertexOffset
 		      )
 {
+  if (!indexed)
+    {
+      fprintf(stderr, "WARNING: attempting to fill unindexed vertex buffer with indices\n");
+    }
   
   memcpy(stagingBufferMapped, vertices, vCount * sizeof(Vertex));
   void* offset = (void*)((uint8_t*)stagingBufferMapped + (vCount * sizeof(Vertex)));
@@ -52,12 +82,38 @@ VkBVertexBuffer::fill(const Vertex* vertices, uint32_t vCount,
 }
 
 void
+VkBVertexBuffer::fill(const LineVertex* vertices, uint32_t vCount, uint32_t* vertexOffset)
+{
+  if (indexed)
+    {
+      fprintf(stderr, "WARNING: attempting to fill indexed Line vertex buffer with no indices\n");
+    }
+  
+  memcpy(stagingBufferMapped, vertices, vCount * sizeof(LineVertex));
+  meshesMapped++;
+
+  //Transfer
+  copyBuffer(stagingBuffer, vertexBuffer, sizeof(LineVertex) * vCount,
+	     transientCommandPool, graphicsQueue,
+	     0,//src offset
+	     vertexCount * sizeof(LineVertex)//dst offset
+	     );
+  
+  vertexCount += vCount;
+
+  *vertexOffset = vertexCount - vCount;
+}
+
+void
 VkBVertexBuffer::fill(const LineVertex* vertices, uint32_t vCount,
 		      const uint32_t* indices, uint32_t iCount,
 		      uint32_t* indexOffset, uint32_t* vertexOffset
 		      )
 {
-  
+  if (!indexed)
+    {
+      fprintf(stderr, "WARNING: attempting to fill unindexed Line vertex buffer with indices\n");
+    }
   memcpy(stagingBufferMapped, vertices, vCount * sizeof(LineVertex));
   void* offset = (void*)((uint8_t*)stagingBufferMapped + (vCount * sizeof(LineVertex)));
   memcpy(offset, indices, iCount * sizeof(uint32_t));
@@ -82,9 +138,24 @@ VkBVertexBuffer::fill(const LineVertex* vertices, uint32_t vCount,
   *indexOffset = indexCount - iCount; //Index into buffer for drawing
   *vertexOffset = vertexCount - vCount;
 }
-
+void
+VkBVertexBuffer::create(VkDeviceSize initialVertexSize)
+{
+  indexed = false;
+  initialize(initialVertexSize, 0);
+}
 void
 VkBVertexBuffer::create(VkDeviceSize initialVertexSize,
+			VkDeviceSize initialIndexSize)
+{
+  indexed = true;
+  initialize(initialVertexSize, initialIndexSize);
+}
+
+
+
+void
+VkBVertexBuffer::initialize(VkDeviceSize initialVertexSize,
 			VkDeviceSize initialIndexSize)
 {
   meshesMapped = 0;
@@ -112,21 +183,21 @@ VkBVertexBuffer::create(VkDeviceSize initialVertexSize,
 	       memFlags,
 	       vertexBuffer,
 	       vertexBufferMemory);
-
-  VkMemoryPropertyFlags indexMemFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-  VkBufferUsageFlags indexUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+  if (indexed)
+    {
+      VkMemoryPropertyFlags indexMemFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      VkBufferUsageFlags indexUsageFlags = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT |
         VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-  createBuffer(initialIndexSize,
-	       indexUsageFlags,
-	       indexMemFlags,
-	       indexBuffer,
-	       indexBufferMemory);
-
+      createBuffer(initialIndexSize,
+		   indexUsageFlags,
+		   indexMemFlags,
+		   indexBuffer,
+		   indexBufferMemory);
+    }
   vkMapMemory(device, stagingBufferMemory,
 		0,
 	      stagingBufferSize,
 		0, &stagingBufferMapped);
-  
-}
 
+}
 

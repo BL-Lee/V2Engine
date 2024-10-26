@@ -195,6 +195,7 @@ void VkBTexture::initSampler() {
   samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+
   samplerInfo.anisotropyEnable = VK_FALSE;
   //samplerInfo.maxAnisotropy = physProperties.limits.maxSamplerAnisotropy; //Max quality.. maybe lower
   

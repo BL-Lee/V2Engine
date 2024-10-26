@@ -11,5 +11,7 @@ public:
   
   void createLineGraphicsPipeline(VkBSwapChain& swapChain,
 			      VkBRenderPass renderPass,
-			      VkDescriptorSetLayout* descriptorSetLayouts);
+				  std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
+				  std::vector<VkPushConstantRange>* pushConstantRanges);
+
 };

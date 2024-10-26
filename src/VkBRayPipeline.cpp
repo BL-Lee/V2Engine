@@ -1,7 +1,9 @@
 #include "VkBRayPipeline.hpp"
 #include "VkBShader.hpp"
 #include "VkBSingleCommandBuffer.hpp"
-void VkBRayPipeline::createPipeline(const char* filePath, VkDescriptorSetLayout* descriptorSetLayouts, size_t layoutCount) {
+void VkBRayPipeline::createPipeline(const char* filePath,
+				    std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
+				    std::vector<VkPushConstantRange>* pushConstantRanges) {
   //Shader stuff
   VkShaderModule computeShaderModule = VkBShader::createShaderFromFile(filePath);
 
@@ -13,8 +15,26 @@ void VkBRayPipeline::createPipeline(const char* filePath, VkDescriptorSetLayout*
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount = layoutCount;
-  pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts;
+  if (descriptorSetLayouts)
+    {
+      pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorSetLayouts->size();
+      pipelineLayoutInfo.pSetLayouts = (VkDescriptorSetLayout*)descriptorSetLayouts->data();
+    }
+  else
+    {
+      pipelineLayoutInfo.setLayoutCount = 0;
+      pipelineLayoutInfo.pSetLayouts = nullptr;
+    }
+  if (pushConstantRanges)
+    {
+      pipelineLayoutInfo.pushConstantRangeCount = (uint32_t)pushConstantRanges->size(); // Optional
+      pipelineLayoutInfo.pPushConstantRanges = (VkPushConstantRange*)pushConstantRanges->data();
+    }
+  else
+    {
+      pipelineLayoutInfo.pushConstantRangeCount = 0;
+      pipelineLayoutInfo.pPushConstantRanges = nullptr;
+    }
 
   if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
     throw std::runtime_error("failed to create compute pipeline layout!");

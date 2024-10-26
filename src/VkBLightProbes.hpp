@@ -5,6 +5,8 @@
 
 #include "VkBGlobals.hpp"
 #include "VkBTexture.hpp"
+#include "Vertex.hpp"
+#include "VkBVertexBuffer.hpp"
 class VkBLightProbeInfo
 {
 public:
@@ -16,12 +18,25 @@ public:
   int cascadeCount;
   int baseRayCount; //TODO
   int rayIncreasePerCascade; //TODO
+  size_t imageWidth;
   //VkBUniformPool uniformPool;
   //VkBUniformBuffer uniform;
+
+  //DEBUG LINES------------------
+  VkBuffer lineBuffer; 
+  VkDeviceMemory lineBufferMemory;
+  void* lineBufferMapped;
+  LineVertex* lines;
+  VkBVertexBuffer lineVBO;
+  int lineCount;
+  int debugCascadeViewIndex;
+  int debugDirectionViewIndex;
+  int viewDebug;
   
   void create();
   void destroy();
-  void copyTextureToCPU(VkBTexture tex);
+  //  void copyTextureToCPU(VkBTexture* tex);
   void transitionImageToStorage(VkImage image);
   void transitionImageToSampled(VkImage image);
+  //  void processLightProbeTextureToLines();//deprecated. Fills line buffer in compute shader now
 };

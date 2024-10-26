@@ -2,6 +2,7 @@
 #include "VkBUniformPool.hpp"
 #include "VkBUniformBuffer.hpp"
 #include "VkBTexture.hpp"
+#include <vector>
 class VkBRayPipeline
 {
 public:
@@ -11,7 +12,10 @@ public:
   VkCommandBuffer commandBuffer;
 
   void destroy();
-  void createPipeline(const char* filePath, VkDescriptorSetLayout* descriptorSetLayouts, size_t count);
+  void createPipeline(const char* filePath,
+		      std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
+		      std::vector<VkPushConstantRange>* pushConstantsRanges);
+  //Shader stuff
   void transitionSwapChainForComputeWrite(VkImage image, VkImage swapImage);
   void transitionSwapChainForComputeTransfer(VkImage image);
   void transitionSwapChainForComputePresent(VkImage swapImage);

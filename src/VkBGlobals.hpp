@@ -8,6 +8,7 @@
 extern VkDevice device;
 extern VkInstance instance;
 extern VkPhysicalDevice physicalDevice;
+extern VkPhysicalDeviceProperties physicalDeviceProperties;
 
 extern std::vector<const char*> validationLayers;
 extern std::vector<const char*> deviceExtensions;

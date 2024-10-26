@@ -99,4 +99,3 @@ bool VkBDeviceSelection::checkDeviceExtensionSupport(VkPhysicalDevice device, co
 
   return requiredExtensions.empty();
 }
-

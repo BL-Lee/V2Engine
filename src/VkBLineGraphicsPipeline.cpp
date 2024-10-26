@@ -8,7 +8,8 @@
 //Meant for debug lines. So will get updated every frame probably
 void VkBLineGraphicsPipeline::createLineGraphicsPipeline(VkBSwapChain& swapChain,
 						     VkBRenderPass renderPass,
-						     VkDescriptorSetLayout* descriptorSetLayouts)
+							 std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
+							 std::vector<VkPushConstantRange>* pushConstantRanges)
 {
   //Shader stuff
   VkShaderModule vertShaderModule = VkBShader::createShaderFromFile("../src/shaders/lineVert.spv");
@@ -117,10 +118,26 @@ void VkBLineGraphicsPipeline::createLineGraphicsPipeline(VkBSwapChain& swapChain
 
   VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
   pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-  pipelineLayoutInfo.setLayoutCount = 3;
-  pipelineLayoutInfo.pSetLayouts = descriptorSetLayouts;
-  pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-  pipelineLayoutInfo.pPushConstantRanges = nullptr; // Optional
+  if (descriptorSetLayouts)
+    {
+      pipelineLayoutInfo.setLayoutCount = (uint32_t)descriptorSetLayouts->size();
+      pipelineLayoutInfo.pSetLayouts = (VkDescriptorSetLayout*)descriptorSetLayouts->data();
+    }
+  else
+    {
+      pipelineLayoutInfo.setLayoutCount = 0;
+      pipelineLayoutInfo.pSetLayouts = nullptr;
+    }
+  if (pushConstantRanges)
+    {
+      pipelineLayoutInfo.pushConstantRangeCount = (uint32_t)pushConstantRanges->size(); // Optional
+      pipelineLayoutInfo.pPushConstantRanges = (VkPushConstantRange*)pushConstantRanges->data();
+    }
+  else
+    {
+      pipelineLayoutInfo.pushConstantRangeCount = 0;
+      pipelineLayoutInfo.pPushConstantRanges = nullptr;
+    }
 
   if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &layout) != VK_SUCCESS) {
     throw std::runtime_error("failed to create pipeline layout!");
