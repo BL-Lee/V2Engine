@@ -95,8 +95,8 @@ void main() {
 
   float theta = 2 * pi * dirIndex / goldenRatio;
   float phi = acos(1 - 2*(dirIndex) / SAMPLE_COUNT);
-  vec3 rayDir = vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi));
-    //vec3 rayDir = dirs[dirIndex];
+  vec3 rayDir = normalize(vec3(cos(theta) * sin(phi), sin(theta) * sin(phi), cos(phi)));
+  //vec3 rayDir = dirs[dirIndex];
   
   //Where are we inside this quadrant
   //0-quadrantSize in pixels
@@ -119,9 +119,8 @@ void main() {
 
   //  pixel = vec4(vec2(invocationCoord).xy / gridSize, gl_GlobalInvocationID.z,1.0);
   pixel = vec4(offset,1.0);
-  //pixel = vec4(offset,1.0);
   imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
-  if (gl_GlobalInvocationID.z == cascadeInfo.cascade)
+  //if (gl_GlobalInvocationID.z == cascadeInfo.cascade)
     {
       uint linearIdx = (gl_GlobalInvocationID.x +
 			imageSize(probeInfo).y * gl_GlobalInvocationID.y +
@@ -129,9 +128,9 @@ void main() {
 			)
 	* 2;
       lines[linearIdx + 0].pos = center + offset;
-      lines[linearIdx + 0].colour = rayDir;//pixel.rgb + 0.1;
-      lines[linearIdx + 1].pos = center + offset + rayDir * 0.1;
-      lines[linearIdx + 1].colour = rayDir;//pixel.rgb + 0.1;
+      lines[linearIdx + 0].colour = dirTile;//vec3(dirIndex / 4.0);
+      lines[linearIdx + 1].pos = center + offset + rayDir * 0.01;
+      lines[linearIdx + 1].colour = dirTile;
     }
 
   return;
