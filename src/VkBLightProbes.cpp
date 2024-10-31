@@ -5,34 +5,35 @@ void VkBLightProbeInfo::create()
   {
     resolution = 32;
 
-    cascadeCount = 2;
+    cascadeCount = 4;
     
     gridDimensions = glm::vec3(2.2f,2.2f,2.2f);//Doesn't do anything yet in the shader. Is defined in the shader
     center = glm::vec3(0.0f,0.0f,0.0f);//Doesn't do anything yet in the shader
     raysPerProbe = 20; //Same
 
-
+    imageWidth = resolution * 2;
     //DEBUG LINES
+    /*
     VkMemoryPropertyFlags memFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     VkBufferUsageFlags usageFlags = VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    imageWidth = resolution * 8 * 2;
-    createBuffer(imageWidth * imageWidth * sizeof(uint8_t) * 4,
+
+    createBuffer(imageWidth * imageWidth * imageWidth *sizeof(uint8_t) * 4,
 		 usageFlags,
 		 memFlags,
 		 lineBuffer,
 		 lineBufferMemory);
     vkMapMemory(device, lineBufferMemory,
 		0,
-		imageWidth * imageWidth * sizeof(uint8_t) * 4,
+		imageWidth * imageWidth * imageWidth * sizeof(uint8_t) * 4,
 		0, &lineBufferMapped);
-
+    */
 
     
     debugCascadeViewIndex = 0;
     debugDirectionViewIndex = 0;
     viewDebug = 0;
-    lineCount = imageWidth * imageWidth;
+    lineCount = imageWidth * imageWidth * imageWidth;
     lines = (LineVertex*)malloc(2 * lineCount * sizeof(LineVertex));
     lineVBO.create(lineCount * 2 * sizeof(LineVertex));
   }
@@ -235,8 +236,11 @@ void VkBLightProbeInfo::copyTextureToCPU(VkBTexture* tex)
   vKEndSingleTimeCommandBuffer(commandBuffer);
   }*/
 void VkBLightProbeInfo::destroy() {
-  vkDestroyBuffer(device, lineBuffer, nullptr);
-  vkFreeMemory(device, lineBufferMemory, nullptr);
+  for (int i = 0; i < cascadeCount; i++)
+    textures[i].destroy();
+
+  //vkDestroyBuffer(device, lineBuffer, nullptr);
+  //vkFreeMemory(device, lineBufferMemory, nullptr);
   lineVBO.destroy();
   free(lines);
 

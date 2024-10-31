@@ -18,6 +18,8 @@ public:
   int cascadeCount;
   int baseRayCount; //TODO
   int rayIncreasePerCascade; //TODO
+  VkBTexture textures[4]; //Unhardcode
+  VkSemaphore semaphoreChain[4]; //unhardcode
   size_t imageWidth;
   //VkBUniformPool uniformPool;
   //VkBUniformBuffer uniform;
@@ -32,6 +34,8 @@ public:
   int debugCascadeViewIndex;
   int debugDirectionViewIndex;
   int viewDebug;
+
+  
   
   void create();
   void destroy();

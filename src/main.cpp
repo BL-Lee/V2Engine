@@ -41,9 +41,14 @@ VkCommandPool transientCommandPool; //For short lived command buffers
 VkCommandPool computeCommandPool;
 int USE_RASTER = 1; //Swap between ray and raster
 int DRAW_DEBUG_LINES = 0;
-int debugCascadeViewIndex = 0;
-int debugDirectionViewIndex = 0;
-int viewAllDirections = 1;
+int viewCascade = 0;
+struct CascadeInfo
+{
+  int cascade, quadrant;
+  float start, end;
+  int lineViewIndex;
+};
+CascadeInfo cascadeInfos[4];
 
 double mouseX = 0;
 double mouseY = 0;
@@ -99,7 +104,6 @@ public:
   VkBUniformPool rayTexturePool;
   VkBUniformBuffer rayInputAssemblerBuffer;
   VkBTexture rayBackBuffer;
-  VkBTexture lightProbeTextures[2];
   
   VkBUniformPool cameraUniformPool;
   Camera mainCamera;
@@ -176,13 +180,16 @@ private:
     
     if (action == GLFW_PRESS && key == GLFW_KEY_I)
       {
-	debugCascadeViewIndex = (debugCascadeViewIndex + 1) % (2); //cascade count
-	debugDirectionViewIndex = 0;
+	viewCascade = (viewCascade + 1) % (4); //cascade count
+        cascadeInfos[0].lineViewIndex = viewCascade;
+	cascadeInfos[1].lineViewIndex = viewCascade;
+	cascadeInfos[2].lineViewIndex = viewCascade;
+	cascadeInfos[3].lineViewIndex = viewCascade;
       }
     if (action == GLFW_PRESS && key == GLFW_KEY_O)
-      debugDirectionViewIndex = (debugDirectionViewIndex + 1) % (debugCascadeViewIndex == 0 ? 4 : 16);
+      cascadeInfos[viewCascade].quadrant = (cascadeInfos[viewCascade].quadrant + 1) % (viewCascade == 0 ? 8 : 64);
     if (action == GLFW_PRESS && key == GLFW_KEY_P)
-      debugDirectionViewIndex = (debugDirectionViewIndex - 1) % (debugCascadeViewIndex == 0 ? 4 : 16);
+      cascadeInfos[viewCascade].quadrant = (cascadeInfos[viewCascade].quadrant - 1) % (viewCascade == 0 ? 8 : 64);
     //viewAllDirections = !viewAllDirections;
     
 
@@ -234,11 +241,15 @@ private:
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     //    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     matrixPool.createDescriptorSetLayout();
+    cascadeInfos[0] = {0, 0, 0.0, 0.1};
+    cascadeInfos[1] = {1, 0, 0.1, 1.0};
+    cascadeInfos[2] = {2, 0, 1.0, 2.0};
+    cascadeInfos[3] = {3, 0, 2.0, 1000.0}; 
     lightProbeInfo.create();    
     lightProbeUniformPool.create(1, swapChain.imageViews.size(), 0, true);
-    lightProbeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    lightProbeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    lightProbeUniformPool.addStorageBuffer(2,
+    lightProbeUniformPool.addImageArray(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, lightProbeInfo.cascadeCount);
+    //lightProbeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    lightProbeUniformPool.addStorageBuffer(1,
 					   lightProbeInfo.lineCount * 2 * sizeof(LineVertex));
     lightProbeUniformPool.createDescriptorSetLayout();
 
@@ -256,7 +267,7 @@ private:
     VkPushConstantRange cascadePushConstant = {
       VK_SHADER_STAGE_FRAGMENT_BIT, 
       0,//  offset
-      3 * sizeof(int)  // size
+      sizeof(CascadeInfo)
     };
 
     std::vector<VkPushConstantRange> cascadePushConstantRange = {cascadePushConstant};
@@ -287,22 +298,23 @@ private:
     uint32_t a, b;
     lineVertexBuffer.fill(testLines, 6, testLineIndices, 6, &a, &b);
 
+    std::vector<VkImageView> probeViews(lightProbeInfo.cascadeCount);
+    std::vector<VkSampler> probeSamplers(lightProbeInfo.cascadeCount);
+    for (int i = 0; i < lightProbeInfo.cascadeCount; i++)
+      {
+	lightProbeInfo.textures[i].createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
+						   lightProbeInfo.resolution * 2,
+						   lightProbeInfo.resolution * 2,
+						   lightProbeInfo.resolution * 2,
+						   nullptr);
+	probeViews[i] = lightProbeInfo.textures[i].imageView;
+	probeSamplers[i] = lightProbeInfo.textures[i].textureSampler;
+      }
 
-    lightProbeTextures[0].createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
-					   lightProbeInfo.resolution * 2,
-					   lightProbeInfo.resolution * 2,
-					   lightProbeInfo.resolution * 2,
-					   nullptr);
-    lightProbeTextures[1].createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
-					   lightProbeInfo.resolution * 2,
-					   lightProbeInfo.resolution * 2,
-					   lightProbeInfo.resolution * 2,
-					   nullptr);
-
-    VkImageView probeViews[2] = {lightProbeTextures[0].imageView, lightProbeTextures[1].imageView};
-    VkSampler probeSamplers[2] = {lightProbeTextures[0].textureSampler, lightProbeTextures[1].textureSampler};
+    //VkImageView probeViews[2] = {lightProbeInfo.textures[0].imageView, lightProbeInfo.textures[1].imageView};
+    //VkSampler probeSamplers[2] = {lightProbeInfo.textures[0].textureSampler, lightProbeInfo.textures[1].textureSampler};
     
-    lightProbeUniform.allocateDescriptorSets(&lightProbeUniformPool, probeViews, probeSamplers, &lightProbeInfo.lineVBO.vertexBuffer);
+    lightProbeUniform.allocateDescriptorSets(&lightProbeUniformPool, probeViews.data(), probeSamplers.data(), &lightProbeInfo.lineVBO.vertexBuffer);
 
     staticVertexBuffer.create(sizeof(Vertex) * 5000, sizeof(uint32_t) * 5000);
     emissive.index = 0;
@@ -527,7 +539,7 @@ private:
     //Radiance Cascades ------------------------------------------------------------
     if (true)
       {
-	//lightProbeInfo.transitionImageToStorage(lightProbeTextures.image);
+	//lightProbeInfo.transitionImageToStorage(lightProbeInfo.textures.image);
 	vkResetCommandBuffer(lightProbePipeline.commandBuffer, 0);
 
 	VkCommandBufferBeginInfo beginInfo{};
@@ -538,13 +550,6 @@ private:
 	vkBeginCommandBuffer(lightProbePipeline.commandBuffer, &beginInfo);
 	
 	vkCmdBindPipeline(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, lightProbePipeline.pipeline);
-	
-	//Cascade debug view info
-	vkCmdPushConstants(lightProbePipeline.commandBuffer,
-			   lightProbePipeline.pipelineLayout,
-			   VK_SHADER_STAGE_COMPUTE_BIT,
-			   0, sizeof(int) * 3,
-			   &debugCascadeViewIndex);	
 	
 	vkCmdBindDescriptorSets(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
 				lightProbePipeline.pipelineLayout,
@@ -557,11 +562,22 @@ private:
 				&lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool]
 				, 0, 0);
 
-	vkCmdDispatch(lightProbePipeline.commandBuffer,
-		      lightProbeTextures[0].width / 8,
-		      lightProbeTextures[0].height / 8,
-		      lightProbeTextures[0].depth / 8);
+	for (int i = 0; i < lightProbeInfo.cascadeCount; i++)
+	  //	for (int i = 0; i < 2; i++)
+	  {
+	    //Cascade info cascade 0
+	    vkCmdPushConstants(lightProbePipeline.commandBuffer,
+			       lightProbePipeline.pipelineLayout,
+			       VK_SHADER_STAGE_COMPUTE_BIT,
+			       0, sizeof(CascadeInfo),
+			       &cascadeInfos[i]);	
+	
 
+	    vkCmdDispatch(lightProbePipeline.commandBuffer,
+			  lightProbeInfo.textures[0].width / 8,
+			  lightProbeInfo.textures[0].height / 8,
+			  lightProbeInfo.textures[0].depth / 8);
+	  }
 	
 	if (vkEndCommandBuffer(lightProbePipeline.commandBuffer) != VK_SUCCESS) {
 	  throw std::runtime_error("failed to record command buffer!");
@@ -609,8 +625,8 @@ private:
 	vkCmdPushConstants(drawCommandBuffer.commandBuffer,
 			   graphicsPipeline.layout,
 			   VK_SHADER_STAGE_FRAGMENT_BIT,
-			   0, sizeof(int) * 3,
-			   &debugCascadeViewIndex);	
+			   0, sizeof(CascadeInfo),
+			   &cascadeInfos[viewCascade]);	
 	vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				graphicsPipeline.layout,
 				1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
@@ -653,11 +669,6 @@ private:
 
 
 	// DEBUG LINES ---------------------------------------------------------------
-	//vkResetCommandBuffer(drawCommandBuffer.commandBuffer, 0);
-    
-	//drawCommandBuffer.begin(renderPass.renderPass,
-	//		    swapChain.framebuffers[imageIndex],
-	//		    swapChain.extent);
 
 	if (DRAW_DEBUG_LINES)
 	  {
@@ -666,8 +677,8 @@ private:
 	    vkCmdPushConstants(drawCommandBuffer.commandBuffer,
 			       linePipeline.layout,
 			       VK_SHADER_STAGE_VERTEX_BIT,
-			       0, sizeof(int) * 3,
-			       &debugCascadeViewIndex);	
+			       0, sizeof(CascadeInfo),
+			       &cascadeInfos[viewCascade]);	
 
 	    vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				    linePipeline.layout,
@@ -795,12 +806,12 @@ private:
       {
 	glm::vec2 mouseDiff = glm::vec2(mouseX, mouseY) - glm::vec2(xPos, yPos);
 
-	double cameraSensitivity = 1.0f;
+	double cameraSensitivity = 0.01f;
 	mainCamera.direction = glm::rotate(mainCamera.direction,
-					   (float)(mouseDiff.x * cameraSensitivity * deltaTime),
+					   (float)(mouseDiff.x * cameraSensitivity),
 					   glm::vec3(0.0f, 1.0f, 0.0f));
 	mainCamera.direction = glm::rotate(mainCamera.direction,
-					   (float)(mouseDiff.y * cameraSensitivity * deltaTime),
+					   (float)(mouseDiff.y * cameraSensitivity),
 					   glm::cross(mainCamera.direction,
 						      glm::vec3(0.0f, 1.0f, 0.0f)));
       }
@@ -887,8 +898,7 @@ private:
     depthTexture.destroy();
     matrixPool.destroy();
     lightProbeUniformPool.destroy();
-    lightProbeTextures[0].destroy();
-    lightProbeTextures[1].destroy();
+
     rayInputAssemblerBuffer.destroy();
     rayInputAssemblerPool.destroy();
     rayBackBuffer.destroy();

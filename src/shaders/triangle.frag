@@ -1,97 +1,98 @@
 #version 450
 
 layout(set=0, binding = 1) uniform sampler2D texSampler;
+
 //layout(set=2, binding = 1) uniform sampler3D probeSampler;
-layout(set = 2, binding = 0, rgba8) uniform readonly image3D probeInfo;
-layout(set = 2, binding = 1, rgba8) uniform readonly image3D probeInfo2;	
+layout(set = 2, binding = 0, rgba8) uniform restrict readonly image3D probeInfo[4];
+//layout(set = 1, binding = 0, rgba8) uniform readonly image3D probeInfo[2];
+//layout(set = 2, binding = 1, rgba8) uniform readonly image3D probeInfo2;	
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 1) in vec3 worldPos;
 layout(location = 2) in vec3 worldNormal;
+layout(location = 3) in vec3 TEMP_EYE_POS;
 layout(location = 0) out vec4 outColor;
 
 layout( push_constant ) uniform cascadeConstant {
   int cascade;
   int quadrant;
-  int allQuadrants;
+  float start;
+  float end;
+  int lineView;
 } cascadeInfo;
 
-
+float pi = 3.14159;
+float phi = pi * (sqrt(5.0) - 1.0);
 void main() {
 
+  //outColor = texture(texSampler, fragTexCoord);
+  //return;
   vec3 width = vec3(2.2);
-  vec3 center = vec3(0.0,0.0,0.0);
+  vec3 center = vec3(0.0,1.0,0.0);
+  
+
   
   //need -1:1 -> 0:1
   vec3 probeTexLocation = (worldPos - center) / width;
   probeTexLocation += 0.5;
   //have 0-1
   //Now 0-1 to divided for cascades
-//vec3(dirTilingCount, dirTilingCount, 1.0);
-  //quadrantLocalCoord.z = 1.0;
 
   vec4 radiance = vec4(0.0);
-
-    for (int cascade = cascadeInfo.cascade; cascade < cascadeInfo.cascade + 1; cascade++)
-  //  for (int cascade = 0; cascade < 1; cascade++)
+  vec3 TEMP_CAM_LOC = vec3(5.0,1.0,0.0);
+  vec3 incidentRay = normalize(worldPos - TEMP_EYE_POS);
+  vec3 reflectedRay = normalize(incidentRay - 2*worldNormal*(dot(incidentRay, worldNormal)));
+  //for (int cascade = cascadeInfo.cascade; cascade < cascadeInfo.cascade + 1; cascade++)
+  //  for (int cascade = 0; cascade < 2; cascade++)
+  for (int cascade = 0; cascade < 1; cascade++) //If we're accumulating down the cascade chain.. only need to sample lowest
     {
-  if (worldPos.x > width.x/2 ||
-      worldPos.x <-width.x/2 ||
-      worldPos.y > width.y/2 ||
-      worldPos.y <-width.y/2 ||
-      worldPos.z > width.z/2 ||
-      worldPos.z <-width.z/2)
-    {
-      radiance = vec4(0.0,1.0,1.0,1.0);
-      break;
-    }
+      //Debug show outside of range
+      vec3 pos = worldPos - center;
+      if (pos.x > width.x/2 ||
+	  pos.x <-width.x/2 ||
+	  pos.y > width.y/2 ||
+	  pos.y <-width.y/2 ||
+	  pos.z > width.z/2 ||
+	  pos.z <-width.z/2)
+	{
+	  radiance = vec4(0.0,1.0,1.0,1.0);
+	  break;
+	}
   
 
       vec3 normalizedCoords = probeTexLocation;
-      //probeTexLocation.z = cascade;
-      int dirCount = cascade == 0.0 ? 8 : 64; //TODO unhardcode
-      int dirTilingCount = cascade == 0.0 ? 2 : 4; //TODO cube root
-
-      int gridSize = 32 / int((cascade + 1)); 
-      //int tilingCount = int(textureSize(probeSampler,0).x) / gridSize / dirTilingCount;
-      //int tilingCount = int(imageSize(probeInfo).x) / gridSize / dirTilingCount;
-  
-      //Coord in relation to whole quadrant
-      //vec2 gridCoord = vec2(int(normalizedCoords.y * tilingCount * tilingCount) % tilingCount,
-      //                     int(normalizedCoords.y * tilingCount));
-      //probeTexLocation.x = normalizedCoords.x / tilingCount + gridCoord.x / tilingCount;
-      //probeTexLocation.y = normalizedCoords.z / tilingCount + gridCoord.y / tilingCount;
-  
-      //scale down to quadrant
+      int dirCount = int(pow(8, cascade + 1)); //TODO unhardcode
+      int dirTilingCount = int(pow(2, cascade + 1)); //TODO cube root
+      
+      //scale down to quadrant 
       vec3 quadrantLocalCoord = probeTexLocation / vec3(dirTilingCount, dirTilingCount, dirTilingCount);
 
-      if (probeTexLocation.x > 1.0 ||
-	  probeTexLocation.x < 0.0 ||
-	  probeTexLocation.y > 1.0 ||
-	  probeTexLocation.y < 0.0 ||
-	  probeTexLocation.z > 1.0 ||
-	  probeTexLocation.z < 0.0
-	  )
-	{
-	  radiance = vec4(1.0,0.0,1.0,1.0);
-	  break;
-	}
-      ivec3 coord = ivec3(quadrantLocalCoord * imageSize(probeInfo));
-      for (int dir = cascadeInfo.quadrant; dir < cascadeInfo.quadrant + 1; dir++)//dirCount; dir++)
-      //for (int dir = 0; dir < 1; dir++)//dirCount; dir++)
+      ivec3 coord = ivec3(quadrantLocalCoord * imageSize(probeInfo[cascade]));
+      //for (int dir = cascadeInfo.quadrant; dir < cascadeInfo.quadrant + 1; dir++)//dirCount; dir++)
+      for (int dir = 0; dir < dirCount; dir++)//dirCount; dir++)
         {
-          
-          ivec3 quadrantOffset = ivec3((dir * imageSize(probeInfo).x) % dirTilingCount,
-                                       (dir * imageSize(probeInfo).y) / dirTilingCount,
-                                       0);
+	  float y = 1.0 - (dir / float(dirCount)) * 2.0;
+	  float radius = sqrt(1.0 - y * y);
+
+	  float theta = phi * dir;
+	  float x = cos(theta) * radius;
+	  float z = sin(theta) * radius;
+	  vec3 rayDir = vec3(x,y,z);
+	  //	  if (dot(reflectedRay, worldNormal) < 0.8)
+	  //	    continue;
+
+          ivec3 quadrantOffset = ivec3(dir % dirTilingCount,
+				       (dir / dirTilingCount) % dirTilingCount,
+				       dir / (dirTilingCount * dirTilingCount)) * imageSize(probeInfo[cascade]) / dirTilingCount;
 	  ivec3 imgCoord = coord + quadrantOffset;
-	  if (imgCoord.x > imageSize(probeInfo).x || imgCoord.x > imageSize(probeInfo).y)
+	  if (imgCoord.x > imageSize(probeInfo[cascade]).x || imgCoord.x > imageSize(probeInfo[cascade]).y)
 	    radiance = vec4(1.0,0.0,1.0,1.0);
 	  else
-	    radiance = imageLoad(probeInfo, coord + quadrantOffset);
+	    radiance += imageLoad(probeInfo[cascade], coord + quadrantOffset) / (dirCount / 8.0) ;
         }
     }
+
   radiance.a = 1.0;
-  //outColor = texture(texSampler, fragTexCoord) * radiance + 0.1;
-  outColor = radiance;
+  outColor = radiance + 0.1;
+  //outColor = radiance;
 
 }

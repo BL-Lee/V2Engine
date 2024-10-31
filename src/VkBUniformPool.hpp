@@ -54,6 +54,7 @@ initialize()
   void addBuffer(int, size_t);
   void addStorageBuffer(int dstBinding, size_t size);
   void addImage(int dstBinding, VkDescriptorType type);
+  void addImageArray(int dstBinding, VkDescriptorType type, uint32_t count);
   void destroy();
   void create(uint32_t totalToStore, uint32_t duplicateCount, size_t sizeOfUniform);
   void create(uint32_t totalToStore, uint32_t totalFrames,
