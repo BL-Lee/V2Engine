@@ -34,7 +34,7 @@ public:
   int debugCascadeViewIndex;
   int debugDirectionViewIndex;
   int viewDebug;
-
+  
   
   
   void create();

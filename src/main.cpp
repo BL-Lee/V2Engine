@@ -241,10 +241,10 @@ private:
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     //    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     matrixPool.createDescriptorSetLayout();
-    cascadeInfos[0] = {0, 0, 0.0, 0.1};
-    cascadeInfos[1] = {1, 0, 0.1, 1.0};
-    cascadeInfos[2] = {2, 0, 1.0, 2.0};
-    cascadeInfos[3] = {3, 0, 2.0, 1000.0}; 
+    cascadeInfos[0] = {0, 0, 0.0, 1/32.0};
+    cascadeInfos[1] = {1, 0, 1/32.0, 1/16.0};
+    cascadeInfos[2] = {2, 0, 1/16.0, 1/8.0};
+    cascadeInfos[3] = {3, 0, 1/8.0, 10000.0}; 
     lightProbeInfo.create();    
     lightProbeUniformPool.create(1, swapChain.imageViews.size(), 0, true);
     lightProbeUniformPool.addImageArray(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, lightProbeInfo.cascadeCount);
@@ -359,11 +359,14 @@ private:
 						     &rayBackBuffer.textureSampler,
 						     storageBuffers);
     
-    std::vector<VkDescriptorSetLayout> computeUniformLayouts = {rayInputAssemblerPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
+    std::vector<VkDescriptorSetLayout> computeUniformLayouts = {rayInputAssemblerPool.descriptorSetLayout,
+								cameraUniformPool.descriptorSetLayout};
     rayPipeline.createPipeline("../src/shaders/ray.spv", &computeUniformLayouts, nullptr);
-    std::vector<VkDescriptorSetLayout> probeUniformLayouts = {rayInputAssemblerPool.descriptorSetLayout, lightProbeUniformPool.descriptorSetLayout};
+    std::vector<VkDescriptorSetLayout> probeUniformLayouts = {rayInputAssemblerPool.descriptorSetLayout,
+							      lightProbeUniformPool.descriptorSetLayout};
     cascadePushConstantRange[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
-    lightProbePipeline.createPipeline("../src/shaders/rayProbe.spv", &probeUniformLayouts, &cascadePushConstantRange);
+    lightProbePipeline.createPipeline("../src/shaders/rayProbe.spv",
+				      &probeUniformLayouts, &cascadePushConstantRange, lightProbeInfo.cascadeCount);
     drawCommandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
 	
@@ -539,72 +542,88 @@ private:
     //Radiance Cascades ------------------------------------------------------------
     if (true)
       {
-	//lightProbeInfo.transitionImageToStorage(lightProbeInfo.textures.image);
-	vkResetCommandBuffer(lightProbePipeline.commandBuffer, 0);
-
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	beginInfo.flags = 0; // Optional
-	beginInfo.pInheritanceInfo = nullptr; // Optional
-
-	vkBeginCommandBuffer(lightProbePipeline.commandBuffer, &beginInfo);
-	
-	vkCmdBindPipeline(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, lightProbePipeline.pipeline);
-	
-	vkCmdBindDescriptorSets(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-				lightProbePipeline.pipelineLayout,
-				0, 1,
-				&rayInputAssemblerPool.descriptorSets[imageIndex][rayInputAssemblerBuffer.indexIntoPool]
-				, 0, 0);
-	vkCmdBindDescriptorSets(lightProbePipeline.commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-				lightProbePipeline.pipelineLayout,
-				1, 1,
-				&lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool]
-				, 0, 0);
-
-	for (int i = 0; i < lightProbeInfo.cascadeCount; i++)
-	  //	for (int i = 0; i < 2; i++)
+	for (int i = lightProbeInfo.cascadeCount - 1; i >= 0 ; i--)
 	  {
+	    //lightProbeInfo.transitionImageToStorage(lightProbeInfo.textures.image);
+	    vkResetCommandBuffer(lightProbePipeline.commandBuffers[i], 0);
+
+	    VkCommandBufferBeginInfo beginInfo{};
+	    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	    beginInfo.flags = 0; // Optional
+	    beginInfo.pInheritanceInfo = nullptr; // Optional
+
+	    vkBeginCommandBuffer(lightProbePipeline.commandBuffers[i], &beginInfo);
+	
+	    vkCmdBindPipeline(lightProbePipeline.commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE, lightProbePipeline.pipeline);
+	
+	    vkCmdBindDescriptorSets(lightProbePipeline.commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE,
+				    lightProbePipeline.pipelineLayout,
+				    0, 1,
+				    &rayInputAssemblerPool.descriptorSets[imageIndex][rayInputAssemblerBuffer.indexIntoPool]
+				    , 0, 0);
+	    vkCmdBindDescriptorSets(lightProbePipeline.commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE,
+				    lightProbePipeline.pipelineLayout,
+				    1, 1,
+				    &lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool]
+				    , 0, 0);
+
+
+	    //	for (int i = 0; i < 2; i++)
+
 	    //Cascade info cascade 0
-	    vkCmdPushConstants(lightProbePipeline.commandBuffer,
+	    vkCmdPushConstants(lightProbePipeline.commandBuffers[i],
 			       lightProbePipeline.pipelineLayout,
 			       VK_SHADER_STAGE_COMPUTE_BIT,
 			       0, sizeof(CascadeInfo),
 			       &cascadeInfos[i]);	
-	
 
-	    vkCmdDispatch(lightProbePipeline.commandBuffer,
-			  lightProbeInfo.textures[0].width / 8,
-			  lightProbeInfo.textures[0].height / 8,
-			  lightProbeInfo.textures[0].depth / 8);
-	  }
+	    vkCmdDispatch(lightProbePipeline.commandBuffers[i],
+			  lightProbeInfo.textures[i].width / 8,
+			  lightProbeInfo.textures[i].height / 8,
+			  lightProbeInfo.textures[i].depth / 8);
 	
-	if (vkEndCommandBuffer(lightProbePipeline.commandBuffer) != VK_SUCCESS) {
-	  throw std::runtime_error("failed to record command buffer!");
-	}
+	    if (vkEndCommandBuffer(lightProbePipeline.commandBuffers[i]) != VK_SUCCESS) {
+	      throw std::runtime_error("failed to record command buffer!");
+	    }
 	
-	//Syncronization info for compute 
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkSemaphore waitSemaphores[] = {imageAvailableSemaphore}; //Wait for this before submitting draw
-	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT}; //Wait for this stage before writing to image
-	VkSemaphore signalSemaphores[] = {probeInfoFinishedSemaphore}; //Signal to this when drawing is done
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &lightProbePipeline.commandBuffer;
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	    //Syncronization info for compute 
+	    VkSubmitInfo submitInfo{};
+	    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	    VkSemaphore waitSemaphores[1];
+	    VkSemaphore signalSemaphores[1];
+	    if (i == lightProbeInfo.cascadeCount - 1)
+	      {
+		waitSemaphores[0] = {imageAvailableSemaphore}; //Wait for image availble, ie prev frame done
+	      signalSemaphores[0] = {lightProbeInfo.semaphoreChain[i]}; //Signal to next chain ready
+	      }
+	    else if (i == 0)
+	      {
+		waitSemaphores[0] = {lightProbeInfo.semaphoreChain[i + 1]}; //Wait for previous cascade
+		signalSemaphores[0] = {probeInfoFinishedSemaphore}; //Signal that cascades are done
+	      }
+	    else
+	      {
+	      waitSemaphores[0] = {lightProbeInfo.semaphoreChain[i + 1]}; //Wait previous cascade
+	      signalSemaphores[0] = {lightProbeInfo.semaphoreChain[i]}; //Signal to next cascade
+	      }
+	    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT}; //Wait for this stage before writing to image
+
+	    submitInfo.waitSemaphoreCount = 1;
+	    submitInfo.pWaitSemaphores = waitSemaphores;
+	    submitInfo.pWaitDstStageMask = waitStages;
+	    submitInfo.commandBufferCount = 1;
+	    submitInfo.pCommandBuffers = &lightProbePipeline.commandBuffers[i];
+	    submitInfo.signalSemaphoreCount = 1;
+	    submitInfo.pSignalSemaphores = signalSemaphores;
     
 
-	if (vkQueueSubmit(computeQueue, 1, &submitInfo, nullptr) != VK_SUCCESS) {
-	  throw std::runtime_error("failed to submit compute command buffer!");
-	};
-	//lightProbeInfo.transitionImageToSampled(lightProbeTexture.image);
-	//lightProbeInfo.copyTextureToCPU(&lightProbeTexture);
-	//lightProbeInfo.processLightProbeTextureToLines();
-
+	    if (vkQueueSubmit(computeQueue, 1, &submitInfo, nullptr) != VK_SUCCESS) {
+	      throw std::runtime_error("failed to submit compute command buffer!");
+	    };
+	    //lightProbeInfo.transitionImageToSampled(lightProbeTexture.image);
+	    //lightProbeInfo.copyTextureToCPU(&lightProbeTexture);
+	    //lightProbeInfo.processLightProbeTextureToLines();
+	  }
       }
 
     

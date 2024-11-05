@@ -9,7 +9,8 @@ layout(set = 2, binding = 0, rgba8) uniform restrict readonly image3D probeInfo[
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 1) in vec3 worldPos;
 layout(location = 2) in vec3 worldNormal;
-layout(location = 3) in vec3 TEMP_EYE_POS;
+//layout(location = 3) in vec3 TEMP_EYE_POS;
+layout(location = 3) in vec3 colour;
 layout(location = 0) out vec4 outColor;
 
 layout( push_constant ) uniform cascadeConstant {
@@ -22,11 +23,14 @@ layout( push_constant ) uniform cascadeConstant {
 
 float pi = 3.14159;
 float phi = pi * (sqrt(5.0) - 1.0);
+
+
+
 void main() {
 
   //outColor = texture(texSampler, fragTexCoord);
   //return;
-  vec3 width = vec3(2.2);
+  vec3 width = vec3(2.5);
   vec3 center = vec3(0.0,1.0,0.0);
   
 
@@ -38,12 +42,11 @@ void main() {
   //Now 0-1 to divided for cascades
 
   vec4 radiance = vec4(0.0);
-  vec3 TEMP_CAM_LOC = vec3(5.0,1.0,0.0);
-  vec3 incidentRay = normalize(worldPos - TEMP_EYE_POS);
-  vec3 reflectedRay = normalize(incidentRay - 2*worldNormal*(dot(incidentRay, worldNormal)));
-  //for (int cascade = cascadeInfo.cascade; cascade < cascadeInfo.cascade + 1; cascade++)
+  //vec3 incidentRay = normalize(worldPos - TEMP_EYE_POS);
+  //vec3 reflectedRay = normalize(incidentRay - 2*worldNormal*(dot(incidentRay, worldNormal)));
+  for (int cascade = cascadeInfo.cascade; cascade < cascadeInfo.cascade + 1; cascade++)
   //  for (int cascade = 0; cascade < 2; cascade++)
-  for (int cascade = 0; cascade < 1; cascade++) //If we're accumulating down the cascade chain.. only need to sample lowest
+  //for (int cascade = 0; cascade < 1; cascade++) //If we're accumulating down the cascade chain.. only need to sample lowest
     {
       //Debug show outside of range
       vec3 pos = worldPos - center;
@@ -72,11 +75,11 @@ void main() {
         {
 	  float y = 1.0 - (dir / float(dirCount)) * 2.0;
 	  float radius = sqrt(1.0 - y * y);
-
+	  /*
 	  float theta = phi * dir;
 	  float x = cos(theta) * radius;
 	  float z = sin(theta) * radius;
-	  vec3 rayDir = vec3(x,y,z);
+	  vec3 rayDir = vec3(x,y,z);*/
 	  //	  if (dot(reflectedRay, worldNormal) < 0.8)
 	  //	    continue;
 
@@ -92,7 +95,7 @@ void main() {
     }
 
   radiance.a = 1.0;
-  outColor = radiance + 0.1;
+  outColor = vec4(colour,1.0) * radiance + 0.1;
   //outColor = radiance;
 
 }

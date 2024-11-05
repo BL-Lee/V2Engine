@@ -2,8 +2,10 @@
 #include "VkBShader.hpp"
 #include "VkBSingleCommandBuffer.hpp"
 void VkBRayPipeline::createPipeline(const char* filePath,
-				    std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
-				    std::vector<VkPushConstantRange>* pushConstantRanges) {
+		      std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
+		      std::vector<VkPushConstantRange>* pushConstantRanges,
+		      int commandBufferCount)
+{
   //Shader stuff
   VkShaderModule computeShaderModule = VkBShader::createShaderFromFile(filePath);
 
@@ -51,17 +53,33 @@ void VkBRayPipeline::createPipeline(const char* filePath,
 
   vkDestroyShaderModule(device, computeShaderModule, nullptr);
 
-    
+
   VkCommandBufferAllocateInfo allocInfo{};
   allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
   allocInfo.commandPool = computeCommandPool;
   allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-  allocInfo.commandBufferCount = 1;
-
-  if (vkAllocateCommandBuffers(device, &allocInfo, &commandBuffer) != VK_SUCCESS) {
+  allocInfo.commandBufferCount = commandBufferCount;
+  VkCommandBuffer* buffers;
+  if (commandBufferCount == 1)
+    {
+      buffers = &commandBuffer;
+      commandBuffers = nullptr;
+    }
+  else
+    {
+      commandBuffers = (VkCommandBuffer*)malloc(sizeof(VkCommandBuffer) * commandBufferCount);
+      buffers = commandBuffers;
+    }
+  if (vkAllocateCommandBuffers(device, &allocInfo, buffers) != VK_SUCCESS) {
     throw std::runtime_error("failed to allocate command buffers!");
   }
 
+}
+
+void VkBRayPipeline::createPipeline(const char* filePath,
+				    std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
+				    std::vector<VkPushConstantRange>* pushConstantRanges) {
+  createPipeline(filePath, descriptorSetLayouts, pushConstantRanges,1);
 }
 
 void VkBRayPipeline::transitionSwapChainForComputeWrite(VkImage image, VkImage swapImage) {

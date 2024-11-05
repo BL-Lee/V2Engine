@@ -1,6 +1,7 @@
 #include "VkBLightProbes.hpp"
 #include "VkBBuffer.hpp"
 #include "VkBSingleCommandBuffer.hpp"
+#include <stdexcept>
 void VkBLightProbeInfo::create()
   {
     resolution = 32;
@@ -29,6 +30,13 @@ void VkBLightProbeInfo::create()
 		0, &lineBufferMapped);
     */
 
+    for(int i = 0; i < cascadeCount; i++)
+      {
+	VkSemaphoreCreateInfo semaphoreInfo{};
+	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+	if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &semaphoreChain[i]) != VK_SUCCESS)
+	  throw std::runtime_error("failed to create semaphores!");
+      }
     
     debugCascadeViewIndex = 0;
     debugDirectionViewIndex = 0;
@@ -237,7 +245,10 @@ void VkBLightProbeInfo::copyTextureToCPU(VkBTexture* tex)
   }*/
 void VkBLightProbeInfo::destroy() {
   for (int i = 0; i < cascadeCount; i++)
+    {
     textures[i].destroy();
+    vkDestroySemaphore(device, semaphoreChain[i], nullptr);
+    }
 
   //vkDestroyBuffer(device, lineBuffer, nullptr);
   //vkFreeMemory(device, lineBufferMemory, nullptr);

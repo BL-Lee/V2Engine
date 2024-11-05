@@ -10,11 +10,19 @@ public:
   VkPipelineLayout pipelineLayout;
   VkPipeline pipeline;
   VkCommandBuffer commandBuffer;
-
+  //kind of ahack so we can have radiance cascades that wait for the previous in the chain
+  VkCommandBuffer* commandBuffers;
+  
+  
   void destroy();
   void createPipeline(const char* filePath,
 		      std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
 		      std::vector<VkPushConstantRange>* pushConstantsRanges);
+  void createPipeline(const char* filePath,
+		      std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
+		      std::vector<VkPushConstantRange>* pushConstantsRanges,
+		      int commandBufferCount);
+
   //Shader stuff
   void transitionSwapChainForComputeWrite(VkImage image, VkImage swapImage);
   void transitionSwapChainForComputeTransfer(VkImage image);

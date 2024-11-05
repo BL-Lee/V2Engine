@@ -23,7 +23,7 @@ layout(std140, set = 1, binding = 1) writeonly buffer DebugLines {
 };
 
 layout(set = 0, binding = 2, rgba8) uniform restrict writeonly image2D frameBuffer; //Temp, its from the ray pipeline descriptor set
-layout(set = 1, binding = 0, rgba8) uniform restrict writeonly image3D probeInfo[4];
+layout(set = 1, binding = 0, rgba8) uniform restrict image3D probeInfo[4];
 //layout(set = 1, binding = 1, rgba8) uniform writeonly image3D probeInfo2;
 //layout(set = 1, binding = 1) uniform sampler3D probeSampler;
 
@@ -77,18 +77,34 @@ float rand(vec2 co){
 float pi = 3.14159;
 float phi = pi * (sqrt(5.0) - 1.0);
 float goldenRatio = (1.0 + pow(5.0,0.5))/2.0;
+vec3 center = vec3(0.0, 1.0, 0.0); //Todo: uniform
+vec3 width = vec3(2.5);
+
+//Get pixel in image, local to quadrant
+ivec3 worldPosToImagePixel(vec3 worldPos, int cascadeIndex)
+{
+  vec3 probeTexLocation = (worldPos - center) / width;
+  probeTexLocation += 0.5;
+  int dirCount = int(pow(8, cascadeIndex + 1)); //TODO unhardcode
+  int dirTilingCount = int(pow(2, cascadeIndex + 1)); //TODO cube root
+      
+  //scale down to quadrant 
+  vec3 quadrantLocalCoord = probeTexLocation / vec3(dirTilingCount, dirTilingCount, dirTilingCount);
+
+  ivec3 coord = ivec3(quadrantLocalCoord * imageSize(probeInfo[cascadeIndex]));
+  return coord;
+}
+
+
 
 #define MAX_BOUNCE 1
 //#define SAMPLE_COUNT 6
 void main() {
   vec4 pixel = vec4(0.0);
 
-
   int cascadeIndex = cascadeInfo.cascade;//int(gl_GlobalInvocationID.z);
   int SAMPLE_COUNT = int(pow(8, cascadeIndex + 1)); //8, 64, 64*8
   vec4 radiance = vec4(0.0);
-  vec3 center = vec3(0.0, 1.0, 0.0);
-  vec3 width = vec3(2.2);
   //determine what quadrant we're in
   //Assume powers of two
   int dirTilingCount = int(pow(2, cascadeIndex + 1)); //2, 4, 8
@@ -176,6 +192,23 @@ void main() {
     }
 
   pixel.a = 1.0;
+
+  if (cascadeIndex < 3)
+    {
+      
+      ivec3 upperCoord = worldPosToImagePixel(center + offset, cascadeIndex + 1);
+      int upperDirCount = int(pow(8, cascadeIndex + 1 + 1)); //TODO unhardcode
+      int upperDirTilingCount = int(pow(2, cascadeIndex + 1 + 1)); //TODO cube root
+      for (int dir = 0; dir < upperDirCount; dir++)
+	{
+	  ivec3 quadrantOffset = ivec3(dir % upperDirTilingCount,
+				       (dir / upperDirTilingCount) % upperDirTilingCount,
+				       dir / (upperDirTilingCount * upperDirTilingCount)) * imageSize(probeInfo[cascadeIndex + 1]) / upperDirTilingCount;
+	  ivec3 imgCoord = upperCoord + quadrantOffset;
+	  pixel += imageLoad(probeInfo[cascadeIndex + 1], imgCoord) / upperDirCount;
+	}
+    }
+  
   imageStore(probeInfo[cascadeIndex], ivec3(gl_GlobalInvocationID.xyz), pixel);
 
   if (cascadeIndex == cascadeInfo.lineView)
@@ -187,7 +220,7 @@ void main() {
       * 2;
     lines[linearIdx + 0].pos = center + offset;
     lines[linearIdx + 0].colour = pixel.rgb;
-    lines[linearIdx + 1].pos = rayOrigin + rayDir * dist;
+    lines[linearIdx + 1].pos = center + offset + rayDir * 0.02;//dist;
     lines[linearIdx + 1].colour = pixel.rgb;
   }
 
