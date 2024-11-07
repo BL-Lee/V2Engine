@@ -4,6 +4,7 @@ layout(set=0, binding = 1) uniform sampler2D texSampler;
 
 //layout(set=2, binding = 1) uniform sampler3D probeSampler;
 layout(set = 2, binding = 0, rgba8) uniform restrict readonly image3D probeInfo[4];
+layout(set = 2, binding = 2) uniform sampler3D probeSamplers[4];
 //layout(set = 1, binding = 0, rgba8) uniform readonly image3D probeInfo[2];
 //layout(set = 2, binding = 1, rgba8) uniform readonly image3D probeInfo2;	
 layout(location = 0) in vec2 fragTexCoord;
@@ -71,6 +72,7 @@ void main() {
 
       ivec3 coord = ivec3(quadrantLocalCoord * imageSize(probeInfo[cascade]));
       //for (int dir = cascadeInfo.quadrant; dir < cascadeInfo.quadrant + 1; dir++)//dirCount; dir++)
+      int contributingDirs = 0;
       for (int dir = 0; dir < dirCount; dir++)//dirCount; dir++)
         {
 	  float y = 1.0 - (dir / float(dirCount)) * 2.0;
@@ -90,12 +92,23 @@ void main() {
 	  if (imgCoord.x > imageSize(probeInfo[cascade]).x || imgCoord.x > imageSize(probeInfo[cascade]).y)
 	    radiance = vec4(1.0,0.0,1.0,1.0);
 	  else
-	    radiance += imageLoad(probeInfo[cascade], coord + quadrantOffset) / (dirCount / 8.0) ;
+	    {
+	      vec3 texCoord = vec3(coord + quadrantOffset) / imageSize(probeInfo[cascade]);
+	      //radiance += imageLoad(probeInfo[cascade], coord + quadrantOffset) / (dirCount / 8.0) ;
+	      vec4 val = texture(probeSamplers[cascade], texCoord);
+	      if (val != vec4(0.0))
+		{
+		  radiance += texture(probeSamplers[cascade], texCoord);
+		  contributingDirs++;
+		}
+	    }
         }
+      if (contributingDirs > 0)
+	radiance /= contributingDirs;
     }
 
   radiance.a = 1.0;
-  outColor = vec4(colour,1.0) * radiance + 0.1;
-  //outColor = radiance;
+  //outColor = vec4(colour,1.0) * radiance + 0.1;
+  outColor = radiance;
 
 }

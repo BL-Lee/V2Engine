@@ -33,9 +33,9 @@ void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool* descriptorPool,
       uint32_t bufferCount = 0;
       //The resizing changes memory locations.
       std::vector<VkWriteDescriptorSet> descriptorWrites{};
-      VkDescriptorImageInfo imageInfoBuffer[4]; //TODO make dynamic?
-      VkDescriptorBufferInfo bufferInfoBuffer[4];
-      VkDescriptorBufferInfo storageBufferInfoBuffer[4];
+      VkDescriptorImageInfo imageInfoBuffer[16]; //TODO make dynamic?
+      VkDescriptorBufferInfo bufferInfoBuffer[16];
+      VkDescriptorBufferInfo storageBufferInfoBuffer[16];
       descriptorWrites.resize(descriptorPool->descriptorLayoutBindings.size());
 
       for (int j = 0; j < descriptorPool->descriptorLayoutBindings.size(); j++)

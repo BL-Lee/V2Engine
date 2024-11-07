@@ -49,16 +49,19 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
   case VKB_TEXTURE_TYPE_SAMPLED_RGBA:
     {
       format = VK_FORMAT_R8G8B8A8_SRGB;
+      //format = VK_FORMAT_R32G32B32A32_SFLOAT;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
       imageSize = width * height * depth *4;
+	    //imageSize = width * height * depth * 4 * sizeof(float);
       channels = 4;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;
   case VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA:
     {
       format = VK_FORMAT_R8G8B8A8_UNORM;
+      format = VK_FORMAT_R32G32B32A32_SFLOAT;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
       usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
@@ -66,6 +69,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
 	VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
       imageSize = width * height * depth *4;
+      //imageSize = width * height * depth * 4 * sizeof(float);
       channels = 4;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;
@@ -73,6 +77,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
   case VKB_TEXTURE_TYPE_STORAGE_RGBA:
     {
       format = VK_FORMAT_B8G8R8A8_UNORM;
+      //format = VK_FORMAT_R32G32B32A32_SFLOAT;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |
 	VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
@@ -80,6 +85,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
 
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
       imageSize = width * height * depth * 4;
+      //imageSize = width * height * depth * 4 * sizeof(float);
       channels = 4;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;
@@ -192,6 +198,9 @@ void VkBTexture::initSampler() {
   samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
   samplerInfo.magFilter = VK_FILTER_LINEAR;
   samplerInfo.minFilter = VK_FILTER_LINEAR;
+  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
   samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
   samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;

@@ -241,13 +241,14 @@ private:
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     //    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     matrixPool.createDescriptorSetLayout();
-    cascadeInfos[0] = {0, 0, 0.0, 1/32.0};
-    cascadeInfos[1] = {1, 0, 1/32.0, 1/16.0};
-    cascadeInfos[2] = {2, 0, 1/16.0, 1/8.0};
+    cascadeInfos[0] = {0, 0, 0.0, 0.02};
+    cascadeInfos[1] = {1, 0, 0.02, 10000.0};
+    cascadeInfos[2] = {2, 0, 0.3, 10000.0};
     cascadeInfos[3] = {3, 0, 1/8.0, 10000.0}; 
     lightProbeInfo.create();    
     lightProbeUniformPool.create(1, swapChain.imageViews.size(), 0, true);
     lightProbeUniformPool.addImageArray(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, lightProbeInfo.cascadeCount);
+    lightProbeUniformPool.addImageArray(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, lightProbeInfo.cascadeCount);
     //lightProbeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     lightProbeUniformPool.addStorageBuffer(1,
 					   lightProbeInfo.lineCount * 2 * sizeof(LineVertex));
@@ -298,8 +299,8 @@ private:
     uint32_t a, b;
     lineVertexBuffer.fill(testLines, 6, testLineIndices, 6, &a, &b);
 
-    std::vector<VkImageView> probeViews(lightProbeInfo.cascadeCount);
-    std::vector<VkSampler> probeSamplers(lightProbeInfo.cascadeCount);
+    std::vector<VkImageView> probeViews(lightProbeInfo.cascadeCount * 2);
+    std::vector<VkSampler> probeSamplers(lightProbeInfo.cascadeCount * 2);
     for (int i = 0; i < lightProbeInfo.cascadeCount; i++)
       {
 	lightProbeInfo.textures[i].createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
@@ -309,6 +310,9 @@ private:
 						   nullptr);
 	probeViews[i] = lightProbeInfo.textures[i].imageView;
 	probeSamplers[i] = lightProbeInfo.textures[i].textureSampler;
+	probeViews[i + lightProbeInfo.cascadeCount] = lightProbeInfo.textures[i].imageView;
+	probeSamplers[i + lightProbeInfo.cascadeCount] = lightProbeInfo.textures[i].textureSampler;
+
       }
 
     //VkImageView probeViews[2] = {lightProbeInfo.textures[0].imageView, lightProbeInfo.textures[1].imageView};
