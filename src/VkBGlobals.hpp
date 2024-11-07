@@ -12,7 +12,8 @@ extern VkPhysicalDeviceProperties physicalDeviceProperties;
 
 extern std::vector<const char*> validationLayers;
 extern std::vector<const char*> deviceExtensions;
-
+extern GLFWwindow* window;
+extern uint32_t graphicsQueueFamily;
 extern VkQueue graphicsQueue;
 extern VkQueue presentQueue;
 extern VkQueue computeQueue;

@@ -7,6 +7,14 @@
 #include "VkBTexture.hpp"
 #include "Vertex.hpp"
 #include "VkBVertexBuffer.hpp"
+
+struct CascadeInfo
+{
+  int cascade, quadrant;
+  float start, end;
+  int lineViewIndex;
+};
+
 class VkBLightProbeInfo
 {
 public:

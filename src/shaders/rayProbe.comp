@@ -199,7 +199,7 @@ void main() {
 
   pixel.a = 1.0;
 
-  if (cascadeIndex < 1)
+  if (cascadeIndex < 3)
     {
       
       ivec3 upperCoord = worldPosToImagePixel(center + offset, cascadeIndex + 1);

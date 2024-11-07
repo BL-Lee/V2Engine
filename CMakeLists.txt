@@ -29,6 +29,8 @@ add_subdirectory(libraries/glfw-3.4)
 include_directories(libraries/glfw-3.4/include)
 include_directories(libraries/tinyobjloader)
 include_directories(libraries/stb)
+include_directories(libraries/imgui)
+include_directories(libraries/imgui/backends)
 #other libs
 find_package(Vulkan REQUIRED)
 #link_libraries(Vulkan)
@@ -39,8 +41,14 @@ include_directories(libraries/glm)
 #src files
 file(GLOB SRC src/*.cpp)
 
+file(GLOB IMGUI_SRC
+	libraries/imgui/*.cpp
+	libraries/imgui/backends/imgui_impl_glfw.cpp
+	libraries/imgui/backends/imgui_impl_vulkan.cpp
+)
+
 add_executable(V2Engine src/main.cpp ${LDFLAGS})
-target_sources(V2Engine PUBLIC ${SRC})
+target_sources(V2Engine PUBLIC ${SRC} ${IMGUI_SRC})
 #add_executable(V2Engine src/main.cpp ${LDFLAGS})
 
 if (VULKAN_FOUND)

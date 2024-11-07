@@ -34,6 +34,7 @@ VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 VkPhysicalDeviceProperties physicalDeviceProperties;
 VkDevice device = VK_NULL_HANDLE;
 VkQueue graphicsQueue;
+uint32_t graphicsQueueFamily;
 VkQueue presentQueue;
 VkQueue computeQueue;
 VkCommandPool drawCommandPool;
@@ -42,14 +43,8 @@ VkCommandPool computeCommandPool;
 int USE_RASTER = 1; //Swap between ray and raster
 int DRAW_DEBUG_LINES = 0;
 int viewCascade = 0;
-struct CascadeInfo
-{
-  int cascade, quadrant;
-  float start, end;
-  int lineViewIndex;
-};
-CascadeInfo cascadeInfos[4];
 
+GLFWwindow* window;
 double mouseX = 0;
 double mouseY = 0;
 bool cameraEnabled = 0;
@@ -79,15 +74,16 @@ const bool enableVulkanValidationLayers = true;
 #include "Input.hpp"
 #include "VkBLightProbes.hpp"
 #include "VkBRayPipeline.hpp"
-
+#include "DebugConsole.hpp"
 Input inputInfo = {};
-
+DebugConsole debugConsole;
+CascadeInfo cascadeInfos[4];
 class V2Engine {
 public:
   
 
   VkSurfaceKHR surface;
-  
+
   VkBGraphicsPipeline graphicsPipeline;
   VkBLineGraphicsPipeline linePipeline;
   VkBRayPipeline rayPipeline;
@@ -113,7 +109,7 @@ public:
   VkSemaphore renderFinishedSemaphore;
   VkSemaphore probeInfoFinishedSemaphore;
   VkFence inFlightFence;
-  GLFWwindow* window;
+
   Model* ratModel;
   Model* cornellScene;
   Model* cornellLeftWall;
@@ -191,7 +187,15 @@ private:
     if (action == GLFW_PRESS && key == GLFW_KEY_P)
       cascadeInfos[viewCascade].quadrant = (cascadeInfos[viewCascade].quadrant - 1) % (viewCascade == 0 ? 8 : 64);
     //viewAllDirections = !viewAllDirections;
-    
+    if (action == GLFW_PRESS && key == GLFW_KEY_GRAVE_ACCENT)
+      {
+	if (debugConsole.show)
+	  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	else
+	  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+	debugConsole.show = !debugConsole.show;
+      }
+
 
     if (action == GLFW_PRESS && key == GLFW_KEY_Q)
       glfwSetWindowShouldClose(window, GL_TRUE);
@@ -373,7 +377,9 @@ private:
 				      &probeUniformLayouts, &cascadePushConstantRange, lightProbeInfo.cascadeCount);
     drawCommandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
-	
+    debugConsole.init(&swapChain, renderPass.renderPass);
+    for (int i = 0; i < 4; i++)
+      debugConsole.cascadeInfos[i] = &cascadeInfos[i];
   }
 
   void createSyncObjects() {
@@ -500,7 +506,7 @@ private:
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS)  {
       throw std::runtime_error("Failed to create logical device");
     }
-
+    graphicsQueueFamily = indices.graphicsFamily.value();
     vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphicsQueue);
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
     vkGetDeviceQueue(device, indices.computeFamily.value(), 0, &computeQueue);
@@ -719,7 +725,8 @@ private:
 	    
 	  }
 
-
+	debugConsole.draw(drawCommandBuffer.commandBuffer);
+	
 	drawCommandBuffer.end();
 
 	//Syncronization info for graphics 
@@ -901,7 +908,7 @@ private:
     vkDestroyPipelineLayout(device, linePipeline.layout, nullptr);
 
     lineVertexBuffer.destroy();
-
+    debugConsole.destroy();
     staticVertexBuffer.destroy();
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
