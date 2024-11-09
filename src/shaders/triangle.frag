@@ -108,7 +108,7 @@ void main() {
     }
 
   radiance.a = 1.0;
-  //outColor = vec4(colour,1.0) * radiance + 0.1;
-  outColor = radiance;
+  outColor = vec4(colour,1.0) * radiance + 0.1;
+  //outColor = radiance;
 
 }
