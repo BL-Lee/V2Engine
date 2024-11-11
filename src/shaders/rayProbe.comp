@@ -23,10 +23,8 @@ layout(std140, set = 1, binding = 1) writeonly buffer DebugLines {
 };
 
 layout(set = 0, binding = 2, rgba8) uniform restrict writeonly image2D frameBuffer; //Temp, its from the ray pipeline descriptor set
-layout(set = 1, binding = 0, rgba8) uniform restrict image3D probeInfo[4];
-layout(set = 1, binding = 2) uniform sampler3D probeSamplers[4];
-//layout(set = 1, binding = 1, rgba8) uniform writeonly image3D probeInfo2;
-//layout(set = 1, binding = 1) uniform sampler3D probeSampler;
+layout(set = 1, binding = 0, rgba8) uniform restrict image3D probeInfo;
+layout(set = 1, binding = 2) uniform sampler3D probeSampler;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
@@ -92,7 +90,7 @@ ivec3 worldPosToImagePixel(vec3 worldPos, int cascadeIndex)
   //scale down to quadrant 
   vec3 quadrantLocalCoord = probeTexLocation / vec3(dirTilingCount, dirTilingCount, dirTilingCount);
 
-  ivec3 coord = ivec3(quadrantLocalCoord * imageSize(probeInfo[cascadeIndex]));
+  ivec3 coord = ivec3(quadrantLocalCoord * imageSize(probeInfo));
   return coord;
 }
 
@@ -110,9 +108,9 @@ void main() {
   //Assume powers of two
   int dirTilingCount = int(pow(2, cascadeIndex + 1)); //2, 4, 8
 
-  ivec3 dirTile = ivec3(int(float(gl_GlobalInvocationID.x) / imageSize(probeInfo[cascadeIndex]).x * dirTilingCount),
-			int(float(gl_GlobalInvocationID.y) / imageSize(probeInfo[cascadeIndex]).y * dirTilingCount),
-			int(float(gl_GlobalInvocationID.z) / imageSize(probeInfo[cascadeIndex]).z * dirTilingCount));
+  ivec3 dirTile = ivec3(int(float(gl_GlobalInvocationID.x) / imageSize(probeInfo).x * dirTilingCount),
+			int(float(gl_GlobalInvocationID.y) / imageSize(probeInfo).y * dirTilingCount),
+			int(float(gl_GlobalInvocationID.z) / imageSize(probeInfo).z * dirTilingCount));
   int dirIndex = dirTile.x + dirTile.y * dirTilingCount + dirTile.z * dirTilingCount * dirTilingCount;
 
   float y = 1.0 - (dirIndex / float(SAMPLE_COUNT)) * 2.0;
@@ -126,10 +124,10 @@ void main() {
   
 
 
-  int gridSize = 32 / int(pow(2, cascadeIndex));
+  int gridSize = 64 / int(pow(2, cascadeIndex));
   //Where are we inside this quadrant
   //0-quadrantSize in pixels
-  ivec3 localInvocation = ivec3(gl_GlobalInvocationID) - dirTile * (imageSize(probeInfo[cascadeIndex]) / dirTilingCount);
+  ivec3 localInvocation = ivec3(gl_GlobalInvocationID) - dirTile * (imageSize(probeInfo) / dirTilingCount);
 
   //vec3 rayDir = normalize(vec3(dirTile)/(dirTilingCount / 2) - 0.5);
   
@@ -140,12 +138,12 @@ void main() {
 
   /*
   pixel = vec4(rayDir, 1.0);
-  imageStore(probeInfo[cascadeIndex], ivec3(gl_GlobalInvocationID.xyz), pixel);
+  imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
   if (cascadeIndex == cascadeInfo.lineView)
   {
     uint linearIdx = (gl_GlobalInvocationID.x +
-		      imageSize(probeInfo[cascadeIndex]).y * gl_GlobalInvocationID.y +
-		      imageSize(probeInfo[cascadeIndex]).y * imageSize(probeInfo[cascadeIndex]).z * gl_GlobalInvocationID.z 
+		      imageSize(probeInfo).y * gl_GlobalInvocationID.y +
+		      imageSize(probeInfo).y * imageSize(probeInfo).z * gl_GlobalInvocationID.z 
 		      )
       * 2;
     lines[linearIdx + 0].pos = center + offset;
@@ -155,7 +153,7 @@ void main() {
   }
   return;
   */
-  vec3 rayOrigin = center + offset + (rayDir * cascadeInfo.start);
+  vec3 rayOrigin = center + offset;// + (rayDir * cascadeInfo.start);
   float dist = cascadeInfo.end - cascadeInfo.start;
   vec4 emitColour = vec4(0.0);
   uint matIndex = -1;
@@ -198,7 +196,7 @@ void main() {
     }
 
 
-  if (cascadeIndex < 2 && matIndex == -1)
+  if (cascadeIndex < 1)// && matIndex == -1)
     {
       
       ivec3 upperCoord = worldPosToImagePixel(center + offset, cascadeIndex + 1);
@@ -224,14 +222,14 @@ void main() {
 	  float z = sin(theta) * radius;
 	  vec3 upperDir = normalize(vec3(x,y,z));
 
-	  if (dot(upperDir, rayDir) < 0.0) continue;
+	  if (dot(upperDir, rayDir) < 0.2) continue;
 	  
 	  ivec3 quadrantOffset = ivec3(dir % upperDirTilingCount,
 				       (dir / upperDirTilingCount) % upperDirTilingCount,
-				       dir / (upperDirTilingCount * upperDirTilingCount)) * imageSize(probeInfo[cascadeIndex + 1]) / upperDirTilingCount;
+				       dir / (upperDirTilingCount * upperDirTilingCount)) * imageSize(probeInfo) / upperDirTilingCount;
 	  ivec3 imgCoord = upperCoord + quadrantOffset;
-	  vec3 texCoord = vec3(imgCoord) / imageSize(probeInfo[cascadeIndex + 1]) - 0.5;
-	  vec4 val = texture(probeSamplers[cascadeIndex + 1], texCoord);
+	  vec3 texCoord = vec3(imgCoord) / imageSize(probeInfo) - 0.5;
+	  vec4 val = texture(probeSampler, texCoord);
 	  if (val != vec4(0.0,0.0,0.0,1.0))
 	    {
 	      contributingPixel += val;
@@ -243,13 +241,13 @@ void main() {
 	pixel += contributingPixel / contributingDirs;
     }
   pixel.a = 1.0;
-  imageStore(probeInfo[cascadeIndex], ivec3(gl_GlobalInvocationID.xyz), pixel);
+  imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
 
   if (cascadeIndex == cascadeInfo.lineView)
   {
     uint linearIdx = (gl_GlobalInvocationID.x +
-		      imageSize(probeInfo[cascadeIndex]).y * gl_GlobalInvocationID.y +
-		      imageSize(probeInfo[cascadeIndex]).y * imageSize(probeInfo[cascadeIndex]).z * gl_GlobalInvocationID.z 
+		      imageSize(probeInfo).y * gl_GlobalInvocationID.y +
+		      imageSize(probeInfo).y * imageSize(probeInfo).z * gl_GlobalInvocationID.z 
 		      )
       * 2;
     lines[linearIdx + 0].pos = center + offset;

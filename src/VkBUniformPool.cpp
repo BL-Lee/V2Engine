@@ -82,7 +82,7 @@ void VkBUniformPool::createDescriptorSetLayout() {
   for (int i = 0; i < descriptorLayoutBindings.size(); i++)
     {
       poolSizes[i].type = descriptorLayoutBindings[i].descriptorType;
-      poolSizes[i].descriptorCount = totalSets * imagesInFlight;
+      poolSizes[i].descriptorCount = totalSets * imagesInFlight * descriptorLayoutBindings[i].descriptorCount;
     }
   
   VkDescriptorPoolCreateInfo poolInfo{};

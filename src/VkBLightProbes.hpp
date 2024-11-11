@@ -7,7 +7,8 @@
 #include "VkBTexture.hpp"
 #include "Vertex.hpp"
 #include "VkBVertexBuffer.hpp"
-
+#include "VkBUniformPool.hpp"
+#include "VkBUniformBuffer.hpp"
 struct CascadeInfo
 {
   int cascade, quadrant;
@@ -26,11 +27,16 @@ public:
   int cascadeCount;
   int baseRayCount; //TODO
   int rayIncreasePerCascade; //TODO
-  VkBTexture textures[4]; //Unhardcode
+  VkBTexture textures[5]; //Unhardcode
   VkSemaphore semaphoreChain[4]; //unhardcode
   size_t imageWidth;
-  //VkBUniformPool uniformPool;
-  //VkBUniformBuffer uniform;
+
+  
+  VkBUniformPool computeUniformPool;
+  VkBUniformBuffer computeUniforms[4];
+  VkBUniformPool drawUniformPool;
+  VkBUniformBuffer drawUniform;
+  
 
   //DEBUG LINES------------------
   VkBuffer lineBuffer; 
@@ -45,10 +51,9 @@ public:
   
   
   
-  void create();
+  void create(int frameCount);
   void destroy();
-  //  void copyTextureToCPU(VkBTexture* tex);
-  void transitionImageToStorage(VkImage image);
-  void transitionImageToSampled(VkImage image);
-  //  void processLightProbeTextureToLines();//deprecated. Fills line buffer in compute shader now
+  void transitionImagesToStorage();
+  void transitionImageToSampled(int cascadeIndex);
+
 };

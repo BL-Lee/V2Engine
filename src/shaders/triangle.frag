@@ -3,8 +3,11 @@
 layout(set=0, binding = 1) uniform sampler2D texSampler;
 
 //layout(set=2, binding = 1) uniform sampler3D probeSampler;
-layout(set = 2, binding = 0, rgba8) uniform restrict readonly image3D probeInfo[4];
+//layout(set = 2, binding = 0, rgba8) uniform restrict readonly image3D probeInfo[4];
+//layout(set = 2, binding = 2) uniform sampler3D probeSamplers[4];
+//layout(set = 2, binding = 0, rgba8) uniform restrict readonly image3D probeInfo;
 layout(set = 2, binding = 2) uniform sampler3D probeSamplers[4];
+
 //layout(set = 1, binding = 0, rgba8) uniform readonly image3D probeInfo[2];
 //layout(set = 2, binding = 1, rgba8) uniform readonly image3D probeInfo2;	
 layout(location = 0) in vec2 fragTexCoord;
@@ -70,7 +73,7 @@ void main() {
       //scale down to quadrant 
       vec3 quadrantLocalCoord = probeTexLocation / vec3(dirTilingCount, dirTilingCount, dirTilingCount);
 
-      ivec3 coord = ivec3(quadrantLocalCoord * imageSize(probeInfo[cascade]));
+      ivec3 coord = ivec3(quadrantLocalCoord * textureSize(probeSamplers[cascade],0));
       //for (int dir = cascadeInfo.quadrant; dir < cascadeInfo.quadrant + 1; dir++)//dirCount; dir++)
       int contributingDirs = 0;
       for (int dir = 0; dir < dirCount; dir++)//dirCount; dir++)
@@ -87,13 +90,13 @@ void main() {
 
           ivec3 quadrantOffset = ivec3(dir % dirTilingCount,
 				       (dir / dirTilingCount) % dirTilingCount,
-				       dir / (dirTilingCount * dirTilingCount)) * imageSize(probeInfo[cascade]) / dirTilingCount;
+				       dir / (dirTilingCount * dirTilingCount)) * textureSize(probeSamplers[cascade],0) / dirTilingCount;
 	  ivec3 imgCoord = coord + quadrantOffset;
-	  if (imgCoord.x > imageSize(probeInfo[cascade]).x || imgCoord.x > imageSize(probeInfo[cascade]).y)
+	  if (imgCoord.x > textureSize(probeSamplers[cascade],0).x || imgCoord.x > textureSize(probeSamplers[cascade],0).y)
 	    radiance = vec4(1.0,0.0,1.0,1.0);
 	  else
 	    {
-	      vec3 texCoord = vec3(coord + quadrantOffset) / imageSize(probeInfo[cascade]);
+	      vec3 texCoord = vec3(coord + quadrantOffset) / textureSize(probeSamplers[cascade],0);
 	      //radiance += imageLoad(probeInfo[cascade], coord + quadrantOffset) / (dirCount / 8.0) ;
 	      vec4 val = texture(probeSamplers[cascade], texCoord);
 	      if (val != vec4(0.0))

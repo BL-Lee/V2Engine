@@ -93,8 +93,6 @@ public:
 
   VkBVertexBuffer staticVertexBuffer;
   VkBUniformPool matrixPool;
-  VkBUniformBuffer lightProbeUniform;
-  VkBUniformPool lightProbeUniformPool;
 
   VkBUniformPool rayInputAssemblerPool;
   VkBUniformPool rayTexturePool;
@@ -122,21 +120,6 @@ public:
 
   VkBLightProbeInfo lightProbeInfo;
   
-  LineVertex testLines[6] = {
-    {{0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}},
-    {{1.0, 0.0, 0.0}, {1.0, 0.0, 0.0}},
-
-    {{0.0, 0.0, 0.0}, {0.0, 1.0, 0.0}},
-    {{0.0, 1.0, 0.0}, {0.0, 1.0, 0.0}},
-
-    {{0.0, 0.0, 0.0}, {0.0, 0.0, 1.0}},
-     {{0.0, 0.0, 1.0}, {0.0, 0.0, 1.0}}
-  };
-  unsigned int testLineIndices[6] = {
-    0,1,2,3,4,5
-  };
-
-  VkBVertexBuffer lineVertexBuffer;
   
   std::chrono::time_point<std::chrono::high_resolution_clock> fpsPrev;
 
@@ -239,6 +222,18 @@ private:
     swapChain.createImageViews();
     
     renderPass.createRenderPass(swapChain.imageFormat);
+        //Command pools
+    createCommandPool(&drawCommandPool, device, physicalDevice, surface,
+		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    createCommandPool(&transientCommandPool, device, physicalDevice, surface,
+		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
+    createCommandPool(&computeCommandPool, device, physicalDevice, surface,
+		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    rayBackBuffer.createTextureImage(VKB_TEXTURE_TYPE_STORAGE_RGBA,
+				      swapChain.extent.width,
+				      swapChain.extent.height,
+				      nullptr);
+
     
     matrixPool.create(5, swapChain.imageViews.size(), sizeof(glm::mat4));
     matrixPool.addBuffer(0, sizeof(glm::mat4));
@@ -246,17 +241,9 @@ private:
     //    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     matrixPool.createDescriptorSetLayout();
     cascadeInfos[0] = {0, 0, 0.0, 0.02};
-    cascadeInfos[1] = {1, 0, 0.02, 10000.0};
-    cascadeInfos[2] = {2, 0, 0.3, 10000.0};
+    cascadeInfos[1] = {1, 0, 0.02, 0.36};
+    cascadeInfos[2] = {2, 0, 0.36, 1.4};
     cascadeInfos[3] = {3, 0, 1/8.0, 10000.0}; 
-    lightProbeInfo.create();    
-    lightProbeUniformPool.create(1, swapChain.imageViews.size(), 0, true);
-    lightProbeUniformPool.addImageArray(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, lightProbeInfo.cascadeCount);
-    lightProbeUniformPool.addImageArray(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, lightProbeInfo.cascadeCount);
-    //lightProbeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    lightProbeUniformPool.addStorageBuffer(1,
-					   lightProbeInfo.lineCount * 2 * sizeof(LineVertex));
-    lightProbeUniformPool.createDescriptorSetLayout();
 
     cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*3 + sizeof(float)*4);
@@ -267,8 +254,8 @@ private:
     mainCamera.ubo.allocateDescriptorSets(&cameraUniformPool, nullptr, nullptr, nullptr);
     
     
-
-    std::vector<VkDescriptorSetLayout> uniformLayouts = {matrixPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout, lightProbeUniformPool.descriptorSetLayout};
+    lightProbeInfo.create(swapChain.imageViews.size());
+    std::vector<VkDescriptorSetLayout> uniformLayouts = {matrixPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout, lightProbeInfo.drawUniformPool.descriptorSetLayout};
     VkPushConstantRange cascadePushConstant = {
       VK_SHADER_STAGE_FRAGMENT_BIT, 
       0,//  offset
@@ -286,43 +273,7 @@ private:
     std::cout << "Swap Chain image count: " << swapChain.imageViews.size() << std::endl;
 
 
-    //Command pools
-    createCommandPool(&drawCommandPool, device, physicalDevice, surface,
-		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    createCommandPool(&transientCommandPool, device, physicalDevice, surface,
-		      VK_COMMAND_POOL_CREATE_TRANSIENT_BIT);
-    createCommandPool(&computeCommandPool, device, physicalDevice, surface,
-		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    rayBackBuffer.createTextureImage(VKB_TEXTURE_TYPE_STORAGE_RGBA,
-				      swapChain.extent.width,
-				      swapChain.extent.height,
-				      nullptr);
 
-
-    lineVertexBuffer.create(6 * sizeof(LineVertex), 6 * sizeof(unsigned int));
-    uint32_t a, b;
-    lineVertexBuffer.fill(testLines, 6, testLineIndices, 6, &a, &b);
-
-    std::vector<VkImageView> probeViews(lightProbeInfo.cascadeCount * 2);
-    std::vector<VkSampler> probeSamplers(lightProbeInfo.cascadeCount * 2);
-    for (int i = 0; i < lightProbeInfo.cascadeCount; i++)
-      {
-	lightProbeInfo.textures[i].createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
-						   lightProbeInfo.resolution * 2,
-						   lightProbeInfo.resolution * 2,
-						   lightProbeInfo.resolution * 2,
-						   nullptr);
-	probeViews[i] = lightProbeInfo.textures[i].imageView;
-	probeSamplers[i] = lightProbeInfo.textures[i].textureSampler;
-	probeViews[i + lightProbeInfo.cascadeCount] = lightProbeInfo.textures[i].imageView;
-	probeSamplers[i + lightProbeInfo.cascadeCount] = lightProbeInfo.textures[i].textureSampler;
-
-      }
-
-    //VkImageView probeViews[2] = {lightProbeInfo.textures[0].imageView, lightProbeInfo.textures[1].imageView};
-    //VkSampler probeSamplers[2] = {lightProbeInfo.textures[0].textureSampler, lightProbeInfo.textures[1].textureSampler};
-    
-    lightProbeUniform.allocateDescriptorSets(&lightProbeUniformPool, probeViews.data(), probeSamplers.data(), &lightProbeInfo.lineVBO.vertexBuffer);
 
     staticVertexBuffer.create(sizeof(Vertex) * 5000, sizeof(uint32_t) * 5000);
     emissive.index = 0;
@@ -371,7 +322,7 @@ private:
 								cameraUniformPool.descriptorSetLayout};
     rayPipeline.createPipeline("../src/shaders/ray.spv", &computeUniformLayouts, nullptr);
     std::vector<VkDescriptorSetLayout> probeUniformLayouts = {rayInputAssemblerPool.descriptorSetLayout,
-							      lightProbeUniformPool.descriptorSetLayout};
+							      lightProbeInfo.computeUniformPool.descriptorSetLayout};
     cascadePushConstantRange[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     lightProbePipeline.createPipeline("../src/shaders/rayProbe.spv",
 				      &probeUniformLayouts, &cascadePushConstantRange, lightProbeInfo.cascadeCount);
@@ -552,9 +503,9 @@ private:
     //Radiance Cascades ------------------------------------------------------------
     if (true)
       {
+	lightProbeInfo.transitionImagesToStorage();
 	for (int i = lightProbeInfo.cascadeCount - 1; i >= 0 ; i--)
 	  {
-	    //lightProbeInfo.transitionImageToStorage(lightProbeInfo.textures.image);
 	    vkResetCommandBuffer(lightProbePipeline.commandBuffers[i], 0);
 
 	    VkCommandBufferBeginInfo beginInfo{};
@@ -574,11 +525,9 @@ private:
 	    vkCmdBindDescriptorSets(lightProbePipeline.commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE,
 				    lightProbePipeline.pipelineLayout,
 				    1, 1,
-				    &lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool]
+				    &lightProbeInfo.computeUniformPool.descriptorSets[imageIndex][lightProbeInfo.computeUniforms[i].indexIntoPool]
 				    , 0, 0);
 
-
-	    //	for (int i = 0; i < 2; i++)
 
 	    //Cascade info cascade 0
 	    vkCmdPushConstants(lightProbePipeline.commandBuffers[i],
@@ -630,9 +579,8 @@ private:
 	    if (vkQueueSubmit(computeQueue, 1, &submitInfo, nullptr) != VK_SUCCESS) {
 	      throw std::runtime_error("failed to submit compute command buffer!");
 	    };
-	    //lightProbeInfo.transitionImageToSampled(lightProbeTexture.image);
-	    //lightProbeInfo.copyTextureToCPU(&lightProbeTexture);
-	    //lightProbeInfo.processLightProbeTextureToLines();
+
+	    lightProbeInfo.transitionImageToSampled(i);
 	  }
       }
 
@@ -661,7 +609,7 @@ private:
 				1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
 	vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				graphicsPipeline.layout,
-				2, 1, &lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool], 0, nullptr);
+				2, 1, &lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][lightProbeInfo.drawUniform.indexIntoPool], 0, nullptr);
 
 	drawCommandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
@@ -714,7 +662,7 @@ private:
 				    1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
 	    vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 				    linePipeline.layout,
-				    2, 1, &lightProbeUniformPool.descriptorSets[imageIndex][lightProbeUniform.indexIntoPool], 0, nullptr);
+				    2, 1, &lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][lightProbeInfo.drawUniform.indexIntoPool], 0, nullptr);
 
 	    drawCommandBuffer.record(linePipeline.pipeline,
 				      linePipeline.layout,
@@ -877,7 +825,7 @@ private:
       
       processInputs();
       drawFrame();
-      //glfwSetWindowShouldClose(window, GL_TRUE);
+      //      glfwSetWindowShouldClose(window, GL_TRUE);
 
     }
     vkDeviceWaitIdle(device);
@@ -907,7 +855,6 @@ private:
     vkDestroyPipeline(device, linePipeline.pipeline, nullptr);	
     vkDestroyPipelineLayout(device, linePipeline.layout, nullptr);
 
-    lineVertexBuffer.destroy();
     debugConsole.destroy();
     staticVertexBuffer.destroy();
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
@@ -927,7 +874,7 @@ private:
 
     depthTexture.destroy();
     matrixPool.destroy();
-    lightProbeUniformPool.destroy();
+
 
     rayInputAssemblerBuffer.destroy();
     rayInputAssemblerPool.destroy();

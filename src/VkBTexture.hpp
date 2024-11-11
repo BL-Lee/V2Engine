@@ -1,6 +1,5 @@
 #pragma once
 #include <stb_image.h>
-
 typedef uint32_t VkBTextureType;
 #define VKB_TEXTURE_TYPE_DEPTH 0x1u
 #define VKB_TEXTURE_TYPE_SAMPLED_RGBA 0x2u
@@ -23,6 +22,8 @@ public:
   VkMemoryPropertyFlags properties;
   VkImageAspectFlags aspectFlags;
   VkDeviceSize imageSize;
+
+  
 
   void createTextureImage(VkBTextureType type,
 			  uint32_t w, uint32_t h,

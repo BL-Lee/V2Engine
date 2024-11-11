@@ -1,6 +1,6 @@
 #pragma once
 #include "VkBGlobals.hpp"
-#include "SwapChain.hpp"
+#include "swapChain.hpp"
 #include "VkBLightProbes.hpp"
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
