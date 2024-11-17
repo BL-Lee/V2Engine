@@ -20,8 +20,8 @@ endif()
 #set (GLFW_VULKAN_STATIC ON)
 
 if( MSVC )
-	set(ENV{VULKAN_SDK} "C:/VulkanSDK/1.3.283.0")
-	include_directories("C:/VulkanSDK/1.3.283.0/Include")	
+	set(ENV{VULKAN_SDK} "C:/VulkanSDK/1.3.296.0")
+	include_directories("C:/VulkanSDK/1.3.296.0/Include")	
     SET( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ENTRY:mainCRTStartup" )
 endif()
 

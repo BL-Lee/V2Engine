@@ -81,15 +81,17 @@ void VkBLightProbeInfo::create(int frameCount)
     drawUniformPool.addStorageBuffer(1, lineCount * 2 * sizeof(LineVertex));
     drawUniformPool.createDescriptorSetLayout();
 
-    VkImageView probeViews[cascadeCount];
-    VkSampler probeSamplers[cascadeCount];
+    std::vector<VkImageView> probeViews;
+    std::vector<VkSampler> probeSamplers;
+    probeViews.resize(cascadeCount);
+    probeSamplers.resize(cascadeCount);
 
     for (int i = 0; i < cascadeCount; i++)
       {
 	probeViews[i] = textures[i].imageView;
 	probeSamplers[i] = textures[i].textureSampler;
       }
-    drawUniform.allocateDescriptorSets(&drawUniformPool, probeViews, probeSamplers, &lineVBO.vertexBuffer);
+    drawUniform.allocateDescriptorSets(&drawUniformPool, probeViews.data(), probeSamplers.data(), &lineVBO.vertexBuffer);
     
   }
 
@@ -98,10 +100,11 @@ void VkBLightProbeInfo::transitionImagesToStorage()
 {
   VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
     
-  VkImageMemoryBarrier barriers[cascadeCount]; //TODO: Unhardcode
+  std::vector<VkImageMemoryBarrier> barriers; //TODO: Unhardcode
+  barriers.resize(cascadeCount);
   for (int i = 0; i < cascadeCount; i++)
     {
-      barriers[i] = {};
+      barriers[i] = {0};
       barriers[i].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
     
       barriers[i].oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
