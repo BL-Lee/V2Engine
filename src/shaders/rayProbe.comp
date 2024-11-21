@@ -94,7 +94,46 @@ ivec3 worldPosToImagePixel(vec3 worldPos, int cascadeIndex)
   return coord;
 }
 
+vec3 initialDirs[8] = {
+  vec3(-1,-1,-1),
+  vec3( 1,-1,-1),
+  vec3(-1, 1,-1),
+  vec3( 1, 1,-1),
+  vec3(-1,-1, 1),
+  vec3( 1,-1, 1),
+  vec3(-1, 1, 1),
+  vec3( 1, 1, 1)
+};
 
+vec3 getDirFromIndex(int dirIndex, int cascadeIndex)
+{
+  int SAMPLE_COUNT = int(pow(8, cascadeIndex + 1)); //8, 64, 64*8
+  int tmpIndex = dirIndex;
+  int tmpSampleCount = SAMPLE_COUNT;
+  int initDirIdx = int(dirIndex*8.0 / tmpSampleCount);
+  tmpIndex = dirIndex - initDirIdx * (tmpSampleCount / 8);
+  
+
+  vec3 rayDir = initialDirs[initDirIdx];
+
+
+  float contribution = 0.5;//Arbitrary, higher spreads them out, lower bunches them. This is what looked good for demos/4layers
+
+  tmpSampleCount /= 8;
+  for (int i = 0; i < cascadeIndex; i++)
+    {
+      tmpSampleCount = max(tmpSampleCount, 1);
+      int initDirIdx = int(tmpIndex * 8.0 / tmpSampleCount);
+      vec3 nextDir = initialDirs[initDirIdx]; 
+      tmpIndex -= initDirIdx * tmpSampleCount / 8;
+      tmpSampleCount /= 8;
+      rayDir += nextDir * contribution;
+      contribution *= 0.5;
+    }
+
+  rayDir = normalize(rayDir);
+  return rayDir;
+}
 
 #define MAX_BOUNCE 1
 //#define SAMPLE_COUNT 6
@@ -108,21 +147,13 @@ void main() {
   //Assume powers of two
   int dirTilingCount = int(pow(2, cascadeIndex + 1)); //2, 4, 8
 
+  
   ivec3 dirTile = ivec3(int(float(gl_GlobalInvocationID.x) / imageSize(probeInfo).x * dirTilingCount),
 			int(float(gl_GlobalInvocationID.y) / imageSize(probeInfo).y * dirTilingCount),
 			int(float(gl_GlobalInvocationID.z) / imageSize(probeInfo).z * dirTilingCount));
   int dirIndex = dirTile.x + dirTile.y * dirTilingCount + dirTile.z * dirTilingCount * dirTilingCount;
 
-  float y = 1.0 - (dirIndex / float(SAMPLE_COUNT)) * 2.0;
-  float radius = sqrt(1.0 - y * y);
-  
-  float theta = phi * dirIndex;
-  float x = cos(theta) * radius;
-  float z = sin(theta) * radius;
-  vec3 rayDir = vec3(x,y,z);
-
-  
-
+  vec3 rayDir = getDirFromIndex(dirIndex, cascadeIndex);  
 
   int gridSize = 64 / int(pow(2, cascadeIndex));
   //Where are we inside this quadrant
@@ -195,8 +226,10 @@ void main() {
       pixel = vec4(0.0,1.0,0.0,1.0) * 0.5;
     }
 
+  //  matIndex = -1;
+  //  pixel = vec4(center + offset,1.0);
 
-  if (cascadeIndex < 1)// && matIndex == -1)
+  if (cascadeIndex < 3 && matIndex == -1)
     {
       
       ivec3 upperCoord = worldPosToImagePixel(center + offset, cascadeIndex + 1);
@@ -205,24 +238,10 @@ void main() {
       int contributingDirs = 0;
       vec4 contributingPixel = vec4(0.0);
 
-      //We know points are sampled with y's sequentially, then radially.
-      //Can take a strip around the sphere near the same y, then try all the points around that strip?
-      float normY = (rayDir.y + 1.0) / 2.0;
-      int startYStrip = int((normY - 0.2) * upperDirCount);
-      int endYStrip = int((normY + 0.2) * upperDirCount);
-      //      for (int dir = 0; dir < upperDirCount; dir++)
-      for (int dir = startYStrip; dir < endYStrip; dir++)
+      int upperDirIndex = dirIndex * 8;//int(float(dirIndex) / SAMPLE_COUNT * upperDirCount);
+      for (int dir = upperDirIndex; dir < upperDirIndex + 8; dir++)
 	{
-
-	  float y = 1.0 - (dir / float(upperDirCount)) * 2.0;
-	  float radius = sqrt(1.0 - y * y);
-  
-	  float theta = phi * dir;
-	  float x = cos(theta) * radius;
-	  float z = sin(theta) * radius;
-	  vec3 upperDir = normalize(vec3(x,y,z));
-
-	  if (dot(upperDir, rayDir) < 0.2) continue;
+	  //	  vec3 upperDir = getDirFromIndex(dir, cascadeIndex + 1);
 	  
 	  ivec3 quadrantOffset = ivec3(dir % upperDirTilingCount,
 				       (dir / upperDirTilingCount) % upperDirTilingCount,
@@ -235,7 +254,6 @@ void main() {
 	      contributingPixel += val;
 	      contributingDirs++;
 	    }
-	  //pixel += imageLoad(probeInfo[cascadeIndex + 1], imgCoord) / upperDirCount;
 	}
       if (contributingDirs > 0)
 	pixel += contributingPixel / contributingDirs;

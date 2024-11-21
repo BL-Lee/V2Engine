@@ -649,6 +649,7 @@ private:
 
 	if (DRAW_DEBUG_LINES)
 	  {
+	    
 	    vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, linePipeline.pipeline);
 	    //Cascade debug view info
 	    vkCmdPushConstants(drawCommandBuffer.commandBuffer,
@@ -828,7 +829,11 @@ private:
       //      glfwSetWindowShouldClose(window, GL_TRUE);
 
     }
-    vkDeviceWaitIdle(device);
+
+    if (vkDeviceWaitIdle(device) != VK_SUCCESS)
+      {
+	  throw std::runtime_error("failed to wait idle!!");	
+      }
 
   }
 

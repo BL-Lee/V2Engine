@@ -1,4 +1,5 @@
 #include "VkBSingleCommandBuffer.hpp"
+#include <stdexcept>
 VkCommandBuffer vKBeginSingleTimeCommandBuffer()
 {
   VkCommandBufferAllocateInfo allocInfo{};
@@ -26,8 +27,15 @@ void vKEndSingleTimeCommandBuffer(VkCommandBuffer commandBuffer)
   submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   submitInfo.commandBufferCount = 1;
   submitInfo.pCommandBuffers = &commandBuffer;
-  
-  vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-  vkQueueWaitIdle(graphicsQueue);
+
+  VkResult result;
+  result = vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+  if (result != VK_SUCCESS)
+    throw std::runtime_error("Failed to submit queue single time command buffer");
+
+  result = vkQueueWaitIdle(graphicsQueue);
+  if (result != VK_SUCCESS)
+    throw std::runtime_error("Failed to wait for idle queue single time command buffer");
+
   vkFreeCommandBuffers(device, transientCommandPool, 1, &commandBuffer);
 }

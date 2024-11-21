@@ -6,7 +6,7 @@ void VkBLightProbeInfo::create(int frameCount)
   {
     resolution = 64;
 
-    cascadeCount = 2;
+    cascadeCount = 4;
     
     gridDimensions = glm::vec3(2.2f,2.2f,2.2f);//Doesn't do anything yet in the shader. Is defined in the shader
     center = glm::vec3(0.0f,0.0f,0.0f);//Doesn't do anything yet in the shader
@@ -121,7 +121,7 @@ void VkBLightProbeInfo::transitionImagesToStorage()
     
 
       barriers[i].srcAccessMask = 0;
-      barriers[i].dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+      barriers[i].dstAccessMask = VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT;
     }
   VkPipelineStageFlags sourceStage =  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
   VkPipelineStageFlags destinationStage = VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
