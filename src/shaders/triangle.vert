@@ -31,7 +31,8 @@ void main() {
     worldPos = (ubo.model * vec4(position, 1.0)).xyz;
     fragTexCoord = texCoord;
     worldNormal = (ubo.model * vec4(normal, 0.0)).xyz;
-    //TEMP_EYE_POS = (_MainCamera.invViewProj * vec4(0.0,0.0,0.0,1.0)).xyz;
+    //    TEMP_EYE_POS = (_MainCamera.invViewProj * vec4(0.0,0.0,0.0,1.0)).xyz;
+
     if (materialIndex == 0) //emissive
     {
       colour = vec3(1.0,0.9,0.6);

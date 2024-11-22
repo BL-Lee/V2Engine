@@ -183,7 +183,7 @@ void main() {
 
 
   /*
-  pixel = vec4(rayDir, 1.0);
+  pixel = vec4(, 1.0);
   imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
   if (cascadeIndex == cascadeInfo.lineView)
   {
@@ -216,7 +216,7 @@ void main() {
 
       vec3 avg = v0.position + v1.position + v2.position / 3.0;
 
-      if (testDist < dist && dist > 0.01 && dot(normal, rayDir) < 0.0)
+      if (testDist < dist && dist > 0.0 && dot(normal, rayDir) < 0.0)
         {
           matIndex = v0.materialIndex;
           dist = testDist;
@@ -263,7 +263,7 @@ void main() {
       
       pixel += contributingPixel / 8.0;
 
-    }
+      }
   pixel.a = 1.0;
   imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
 
