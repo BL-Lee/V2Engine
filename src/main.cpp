@@ -113,6 +113,7 @@ public:
   Model* cornellLeftWall;
   Model* cornellRightWall;
   Model* cornellLight;
+  Model* cornellCeilLight;
   Material emissive;
   Material diffuseGreen;
   Material diffuseRed;
@@ -159,7 +160,7 @@ private:
     
     if (action == GLFW_PRESS && key == GLFW_KEY_I)
       {
-	viewCascade = (viewCascade + 1) % (4); //cascade count
+	viewCascade = (viewCascade + 1) % (3); //cascade count
         cascadeInfos[0].lineViewIndex = viewCascade;
 	cascadeInfos[1].lineViewIndex = viewCascade;
 	cascadeInfos[2].lineViewIndex = viewCascade;
@@ -235,15 +236,15 @@ private:
 				      nullptr);
 
     
-    matrixPool.create(5, swapChain.imageViews.size(), sizeof(glm::mat4));
+    matrixPool.create(6, swapChain.imageViews.size(), sizeof(glm::mat4));
     matrixPool.addBuffer(0, sizeof(glm::mat4));
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     //    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     matrixPool.createDescriptorSetLayout();
-    cascadeInfos[0] = {0, 0, 0.0, 0.02};
-    cascadeInfos[1] = {1, 0, 0.02, 0.36};
-    cascadeInfos[2] = {2, 0, 0.36, 1.4};
-    cascadeInfos[3] = {3, 0, 1/8.0, 10000.0}; 
+    cascadeInfos[0] = {0, 0, 0.0, 0.002};
+    cascadeInfos[1] = {1, 0, 0.005, 0.16};
+    cascadeInfos[2] = {2, 0, 0.16, 1.2};
+    cascadeInfos[3] = {3, 0, 1.2, 1000.0}; 
 
     cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*3 + sizeof(float)*4);
@@ -284,6 +285,7 @@ private:
     cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &staticVertexBuffer, &diffuseGreen);
     cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj", "../models/cornell.png", &staticVertexBuffer, &diffuseRed);
     cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &staticVertexBuffer, &emissive);
+    cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj", "../models/cornell.png", &staticVertexBuffer, &emissive);
 
     ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &staticVertexBuffer, &diffuseGrey);
 
@@ -295,21 +297,24 @@ private:
 
     cornellScene->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
     cornellLight->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
+    cornellCeilLight->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
     cornellLeftWall->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
     cornellRightWall->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
 
     rayInputAssemblerPool.create(1, swapChain.imageViews.size(), 0, true);
     rayInputAssemblerPool.addStorageBuffer(0,
-						      (cornellScene->vertexCount +
-						       cornellLight->vertexCount +
-						       cornellRightWall->vertexCount +
-						       cornellLeftWall->vertexCount 
-						       ) * sizeof(Vertex));
+					   (cornellScene->vertexCount +
+					    cornellLight->vertexCount +
+					    cornellCeilLight->vertexCount +
+					    cornellRightWall->vertexCount +
+					    cornellLeftWall->vertexCount 
+					    ) * sizeof(Vertex));
     rayInputAssemblerPool.addStorageBuffer(1, (cornellScene->indexCount +
-							  cornellLight->indexCount +
-							  cornellRightWall->indexCount +
-							  cornellLeftWall->indexCount 
-							  ) * sizeof(uint32_t));
+					       cornellLight->indexCount +
+					       cornellCeilLight->indexCount +
+					       cornellRightWall->indexCount +
+					       cornellLeftWall->indexCount 
+					       ) * sizeof(uint32_t));
     rayInputAssemblerPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     rayInputAssemblerPool.createDescriptorSetLayout();
     VkBuffer storageBuffers[] = {staticVertexBuffer.vertexBuffer, staticVertexBuffer.indexBuffer};
@@ -484,6 +489,7 @@ private:
     glm::mat4 identity = glm::mat4(1.0f);
     memcpy(cornellScene->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
     memcpy(cornellLight->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
+    memcpy(cornellCeilLight->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
     memcpy(cornellLeftWall->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
     memcpy(cornellRightWall->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
 
@@ -641,6 +647,12 @@ private:
 			     &staticVertexBuffer,
 			     &matrixPool.descriptorSets[imageIndex][cornellLight->modelUniform.indexIntoPool],
 				 cornellLight
+			     );
+	drawCommandBuffer.record(graphicsPipeline.pipeline,
+			     graphicsPipeline.layout,
+			     &staticVertexBuffer,
+			     &matrixPool.descriptorSets[imageIndex][cornellCeilLight->modelUniform.indexIntoPool],
+				 cornellCeilLight
 			     );
     
 
@@ -873,6 +885,7 @@ private:
     delete cornellLight;
     delete cornellRightWall;
     delete cornellLeftWall;
+    delete cornellCeilLight;
     lightProbeInfo.destroy();
     mainCamera.ubo.destroy();
     cameraUniformPool.destroy();

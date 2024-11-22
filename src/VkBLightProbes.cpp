@@ -4,7 +4,7 @@
 #include <stdexcept>
 void VkBLightProbeInfo::create(int frameCount)
   {
-    resolution = 64;
+    resolution = 32;
 
     cascadeCount = 4;
     

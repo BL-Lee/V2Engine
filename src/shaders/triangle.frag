@@ -73,45 +73,23 @@ void main() {
       //scale down to quadrant 
       vec3 quadrantLocalCoord = probeTexLocation / vec3(dirTilingCount, dirTilingCount, dirTilingCount);
 
-      ivec3 coord = ivec3(quadrantLocalCoord * textureSize(probeSamplers[cascade],0));
-      //for (int dir = cascadeInfo.quadrant; dir < cascadeInfo.quadrant + 1; dir++)//dirCount; dir++)
-      int contributingDirs = 0;
-      for (int dir = 0; dir < dirCount; dir++)//dirCount; dir++)
+      vec3 coord = vec3(quadrantLocalCoord * textureSize(probeSamplers[cascade],0));
+      for (int dir = 0; dir < dirCount; dir++)
         {
 	  float y = 1.0 - (dir / float(dirCount)) * 2.0;
 	  float radius = sqrt(1.0 - y * y);
-	  /*
-	  float theta = phi * dir;
-	  float x = cos(theta) * radius;
-	  float z = sin(theta) * radius;
-	  vec3 rayDir = vec3(x,y,z);*/
-	  //	  if (dot(reflectedRay, worldNormal) < 0.8)
-	  //	    continue;
 
           ivec3 quadrantOffset = ivec3(dir % dirTilingCount,
 				       (dir / dirTilingCount) % dirTilingCount,
 				       dir / (dirTilingCount * dirTilingCount)) * textureSize(probeSamplers[cascade],0) / dirTilingCount;
-	  ivec3 imgCoord = coord + quadrantOffset;
-	  if (imgCoord.x > textureSize(probeSamplers[cascade],0).x || imgCoord.x > textureSize(probeSamplers[cascade],0).y)
-	    radiance = vec4(1.0,0.0,1.0,1.0);
-	  else
-	    {
-	      vec3 texCoord = vec3(coord + quadrantOffset) / textureSize(probeSamplers[cascade],0);
-	      //radiance += imageLoad(probeInfo[cascade], coord + quadrantOffset) / (dirCount / 8.0) ;
-	      vec4 val = texture(probeSamplers[cascade], texCoord);
-	      if (val != vec4(0.0))
-		{
-		  radiance += texture(probeSamplers[cascade], texCoord);
-		  contributingDirs++;
-		}
-	    }
+	  vec3 texCoord = vec3(coord + quadrantOffset) / textureSize(probeSamplers[cascade],0);
+	  vec4 val = texture(probeSamplers[cascade], texCoord);
+	  radiance += val / dirCount;
         }
-      if (contributingDirs > 0)
-	radiance /= contributingDirs;
     }
 
   radiance.a = 1.0;
-  outColor = vec4(colour,1.0) * radiance + 0.1;
+  outColor = vec4(colour,1.0) * (radiance);
   //outColor = radiance;
 
 }

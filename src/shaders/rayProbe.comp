@@ -94,6 +94,20 @@ ivec3 worldPosToImagePixel(vec3 worldPos, int cascadeIndex)
   return coord;
 }
 
+//Get uv in texture, local to quadrant
+vec3 worldPosToImageUV(vec3 worldPos, int cascadeIndex)
+{
+  vec3 probeTexLocation = (worldPos - center) / width;
+  probeTexLocation += 0.5;
+  int dirCount = int(pow(8, cascadeIndex + 1)); //TODO unhardcode
+  int dirTilingCount = int(pow(2, cascadeIndex + 1)); //TODO cube root
+      
+  //scale down to quadrant 
+  vec3 quadrantLocalCoord = probeTexLocation / vec3(dirTilingCount, dirTilingCount, dirTilingCount);
+  
+  return quadrantLocalCoord;
+}
+
 vec3 initialDirs[8] = {
   vec3(-1,-1,-1),
   vec3( 1,-1,-1),
@@ -155,17 +169,18 @@ void main() {
 
   vec3 rayDir = getDirFromIndex(dirIndex, cascadeIndex);  
 
-  int gridSize = 64 / int(pow(2, cascadeIndex));
+  int gridSize = 32 / int(pow(2, cascadeIndex));
   //Where are we inside this quadrant
   //0-quadrantSize in pixels
   ivec3 localInvocation = ivec3(gl_GlobalInvocationID) - dirTile * (imageSize(probeInfo) / dirTilingCount);
 
   //vec3 rayDir = normalize(vec3(dirTile)/(dirTilingCount / 2) - 0.5);
   
-  vec3 offset = localInvocation;
+  vec3 offset = localInvocation + 0.5;//0.5 to offset to midpoint
   offset /= gridSize;
   offset -= 0.5;
   offset *= width;
+
 
   /*
   pixel = vec4(rayDir, 1.0);
@@ -184,12 +199,12 @@ void main() {
   }
   return;
   */
-  vec3 rayOrigin = center + offset;// + (rayDir * cascadeInfo.start);
+  vec3 rayOrigin = center + offset + (rayDir * cascadeInfo.start);
   float dist = cascadeInfo.end - cascadeInfo.start;
   vec4 emitColour = vec4(0.0);
   uint matIndex = -1;
 
-  for (int i = 0; i < 138; i+=3)
+  for (int i = 0; i < 168; i+=3)
     {
       Vertex v0 = vertices[i + 0];
       Vertex v1 = vertices[i + 1];
@@ -201,7 +216,7 @@ void main() {
 
       vec3 avg = v0.position + v1.position + v2.position / 3.0;
 
-      if (testDist < dist && dist > 0.0 && dot(normal, rayDir) < 0.0)
+      if (testDist < dist && dist > 0.01 && dot(normal, rayDir) < 0.0)
         {
           matIndex = v0.materialIndex;
           dist = testDist;
@@ -218,7 +233,7 @@ void main() {
       pixel = vec4(0.5,0.5,0.5,1.0) * 0.5;
     }
   else if (matIndex == 2) //red
-    {
+     {
       pixel = vec4(1.0,0.0,0.0,1.0) * 0.5;
     }
   else if (matIndex == 3) //green
@@ -226,37 +241,28 @@ void main() {
       pixel = vec4(0.0,1.0,0.0,1.0) * 0.5;
     }
 
-  //  matIndex = -1;
-  //  pixel = vec4(center + offset,1.0);
-
   if (cascadeIndex < 3 && matIndex == -1)
     {
-      
-      ivec3 upperCoord = worldPosToImagePixel(center + offset, cascadeIndex + 1);
+      vec3 upperCoord = worldPosToImageUV(center + offset, cascadeIndex + 1);
       int upperDirCount = int(pow(8, cascadeIndex + 1 + 1)); //TODO unhardcode
       int upperDirTilingCount = int(pow(2, cascadeIndex + 1 + 1)); //TODO cube root
-      int contributingDirs = 0;
+
       vec4 contributingPixel = vec4(0.0);
 
-      int upperDirIndex = dirIndex * 8;//int(float(dirIndex) / SAMPLE_COUNT * upperDirCount);
+      int upperDirIndex = dirIndex * 8;
       for (int dir = upperDirIndex; dir < upperDirIndex + 8; dir++)
 	{
-	  //	  vec3 upperDir = getDirFromIndex(dir, cascadeIndex + 1);
-	  
-	  ivec3 quadrantOffset = ivec3(dir % upperDirTilingCount,
+	  vec3 upperDir = getDirFromIndex(dir, cascadeIndex + 1);
+	  vec3 quadrantOffset = vec3(dir % upperDirTilingCount,
 				       (dir / upperDirTilingCount) % upperDirTilingCount,
-				       dir / (upperDirTilingCount * upperDirTilingCount)) * imageSize(probeInfo) / upperDirTilingCount;
-	  ivec3 imgCoord = upperCoord + quadrantOffset;
-	  vec3 texCoord = vec3(imgCoord) / imageSize(probeInfo) - 0.5;
+				     dir / (upperDirTilingCount * upperDirTilingCount)) / upperDirTilingCount;
+	  vec3 texCoord = upperCoord + quadrantOffset;
 	  vec4 val = texture(probeSampler, texCoord);
-	  if (val != vec4(0.0,0.0,0.0,1.0))
-	    {
-	      contributingPixel += val;
-	      contributingDirs++;
-	    }
+	  contributingPixel += val;
 	}
-      if (contributingDirs > 0)
-	pixel += contributingPixel / contributingDirs;
+      
+      pixel += contributingPixel / 8.0;
+
     }
   pixel.a = 1.0;
   imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
