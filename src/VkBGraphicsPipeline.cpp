@@ -11,8 +11,8 @@ void VkBGraphicsPipeline::createGraphicsPipeline(VkBSwapChain& swapChain,
 						 std::vector<VkPushConstantRange>* pushConstantRanges)
 {
       //Shader stuff
-    VkShaderModule vertShaderModule = VkBShader::createShaderFromFile("../src/shaders/vert.spv");
-    VkShaderModule fragShaderModule = VkBShader::createShaderFromFile("../src/shaders/frag.spv");
+    VkShaderModule vertShaderModule = VkBShader::createShaderFromFile("../src/shaders/trianglevert.spv");
+    VkShaderModule fragShaderModule = VkBShader::createShaderFromFile("../src/shaders/trianglefrag.spv");
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

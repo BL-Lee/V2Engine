@@ -1,0 +1,10 @@
+struct Vertex {
+  vec3 position;
+  vec3 normal;
+  vec2 texCoord;
+  uint materialIndex;
+};
+struct LineVertex {
+  vec3 pos;
+  vec3 colour;
+};
