@@ -72,20 +72,30 @@ void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
   bool show_another_window = true;
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-  {
-    ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-    for (int i = 0; i < 4; i++)
-      {
-	ImGui::PushID(i);
+  ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+  for (int i = 0; i < 4; i++)
+    {
+      ImGui::PushID(i);
 
-	if (ImGui::SliderFloat("Cascade Distance", &cascadeInfos[i]->end, 0.0, 4.0)) {
-	  if (i < 3)
+      if (ImGui::SliderFloat("Cascade Distance", &cascadeInfos[i]->end, 0.0, 4.0)) {
+	if (i < 3)
 	  cascadeInfos[i+1]->start = cascadeInfos[i]->end;
-	}
-	ImGui::PopID();
       }
-    ImGui::End();
-  }
+      ImGui::PopID();
+    }
+  static const char* items[] = {"0","1","2","3"};
+  static int selectedItem = 1;
+  ImGui::Combo("MyCombo", &selectedItem, items, IM_ARRAYSIZE(items));
+  rayDebugPushConstant->viewMode = (uint32_t)selectedItem;
+  
+  ImGui::SliderFloat("RayTriangleLimit", &rayDebugPushConstant->triangleTestLimit, 0.0, 300.0);
+  ImGui::SliderFloat("RayBoxLimit", &rayDebugPushConstant->boxTestLimit, 0.0, 10.0);
+  ImGui::End();
+  
+
+
+
+  
   // Rendering
   ImGui::Render();
   ImDrawData* drawData = ImGui::GetDrawData();

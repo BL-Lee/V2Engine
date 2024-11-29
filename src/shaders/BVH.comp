@@ -1,0 +1,10 @@
+struct BVHNode
+{
+  vec3 min;
+  vec3 max;
+  int modelMatrixIndex;
+  uint triangleCount;
+  uint triangleOrChildIndex;
+};
+
+

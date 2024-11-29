@@ -4,7 +4,7 @@
 #include <set>
 #include <cstring>
 #include <optional>
-
+#include <iostream>
 
 QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface) {
   QueueFamilyIndices indices;
@@ -98,4 +98,17 @@ bool VkBDeviceSelection::checkDeviceExtensionSupport(VkPhysicalDevice device, co
   }
 
   return requiredExtensions.empty();
+}
+
+void VkBDeviceSelection::printPhysicalDeviceProperties(VkPhysicalDeviceProperties* props)
+{
+  std::cout << "Max compute workgroup size: " <<
+    props->limits.maxComputeWorkGroupSize[0] << ", " <<
+    props->limits.maxComputeWorkGroupSize[1] << ", " <<
+    props->limits.maxComputeWorkGroupSize[2] << std::endl;
+  std::cout << "Max image dimension3D " <<
+    props->limits.maxImageDimension3D << std::endl;
+  std::cout << "Max descriptorSet samplers: " <<
+    props->limits.maxDescriptorSetSamplers << std::endl;
+
 }

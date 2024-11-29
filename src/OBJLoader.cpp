@@ -15,7 +15,6 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath,
 			      Material* mat)
   {
     Model* model = new Model();
-    
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -29,8 +28,8 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath,
       throw std::runtime_error(warn + err);
     }
 
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
+    //std::vector<Vertex> vertices;
+    //std::vector<uint32_t> indices;
     std::unordered_map<Vertex, uint32_t> uniqueVertices{};
     for (const auto& shape : shapes) {
       for (const auto& index : shape.mesh.indices) {
@@ -62,21 +61,24 @@ Model* ModelImporter::loadOBJ(const char* modelPath, const char* texturePath,
 	
         indices.push_back(uniqueVertices[vertex]);
 	*/
-	vertices.push_back(vertex);
-	indices.push_back(indices.size());
+	model->vertices.push_back(vertex);
+	model->indices.push_back((uint32_t)model->indices.size());
       }
     }
-    model->indexCount = (uint32_t)indices.size();
-    model->vertexCount = (uint32_t)vertices.size();
+    model->indexCount = (uint32_t)model->indices.size();
+    model->vertexCount = (uint32_t)model->vertices.size();
     /*VBO.create(vertices.size() * sizeof(Vertex),
       indices.size() * sizeof(uint32_t));*/
-    VBO->fill(vertices.data(), vertices.size(),
-	      indices.data(), indices.size(),
+    VBO->fill(model->vertices.data(), (uint32_t)model->vertices.size(),
+	      model->indices.data(), (uint32_t)model->indices.size(),
 	      &model->startIndex,
 	      &model->vertexOffset);
+    
+    model->modelMatrix = glm::mat4(1.0);
+    
     //    model->VBO.transferToDevice(transientCommandPool, graphicsQueue);
     model->textures.createTextureImage(VKB_TEXTURE_TYPE_SAMPLED_RGBA, texturePath);
-    std::cout << vertices.size() << ": VERTICES" << std::endl;
-    std::cout << indices.size() << ": INDICES" << std::endl;
+    std::cout << model->vertices.size() << ": VERTICES" << std::endl;
+    std::cout << model->indices.size() << ": INDICES" << std::endl;
     return model;
   }

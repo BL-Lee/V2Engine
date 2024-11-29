@@ -7,11 +7,18 @@ class Model{
 public:
   
   VkBTexture textures; //Just diffuse for now
-  VkBUniformBuffer modelUniform;
-  size_t vertexCount;
-  size_t indexCount;
+  VkBUniformBuffer modelUniform; //Thisl'l need to change to 
+  uint32_t vertexCount;
+  uint32_t indexCount;
   uint32_t startIndex;
   uint32_t vertexOffset;
+
+  std::vector<Vertex> vertices;
+  std::vector<uint32_t> indices;
+  glm::mat4 modelMatrix;
+
+  uint32_t indexIntoModelMatrixBuffer;
+  
   ~Model();
 };
 

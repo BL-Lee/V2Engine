@@ -1,8 +1,18 @@
+#pragma once
 #include "VkBGlobals.hpp"
 #include "VkBUniformPool.hpp"
 #include "VkBUniformBuffer.hpp"
 #include "VkBTexture.hpp"
 #include <vector>
+
+struct RayDebugPushConstant
+{
+  uint32_t viewMode;
+  float triangleTestLimit;
+  float boxTestLimit;
+};
+
+
 class VkBRayPipeline
 {
 public:
@@ -12,7 +22,7 @@ public:
   VkCommandBuffer commandBuffer;
   //kind of ahack so we can have radiance cascades that wait for the previous in the chain
   VkCommandBuffer* commandBuffers;
-  
+
   
   void destroy();
   void createPipeline(const char* filePath,

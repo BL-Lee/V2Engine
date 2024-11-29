@@ -21,4 +21,5 @@ public:
   static VkPhysicalDevice pickPhysicalDevice(VkInstance instance, VkSurfaceKHR surface,const std::vector<const char*>&deviceExtensions);
   static bool isPhysicalDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface,const std::vector<const char*>&deviceExtensions);
   static bool checkDeviceExtensionSupport(VkPhysicalDevice device,const std::vector<const char*>&deviceExtensions);
+  static void printPhysicalDeviceProperties(VkPhysicalDeviceProperties* props);
 };

@@ -40,6 +40,7 @@ VkQueue computeQueue;
 VkCommandPool drawCommandPool;
 VkCommandPool transientCommandPool; //For short lived command buffers
 VkCommandPool computeCommandPool;
+uint32_t framesInFlight;
 int USE_RASTER = 1; //Swap between ray and raster
 int DRAW_DEBUG_LINES = 0;
 int viewCascade = 0;
@@ -48,6 +49,8 @@ GLFWwindow* window;
 double mouseX = 0;
 double mouseY = 0;
 bool cameraEnabled = 0;
+
+
 #define NDEBUG_MODE 0
 #if NDEBUG_MODE
 const bool enableVulkanValidationLayers = false;
@@ -75,9 +78,13 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBLightProbes.hpp"
 #include "VkBRayPipeline.hpp"
 #include "DebugConsole.hpp"
+#include "VkBRayInputInfo.hpp"
+#include "BVH.hpp"
 Input inputInfo = {};
 DebugConsole debugConsole;
 CascadeInfo cascadeInfos[4];
+RayDebugPushConstant rayDebugPushConstant;
+
 class V2Engine {
 public:
   
@@ -94,9 +101,7 @@ public:
   VkBVertexBuffer staticVertexBuffer;
   VkBUniformPool matrixPool;
 
-  VkBUniformPool rayInputAssemblerPool;
-  VkBUniformPool rayTexturePool;
-  VkBUniformBuffer rayInputAssemblerBuffer;
+  VkBRayInputInfo rayInputInfo;
   VkBTexture rayBackBuffer;
   
   VkBUniformPool cameraUniformPool;
@@ -187,10 +192,8 @@ private:
 
   void initWindow() {
     glfwInit();
-
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-
     window = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Vulkan Triangle", nullptr, nullptr);
     glfwSetKeyCallback(window, key_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -205,15 +208,7 @@ private:
     createSurface();
     physicalDevice = VkBDeviceSelection::pickPhysicalDevice(instance, surface, deviceExtensions);
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
-    std::cout << "Max compute workgroup size: " <<
-      physicalDeviceProperties.limits.maxComputeWorkGroupSize[0] << ", " <<
-      physicalDeviceProperties.limits.maxComputeWorkGroupSize[1] << ", " <<
-      physicalDeviceProperties.limits.maxComputeWorkGroupSize[2] << std::endl;
-    std::cout << "Max image dimension3D " <<
-      physicalDeviceProperties.limits.maxImageDimension3D << std::endl;
-    std::cout << "Max descriptorSet samplers: " <<
-      physicalDeviceProperties.limits.maxDescriptorSetSamplers << std::endl;
-    
+    VkBDeviceSelection::printPhysicalDeviceProperties(&physicalDeviceProperties);
 
     
     createLogicalDevice();
@@ -221,7 +216,7 @@ private:
     //Swap chain and pipeilne
     swapChain.createSwapChain(surface, window);
     swapChain.createImageViews();
-    
+    framesInFlight = (uint32_t)swapChain.imageViews.size();
     renderPass.createRenderPass(swapChain.imageFormat);
         //Command pools
     createCommandPool(&drawCommandPool, device, physicalDevice, surface,
@@ -236,26 +231,25 @@ private:
 				      nullptr);
 
     
-    matrixPool.create(6, swapChain.imageViews.size(), sizeof(glm::mat4));
+    matrixPool.create(6, (uint32_t)swapChain.imageViews.size(), sizeof(glm::mat4));
     matrixPool.addBuffer(0, sizeof(glm::mat4));
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-    //    matrixPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
     matrixPool.createDescriptorSetLayout();
-    cascadeInfos[0] = {0, 0, 0.0, 0.002};
-    cascadeInfos[1] = {1, 0, 0.005, 0.16};
-    cascadeInfos[2] = {2, 0, 0.16, 1.2};
-    cascadeInfos[3] = {3, 0, 1.2, 1000.0}; 
-
-    cameraUniformPool.create(1, swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
+    cascadeInfos[0] = {0, 0, 0.0f, 0.002f};
+    cascadeInfos[1] = {1, 0, 0.005f, 0.16f};
+    cascadeInfos[2] = {2, 0, 0.16f, 1.2f};
+    cascadeInfos[3] = {3, 0, 1.2f, 1000.0f}; 
+    
+    cameraUniformPool.create(1, (uint32_t)swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*3 + sizeof(float)*4);
     cameraUniformPool.createDescriptorSetLayout();
 
     mainCamera.init();
-    mainCamera.createPerspective(swapChain.extent.width, (float) swapChain.extent.height);
+    mainCamera.createPerspective((float)swapChain.extent.width, (float)swapChain.extent.height);
     mainCamera.ubo.allocateDescriptorSets(&cameraUniformPool, nullptr, nullptr, nullptr);
     
     
-    lightProbeInfo.create(swapChain.imageViews.size());
+    lightProbeInfo.create((uint32_t)swapChain.imageViews.size());
     std::vector<VkDescriptorSetLayout> uniformLayouts = {matrixPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout, lightProbeInfo.drawUniformPool.descriptorSetLayout};
     VkPushConstantRange cascadePushConstant = {
       VK_SHADER_STAGE_FRAGMENT_BIT, 
@@ -272,23 +266,19 @@ private:
     depthTexture.createTextureImage(VKB_TEXTURE_TYPE_DEPTH, swapChain.extent.width, swapChain.extent.height, nullptr);    
     swapChain.createFramebuffers(renderPass, depthTexture.imageView);
     std::cout << "Swap Chain image count: " << swapChain.imageViews.size() << std::endl;
-
-
-
-
-    staticVertexBuffer.create(sizeof(Vertex) * 5000, sizeof(uint32_t) * 5000);
+    
+    rayInputInfo.init();
     emissive.index = 0;
     diffuseGrey.index = 1;
     diffuseGreen.index = 2;
     diffuseRed.index = 3;
-    cornellScene = ModelImporter::loadOBJ("../models/cornell_nowalls.obj", "../models/cornell.png", &staticVertexBuffer, &diffuseGrey);
-    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &staticVertexBuffer, &diffuseGreen);
-    cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj", "../models/cornell.png", &staticVertexBuffer, &diffuseRed);
-    cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &staticVertexBuffer, &emissive);
-    cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj", "../models/cornell.png", &staticVertexBuffer, &emissive);
-
-    ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &staticVertexBuffer, &diffuseGrey);
-
+    cornellScene = ModelImporter::loadOBJ("../models/cornell_nowalls.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseGrey);
+    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseGreen);
+    cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseRed);
+    cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
+    cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
+    ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &rayInputInfo.vertexBuffer, &emissive);
+	  
     VkImageView ratViews[] = {ratModel->textures.imageView};
     VkSampler ratSamplers[] = {ratModel->textures.textureSampler};
     ratModel->modelUniform.allocateDescriptorSets(&matrixPool, ratViews, ratSamplers, nullptr);
@@ -300,33 +290,32 @@ private:
     cornellCeilLight->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
     cornellLeftWall->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
     cornellRightWall->modelUniform.allocateDescriptorSets(&matrixPool, cornellViews, cornellSamplers, nullptr);
+    rayInputInfo.addModel(cornellScene);
+    rayInputInfo.addModel(cornellLight);
+    rayInputInfo.addModel(cornellCeilLight);
+    rayInputInfo.addModel(cornellLeftWall);
+    rayInputInfo.addModel(cornellRightWall);
+    rayInputInfo.addModel(ratModel);
+    rayInputInfo.bvh.transferBVHData();
 
-    rayInputAssemblerPool.create(1, swapChain.imageViews.size(), 0, true);
-    rayInputAssemblerPool.addStorageBuffer(0,
-					   (cornellScene->vertexCount +
-					    cornellLight->vertexCount +
-					    cornellCeilLight->vertexCount +
-					    cornellRightWall->vertexCount +
-					    cornellLeftWall->vertexCount 
-					    ) * sizeof(Vertex));
-    rayInputAssemblerPool.addStorageBuffer(1, (cornellScene->indexCount +
-					       cornellLight->indexCount +
-					       cornellCeilLight->indexCount +
-					       cornellRightWall->indexCount +
-					       cornellLeftWall->indexCount 
-					       ) * sizeof(uint32_t));
-    rayInputAssemblerPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    rayInputAssemblerPool.createDescriptorSetLayout();
-    VkBuffer storageBuffers[] = {staticVertexBuffer.vertexBuffer, staticVertexBuffer.indexBuffer};
-    rayInputAssemblerBuffer.allocateDescriptorSets(&rayInputAssemblerPool,
+    
+    VkBuffer storageBuffers[] = {rayInputInfo.vertexBuffer.vertexBuffer, rayInputInfo.vertexBuffer.indexBuffer, rayInputInfo.bvh.deviceBuffer, rayInputInfo.deviceMatrixBuffer};
+    rayInputInfo.assemblerBuffer.allocateDescriptorSets(&rayInputInfo.assemblerPool,
 						     &rayBackBuffer.imageView,
 						     &rayBackBuffer.textureSampler,
 						     storageBuffers);
     
-    std::vector<VkDescriptorSetLayout> computeUniformLayouts = {rayInputAssemblerPool.descriptorSetLayout,
+    std::vector<VkDescriptorSetLayout> computeUniformLayouts = {rayInputInfo.assemblerPool.descriptorSetLayout,
 								cameraUniformPool.descriptorSetLayout};
-    rayPipeline.createPipeline("../src/shaders/ray.spv", &computeUniformLayouts, nullptr);
-    std::vector<VkDescriptorSetLayout> probeUniformLayouts = {rayInputAssemblerPool.descriptorSetLayout,
+    VkPushConstantRange rayPushConstant = {
+      VK_SHADER_STAGE_COMPUTE_BIT, 
+      0,//  offset
+      sizeof(RayDebugPushConstant)
+    };
+
+    std::vector<VkPushConstantRange> rayPushConstantRange = {rayPushConstant};
+    rayPipeline.createPipeline("../src/shaders/ray.spv", &computeUniformLayouts, &rayPushConstantRange);
+    std::vector<VkDescriptorSetLayout> probeUniformLayouts = {rayInputInfo.assemblerPool.descriptorSetLayout,
 							      lightProbeInfo.computeUniformPool.descriptorSetLayout};
     cascadePushConstantRange[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     lightProbePipeline.createPipeline("../src/shaders/rayProbe.spv",
@@ -336,6 +325,11 @@ private:
     debugConsole.init(&swapChain, renderPass.renderPass);
     for (int i = 0; i < 4; i++)
       debugConsole.cascadeInfos[i] = &cascadeInfos[i];
+    debugConsole.rayDebugPushConstant = &rayDebugPushConstant;
+    rayDebugPushConstant.viewMode = 1;
+    rayDebugPushConstant.triangleTestLimit = 140;
+    rayDebugPushConstant.boxTestLimit = 3;
+
   }
 
   void createSyncObjects() {
@@ -485,7 +479,8 @@ private:
 			   glm::vec3(0.5f, 0.5f, 0.5f));
     
     memcpy(ratModel->modelUniform.getBufferMemoryLocation(currentImage,0), &modelMat, sizeof(glm::mat4));
-
+    ratModel->modelMatrix = modelMat;
+    
     glm::mat4 identity = glm::mat4(1.0f);
     memcpy(cornellScene->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
     memcpy(cornellLight->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
@@ -494,6 +489,10 @@ private:
     memcpy(cornellRightWall->modelUniform.getBufferMemoryLocation(currentImage,0), &identity, sizeof(glm::mat4));
 
     mainCamera.updateMatrices(currentImage);
+    rayInputInfo.updateModelMatrix(ratModel);
+    //std::cout << (uint32_t)ratModel->indexIntoModelMatrixBuffer << std::endl;
+    //std::cout << rayInputInfo.matrixCount << std::endl;
+    rayInputInfo.transferMatrixData();
   }
   
   void drawFrame() {
@@ -505,9 +504,9 @@ private:
     //Get image index we'll draw to, indicating the semaphore for the presentation engine to signal when its done using it. After that we can write to it
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-
+    updateProjectionMatrices(imageIndex);
     //Radiance Cascades ------------------------------------------------------------
-    if (true)
+    if (USE_RASTER)
       {
 	lightProbeInfo.transitionImagesToStorage();
 	for (int i = lightProbeInfo.cascadeCount - 1; i >= 0 ; i--)
@@ -526,7 +525,7 @@ private:
 	    vkCmdBindDescriptorSets(lightProbePipeline.commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE,
 				    lightProbePipeline.pipelineLayout,
 				    0, 1,
-				    &rayInputAssemblerPool.descriptorSets[imageIndex][rayInputAssemblerBuffer.indexIntoPool]
+				    &rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool]
 				    , 0, 0);
 	    vkCmdBindDescriptorSets(lightProbePipeline.commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE,
 				    lightProbePipeline.pipelineLayout,
@@ -591,7 +590,7 @@ private:
       }
 
     
-    updateProjectionMatrices(imageIndex);
+
     //RASTERIZATION -----------------------------------------------------------------
     if (USE_RASTER)
       {
@@ -619,38 +618,38 @@ private:
 
 	drawCommandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
-			     &staticVertexBuffer,
+			     &rayInputInfo.vertexBuffer,
 			     &matrixPool.descriptorSets[imageIndex][ratModel->modelUniform.indexIntoPool],
 				 ratModel
 			     );
 	drawCommandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
-			     &staticVertexBuffer,
+			     &rayInputInfo.vertexBuffer,
 			     &matrixPool.descriptorSets[imageIndex][cornellScene->modelUniform.indexIntoPool],
 				 cornellScene
 			     );
 	drawCommandBuffer.record(graphicsPipeline.pipeline,
 				 graphicsPipeline.layout,
-				 &staticVertexBuffer,
+				 &rayInputInfo.vertexBuffer,
 				 &matrixPool.descriptorSets[imageIndex][cornellScene->modelUniform.indexIntoPool],
 				 cornellRightWall
 				 );
 	drawCommandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
-			     &staticVertexBuffer,
+			     &rayInputInfo.vertexBuffer,
 			     &matrixPool.descriptorSets[imageIndex][cornellScene->modelUniform.indexIntoPool],
 				 cornellLeftWall
 			     );
 
 	drawCommandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
-			     &staticVertexBuffer,
+			     &rayInputInfo.vertexBuffer,
 			     &matrixPool.descriptorSets[imageIndex][cornellLight->modelUniform.indexIntoPool],
 				 cornellLight
 			     );
 	drawCommandBuffer.record(graphicsPipeline.pipeline,
 			     graphicsPipeline.layout,
-			     &staticVertexBuffer,
+			     &rayInputInfo.vertexBuffer,
 			     &matrixPool.descriptorSets[imageIndex][cornellCeilLight->modelUniform.indexIntoPool],
 				 cornellCeilLight
 			     );
@@ -733,8 +732,14 @@ private:
 	vkCmdBindDescriptorSets(rayPipeline.commandBuffer,
 				VK_PIPELINE_BIND_POINT_COMPUTE, rayPipeline.pipelineLayout,
 				0, 1,
-				&rayInputAssemblerPool.descriptorSets[imageIndex][rayInputAssemblerBuffer.indexIntoPool]
+				&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool]
 				, 0, 0);
+	//Cascade info cascade 0
+	vkCmdPushConstants(rayPipeline.commandBuffer,
+			   rayPipeline.pipelineLayout,
+			   VK_SHADER_STAGE_COMPUTE_BIT,
+			   0, sizeof(RayDebugPushConstant),
+			   &rayDebugPushConstant);	
 	
 	vkCmdDispatch(rayPipeline.commandBuffer, swapChain.extent.width / 32, swapChain.extent.height / 32,  1); //switch to swapchain width and height
 
@@ -746,7 +751,7 @@ private:
 	//Syncronization info for compute 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkSemaphore waitSemaphores[] = {probeInfoFinishedSemaphore}; //Wait for this before submitting draw
+	VkSemaphore waitSemaphores[] = {imageAvailableSemaphore}; //Wait for this before submitting draw
 	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
 	VkSemaphore signalSemaphores[] = {renderFinishedSemaphore}; //Signal to this when drawing is done
 	submitInfo.waitSemaphoreCount = 1;
@@ -787,7 +792,7 @@ private:
     
     auto fpsNow = std::chrono::high_resolution_clock::now();
     float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(fpsNow - fpsPrev).count();
-    printf("\r%.8f %4.2f", deltaTime, 1.0f / deltaTime);
+    //printf("\r%.8f %4.2f", deltaTime, 1.0f / deltaTime);
     fpsPrev = std::chrono::high_resolution_clock::now();
     
     double xPos, yPos;
@@ -873,7 +878,7 @@ private:
     vkDestroyPipelineLayout(device, linePipeline.layout, nullptr);
 
     debugConsole.destroy();
-    staticVertexBuffer.destroy();
+    rayInputInfo.destroy();
     vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
@@ -892,10 +897,6 @@ private:
 
     depthTexture.destroy();
     matrixPool.destroy();
-
-
-    rayInputAssemblerBuffer.destroy();
-    rayInputAssemblerPool.destroy();
     rayBackBuffer.destroy();
     vkDestroyDevice(device, nullptr);
     vkDestroySurfaceKHR(instance, surface, nullptr);
