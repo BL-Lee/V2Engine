@@ -2,6 +2,7 @@
 #include "VkBBuffer.hpp"
 #include "VkBSingleCommandBuffer.hpp"
 #include <stdexcept>
+#include <iostream>
 void VkBLightProbeInfo::create(int frameCount)
   {
     resolution = 32;
@@ -14,6 +15,7 @@ void VkBLightProbeInfo::create(int frameCount)
 
     imageWidth = resolution * 2;
 
+    semaphoreChain = (VkSemaphore*)calloc(cascadeCount, sizeof(VkSemaphore));
     for(int i = 0; i < cascadeCount; i++)
       {
 	VkSemaphoreCreateInfo semaphoreInfo{};
@@ -26,7 +28,7 @@ void VkBLightProbeInfo::create(int frameCount)
     debugDirectionViewIndex = 0;
     viewDebug = 0;
     lineCount = imageWidth * imageWidth * imageWidth;
-    lines = (LineVertex*)malloc(2 * lineCount * sizeof(LineVertex));
+    lines = (LineVertex*)calloc(2 * lineCount, sizeof(LineVertex));
     lineVBO.create(lineCount * 2 * sizeof(LineVertex));
 
     computeUniformPool.create(cascadeCount, frameCount, 0, true);
@@ -35,6 +37,7 @@ void VkBLightProbeInfo::create(int frameCount)
     computeUniformPool.addStorageBuffer(1, lineCount * 2 * sizeof(LineVertex));
     computeUniformPool.createDescriptorSetLayout();
 
+    textures = (VkBTexture*)calloc(cascadeCount + 1, sizeof(VkBTexture));
     for (int i = 0; i < cascadeCount; i++)
       {
 	textures[i].createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
@@ -56,11 +59,12 @@ void VkBLightProbeInfo::create(int frameCount)
       0,0,0,0
     };
     textures[cascadeCount].createTextureImage3D(VKB_TEXTURE_TYPE_SAMPLED_RGBA,
-						   2,
-						   2,
-						   2,
-						   test_pix);
-    
+    						   2,
+    						   2,
+    						   2,
+    						   test_pix);
+    std::cout << "buh"<< std::endl;
+    computeUniforms = (VkBUniformBuffer*)calloc(cascadeCount, sizeof(VkBUniformBuffer));
     for (int i = cascadeCount - 1; i >= 0; i--)
       {
 	VkImageView probeViews[2];
@@ -197,7 +201,9 @@ void VkBLightProbeInfo::destroy() {
   textures[cascadeCount].destroy();
   computeUniformPool.destroy();
   drawUniformPool.destroy();
-
+  free(textures);
+  free(semaphoreChain);
+  free(computeUniforms);
   
   lineVBO.destroy();
   free(lines);

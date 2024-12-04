@@ -77,14 +77,24 @@ void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
     {
       ImGui::PushID(i);
 
-      if (ImGui::SliderFloat("Cascade Distance", &cascadeInfos[i]->end, 0.0, 4.0)) {
+      if (ImGui::SliderFloat("Cascade Distance", &cascadeInfos[i]->end, 0.0, 2.0)) {
 	if (i < 3)
 	  cascadeInfos[i+1]->start = cascadeInfos[i]->end;
+	if (i == 0)
+	  {
+	    for (int i = 1; i < 4; i++)
+	      {
+		cascadeInfos[i]->start = cascadeInfos[i-1]->end;
+		cascadeInfos[i]->end = cascadeInfos[i]->start * 2.5;
+	      }
+	    cascadeInfos[3]->end = 1000.0;
+	  }
+
       }
       ImGui::PopID();
     }
   static const char* items[] = {"0","1","2","3"};
-  static int selectedItem = 1;
+  static int selectedItem = 0;
   ImGui::Combo("MyCombo", &selectedItem, items, IM_ARRAYSIZE(items));
   rayDebugPushConstant->viewMode = (uint32_t)selectedItem;
   

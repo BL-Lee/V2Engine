@@ -82,7 +82,7 @@ const bool enableVulkanValidationLayers = true;
 #include "BVH.hpp"
 Input inputInfo = {};
 DebugConsole debugConsole;
-CascadeInfo cascadeInfos[4];
+CascadeInfo cascadeInfos[6];
 RayDebugPushConstant rayDebugPushConstant;
 
 class V2Engine {
@@ -165,7 +165,7 @@ private:
     
     if (action == GLFW_PRESS && key == GLFW_KEY_I)
       {
-	viewCascade = (viewCascade + 1) % (3); //cascade count
+	viewCascade = (viewCascade + 1) % (4); //cascade count
         cascadeInfos[0].lineViewIndex = viewCascade;
 	cascadeInfos[1].lineViewIndex = viewCascade;
 	cascadeInfos[2].lineViewIndex = viewCascade;
@@ -236,9 +236,12 @@ private:
     matrixPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     matrixPool.createDescriptorSetLayout();
     cascadeInfos[0] = {0, 0, 0.0f, 0.002f};
-    cascadeInfos[1] = {1, 0, 0.005f, 0.16f};
-    cascadeInfos[2] = {2, 0, 0.16f, 1.2f};
-    cascadeInfos[3] = {3, 0, 1.2f, 1000.0f}; 
+    cascadeInfos[1] = {1, 0, 0.02f, 0.04f};
+    cascadeInfos[2] = {2, 0, 0.04f, 0.16f};
+    cascadeInfos[3] = {3, 0, 0.16f, 0.32f};
+    cascadeInfos[4] = {4, 0, 0.32f, 1000.0f};
+    cascadeInfos[5] = {5, 0, 0.32f, 1000.0f};
+    //    cascadeInfos[6] = {4, 0, 0.32f, 1000.0f}; 
     
     cameraUniformPool.create(1, (uint32_t)swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*3 + sizeof(float)*4);
@@ -323,7 +326,7 @@ private:
     drawCommandBuffer.createCommandBuffer(drawCommandPool);
     createSyncObjects();
     debugConsole.init(&swapChain, renderPass.renderPass);
-    for (int i = 0; i < 4; i++)
+    for (int i = 0; i < lightProbeInfo.cascadeCount; i++)
       debugConsole.cascadeInfos[i] = &cascadeInfos[i];
     debugConsole.rayDebugPushConstant = &rayDebugPushConstant;
     rayDebugPushConstant.viewMode = 1;
@@ -792,7 +795,7 @@ private:
     
     auto fpsNow = std::chrono::high_resolution_clock::now();
     float deltaTime = std::chrono::duration<float, std::chrono::seconds::period>(fpsNow - fpsPrev).count();
-    //printf("\r%.8f %4.2f", deltaTime, 1.0f / deltaTime);
+    printf("\r%.8f %4.2f", deltaTime, 1.0f / deltaTime);
     fpsPrev = std::chrono::high_resolution_clock::now();
     
     double xPos, yPos;

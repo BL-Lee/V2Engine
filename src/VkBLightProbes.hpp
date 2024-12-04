@@ -27,13 +27,13 @@ public:
   int cascadeCount;
   int baseRayCount; //TODO
   int rayIncreasePerCascade; //TODO
-  VkBTexture textures[5]; //Unhardcode
-  VkSemaphore semaphoreChain[4]; //unhardcode
+  VkBTexture* textures;
+  VkSemaphore* semaphoreChain;
   size_t imageWidth;
 
   
   VkBUniformPool computeUniformPool;
-  VkBUniformBuffer computeUniforms[4];
+  VkBUniformBuffer* computeUniforms;
   VkBUniformPool drawUniformPool;
   VkBUniformBuffer drawUniform;
   

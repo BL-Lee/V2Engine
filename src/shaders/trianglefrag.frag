@@ -122,15 +122,12 @@ void main() {
 				       dir / (dirTilingCount * dirTilingCount)) * textureSize(probeSamplers[cascade],0) / dirTilingCount;
 	  vec3 texCoord = vec3(coord + quadrantOffset) / textureSize(probeSamplers[cascade],0);
 	  vec4 val = texture(probeSamplers[cascade], texCoord);
-	  //radiance += val / 2;
-	  radiance += val / dirCount;
-
+	  radiance += val / 8.0;
         }
     }
-  radiance.a = 1.0;
-  //outColor = radiance;
-  //return;
+  //radiance /= 8.0;
+  //radiance.a = 1.0;
+  outColor = radiance;
+  return;
   outColor = vec4(colour,1.0) * (radiance);
-  //outColor = radiance;
-
 }

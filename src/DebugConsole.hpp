@@ -30,7 +30,7 @@ public:
   //Other
   bool show = false;
   
-  CascadeInfo* cascadeInfos[4];
+  CascadeInfo* cascadeInfos[5];
   RayDebugPushConstant* rayDebugPushConstant;
   void init(VkBSwapChain* swapChain, VkRenderPass renderPass);
   void destroy();

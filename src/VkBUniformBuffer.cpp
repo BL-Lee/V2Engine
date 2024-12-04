@@ -24,6 +24,9 @@ void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool* descriptorPool,
 					      VkBuffer* buffers
 					      )
   {
+
+  bufferInfo = std::vector<VkDescriptorBufferInfo>();
+  imageInfo = std::vector<VkDescriptorImageInfo>();
     uniformPool = descriptorPool;
     indexIntoPool = descriptorPool->getDescriptorSetIndex();// This gets offset into pool
     //bufferInfo = std::vector<VkDescriptorBufferInfo>();

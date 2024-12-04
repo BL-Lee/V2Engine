@@ -40,7 +40,6 @@ public:
 
 */
   void* mappedBuffer;
-  size_t uniformSize;
   VkBUniformPool* uniformPool;
   int indexIntoPool;
 

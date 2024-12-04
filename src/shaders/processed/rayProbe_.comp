@@ -78,21 +78,36 @@ float AABBtest(BVHNode b, vec3 rayOrigin, vec3 invRayDir)
   float dst = hit ? tNear > 0 ? tNear : 0 : FLT_MAX;
   return dst;
 }
-/*
-vec2 AABBtest(BVHNode b, vec3 rayOrigin, vec3 invRayDir) {
+// Thanks to https://stackoverflow.com/a/42752998
+float triangleTest(vec3 rayOrigin, vec3 rayDirection, vec3 v0, vec3 v1, vec3 v2)
+{
+  
+  vec3 edgeAB = v1 - v0;
+  vec3 edgeAC = v2 - v0;
+  vec3 normalVector = cross(edgeAB, edgeAC);
+  vec3 ao = rayOrigin - v0;
+  vec3 dao = cross(ao, rayDirection);
 
-  vec3 tMin = (b.min - rayOrigin) * invRayDir;
-  vec3 tMax = (b.max - rayOrigin) * invRayDir;
+  
+  float determinant = -dot(rayDirection, normalVector);
+  float invDet = 1 / determinant;
+  
+  // Calculate dst to triangle & barycentric coordinates of intersection point
+  float dst = dot(ao, normalVector) * invDet;
+  float u = dot(edgeAC, dao) * invDet;
+  float v = -dot(edgeAB, dao) * invDet;
+  float w = 1 - u - v;
 
-  vec3 t1 = min(tMin, tMax);
-  vec3 t2 = max(tMin, tMax);
-
-  float tNear = max(max(t1.x, t1.y), t1.z);
-  float tFar = min(min(t2.x, t2.y), t2.z);
-  return vec2(tNear, tFar);
-  //  return tFar >= tNear;
+  //  TriangleHitInfo hitInfo;
+  //hitInfo.didHit = determinant >= 1E-8 && dst >= 0 && u >= 0 && v >= 0 && w >= 0;
+  
+  //  hitInfo.hitPoint = ray.origin + ray.dir * dst;
+  //  hitInfo.normal = normalize(tri.normA * w + tri.normB * u + tri.normC * v);
+  //  hitInfo.dst = dst;
+  bool didHit = determinant >= 1E-8 && dst >= 0 && u >= 0 && v >= 0 && w >= 0;
+  return didHit ? dst : FLT_MAX;
 }
-*/
+/*
 float triangleTest(vec3 rayOrigin, vec3 rayDirection, vec3 v0, vec3 v1, vec3 v2, vec3 normal)
 {
 	      
@@ -125,7 +140,7 @@ float triangleTest(vec3 rayOrigin, vec3 rayDirection, vec3 v0, vec3 v1, vec3 v2,
   else
     return FLT_MAX;
 }
-
+*/
 float sphereTest(vec3 origin, vec3 direction)
 {
   vec3 spherePos = vec3(0.0,0.0,0.0);
@@ -169,8 +184,7 @@ TraceResult trace(vec3 rayOrigin, vec3 rayDir, float maxDist)
 
       vec3 invRayDir = 1.0 / rayD;
       float aabbDist = AABBtest(node, rayO, invRayDir);
-      //bool hitAABB = hitAABBInfo.x > 0.001 && hitAABBInfo.y > 0.0 && hitAABBInfo.x < hitAABBInfo.y;//hitAABBInfo.y;
-      if (aabbDist != FLT_MAX)
+      if (aabbDist != FLT_MAX && aabbDist < maxDist)
 	{
 	  result.boxTests++;
 	  //TODO trace function
@@ -184,8 +198,8 @@ TraceResult trace(vec3 rayOrigin, vec3 rayDir, float maxDist)
 	      Vertex v2 = vertices[i + 2];
 	      vec3 normal = v0.normal;
 	      float testDist = triangleTest(rayO, rayD,
-					    v0.position, v1.position, v2.position,
-					    normal);
+					    v0.position, v1.position, v2.position);
+					    //	    normal);
 	      result.triangleTests++;
 	      vec3 avg = v0.position + v1.position + v2.position / 3.0;
       
@@ -301,31 +315,37 @@ void main() {
 
   if (matIndex == 0) //emissive
     {
-      emitColour = vec4(1.0,0.9,0.6,1.0) * 30.0;
+      emitColour = vec4(1.0,0.9,0.6,1.0) * 1.0;
+      //float R = 1.0;//light falloff
+      //emitColour /= 1 + (dist * R) * (dist * R);
       pixel = emitColour;
+      pixel.a = 1.0;
     }
   else if (matIndex == 1) //diffuseGrey
     {
-      pixel = vec4(0.5,0.5,0.5,1.0) * 0.5;
+      pixel = vec4(0.5,0.5,0.5,1.0) * 0.02;
+      pixel.a = 1.0;
     }
   else if (matIndex == 2) //red
      {
-      pixel = vec4(1.0,0.0,0.0,1.0) * 0.5;
+      pixel = vec4(1.0,0.0,0.0,1.0) * 0.02;
+      pixel.a = 1.0;
     }
   else if (matIndex == 3) //green
     {
-      pixel = vec4(0.0,1.0,0.0,1.0) * 0.5;
+      pixel = vec4(0.0,1.0,0.0,1.0) * 0.02;
+      pixel.a = 1.0;
     }
 
   //Combine information from previous pass
-  if (cascadeIndex < 3 && matIndex == -1)
+  if (cascadeIndex < 4 && pixel.a == 0.0)
     {
       vec3 upperCoord = worldPosToImageUV(center + offset, cascadeIndex + 1);
       int upperDirCount = int(pow(8, cascadeIndex + 1 + 1)); //TODO unhardcode
       int upperDirTilingCount = int(pow(2, cascadeIndex + 1 + 1)); //TODO cube root
 
       vec4 contributingPixel = vec4(0.0);
-
+      int contributingDirs = 0;
       int upperDirIndex = dirIndex * 8;
       for (int dir = upperDirIndex; dir < upperDirIndex + 8; dir++)
 	{
@@ -334,11 +354,16 @@ void main() {
 				     dir / (upperDirTilingCount * upperDirTilingCount)) / upperDirTilingCount;
 	  vec3 texCoord = upperCoord + quadrantOffset;
 	  vec4 val = texture(probeSampler, texCoord);
-	  contributingPixel += val;
+	  contributingPixel += val / 8.0;
+
 	}
-      pixel += contributingPixel / 8.0;
+      pixel += contributingPixel;
+
     }
   pixel.a = 1.0;
+
+  //if (cascadeIndex == 0)
+    //   pixel.a = 1.0;
   imageStore(probeInfo, ivec3(gl_GlobalInvocationID.xyz), pixel);
 
   if (cascadeIndex == cascadeInfo.lineView)
