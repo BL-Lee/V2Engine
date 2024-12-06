@@ -134,7 +134,7 @@ void main() {
 
   if (matIndex == 0) //emissive
     {
-      emitColour = vec4(1.0,0.9,0.6,1.0) * 1.0;
+      emitColour = vec4(1.0,0.9,0.4,1.0) * 10.0;
       //float R = 1.0;//light falloff
       //emitColour /= 1 + (dist * R) * (dist * R);
       pixel = emitColour;
@@ -157,7 +157,7 @@ void main() {
     }
 
   //Combine information from previous pass
-  if (cascadeIndex < 4 && pixel.a == 0.0)
+  if (cascadeIndex < 3 && matIndex == -1)
     {
       vec3 upperCoord = worldPosToImageUV(center + offset, cascadeIndex + 1);
       int upperDirCount = int(pow(8, cascadeIndex + 1 + 1)); //TODO unhardcode
@@ -179,7 +179,8 @@ void main() {
       pixel += contributingPixel;
 
     }
-  pixel.a = 1.0;
+  if (cascadeIndex != 0)
+    pixel.a = 1.0;
 
   //if (cascadeIndex == 0)
     //   pixel.a = 1.0;
@@ -192,9 +193,11 @@ void main() {
 		      imageSize(probeInfo).y * imageSize(probeInfo).z * gl_GlobalInvocationID.z 
 		      )
       * 2;
-    lines[linearIdx + 0].pos = center + offset;
+    if (matIndex == -1)
+      maxDist = 0;
+    lines[linearIdx + 0].pos = rayOrigin;
     lines[linearIdx + 0].colour = pixel.rgb;
-    lines[linearIdx + 1].pos = center + offset + rayDir * 0.02;//dist;
+    lines[linearIdx + 1].pos = rayOrigin + rayDir * maxDist;//dist;
     lines[linearIdx + 1].colour = pixel.rgb;
   }
 

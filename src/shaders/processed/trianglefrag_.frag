@@ -39,6 +39,7 @@ vec3 initialDirs[8] = {
   vec3( 1, 1, 1)
 };
 
+
 int getIndexFromDir(vec3 dir, int cascadeIndex)
 {
   vec3 contributedDir = vec3(0.0);
@@ -122,12 +123,12 @@ void main() {
 				       dir / (dirTilingCount * dirTilingCount)) * textureSize(probeSamplers[cascade],0) / dirTilingCount;
 	  vec3 texCoord = vec3(coord + quadrantOffset) / textureSize(probeSamplers[cascade],0);
 	  vec4 val = texture(probeSamplers[cascade], texCoord);
-	  radiance += val / 8.0;
+	  radiance += val / dirCount;
         }
     }
-  //radiance /= 8.0;
+  radiance /= radiance.a;
   //radiance.a = 1.0;
-  outColor = radiance;
-  return;
+  //outColor = radiance;
+  //return;
   outColor = vec4(colour,1.0) * (radiance);
 }
