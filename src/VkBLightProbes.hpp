@@ -9,6 +9,8 @@
 #include "VkBVertexBuffer.hpp"
 #include "VkBUniformPool.hpp"
 #include "VkBUniformBuffer.hpp"
+#include "VkBRayPipeline.hpp"
+#include "VkBRayInputInfo.hpp"
 struct CascadeInfo
 {
   int cascade, quadrant;
@@ -49,7 +51,12 @@ public:
   int debugDirectionViewIndex;
   int viewDebug;
   
-  
+  void compute3DRadianceCascade(VkBRayPipeline* lightProbePipeline,
+				VkBRayInputInfo* rayInputInfo,
+				CascadeInfo* cascadeInfos,
+				std::vector<VkSemaphore> waitSemaphores,
+				std::vector<VkSemaphore> signalSemaphores,
+				uint32_t imageIndex);
   
   void create(int frameCount);
   void destroy();

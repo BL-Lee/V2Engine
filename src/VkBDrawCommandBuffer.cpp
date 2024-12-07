@@ -58,7 +58,6 @@ void
 VkBDrawCommandBuffer::record(VkPipeline pipeline,
 			     VkPipelineLayout pipelineLayout,
 			     VkBVertexBuffer* vertexBuffer,
-			     VkDescriptorSet* descriptorSet,
 			     int offset,
 			     int count
 			     )
@@ -72,10 +71,6 @@ VkBDrawCommandBuffer::record(VkPipeline pipeline,
   if (vertexBuffer->indexed)
     vkCmdBindIndexBuffer(commandBuffer, vertexBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
   
-  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			  pipelineLayout,
-			  0, 1, descriptorSet, 0, nullptr);
-
   if (vertexBuffer->indexed)
     vkCmdDrawIndexed(commandBuffer, count, 1, offset, 0, 0);
   else
@@ -87,7 +82,6 @@ void
 VkBDrawCommandBuffer::record(VkPipeline pipeline,
 			     VkPipelineLayout pipelineLayout,
 			     VkBVertexBuffer* vertexBuffer,
-			     VkDescriptorSet* descriptorSet,
 			     Model* model
 			     )
 {
@@ -98,10 +92,12 @@ VkBDrawCommandBuffer::record(VkPipeline pipeline,
   vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
   if (vertexBuffer->indexed)
     vkCmdBindIndexBuffer(commandBuffer, vertexBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-  
-  vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-			  pipelineLayout,
-			  0, 1, descriptorSet, 0, nullptr);
+
+  vkCmdPushConstants(commandBuffer,
+		     pipelineLayout,
+		     VK_SHADER_STAGE_VERTEX_BIT,
+		     20, sizeof(uint32_t),
+		     &model->indexIntoModelMatrixBuffer);	
 
   if (vertexBuffer->indexed)
     vkCmdDrawIndexed(commandBuffer, model->indexCount, 1, model->startIndex, model->vertexOffset, 0);

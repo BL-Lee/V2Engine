@@ -1,6 +1,6 @@
 #version 450
 
-layout(set=0, binding = 1) uniform sampler2D texSampler;
+//layout(set=0, binding = 1) uniform sampler2D texSampler;
 
 //layout(set=2, binding = 1) uniform sampler3D probeSampler;
 //layout(set = 2, binding = 0, rgba8) uniform restrict readonly image3D probeInfo[4];
@@ -15,9 +15,10 @@ layout(location = 1) in vec3 worldPos;
 layout(location = 2) in vec3 worldNormal;
 //layout(location = 3) in vec3 TEMP_EYE_POS;
 layout(location = 3) in vec3 colour;
-layout(location = 0) out vec4 outColor;
+layout(location = 0) out vec4 outColour;
 
 layout( push_constant ) uniform cascadeConstant {
+  layout(offset=0)
   int cascade;
   int quadrant;
   float start;
@@ -73,8 +74,9 @@ int getIndexFromDir(vec3 dir, int cascadeIndex)
 
 void main() {
 
-  //outColor = texture(texSampler, fragTexCoord);
-  //return;
+  outColour = vec4(colour,1.0);
+  return;
+
   vec3 width = vec3(2.5);
   vec3 center = vec3(0.0,1.0,0.0);
   
@@ -130,5 +132,5 @@ void main() {
   //radiance.a = 1.0;
   //outColor = radiance;
   //return;
-  outColor = vec4(colour,1.0) * (radiance);
+  outColour = vec4(colour,1.0) * (radiance);
 }

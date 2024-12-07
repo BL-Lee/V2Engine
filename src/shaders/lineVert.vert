@@ -1,9 +1,9 @@
 #version 450
 
-layout(set=0, binding = 0) uniform UniformBufferObject {
+/*layout(set=0, binding = 0) uniform UniformBufferObject {
     mat4 model;
 } ubo;
-
+*/
 layout(set=1, binding = 1) uniform cameraUniform {
   mat4 view;
   mat4 proj;
@@ -25,7 +25,7 @@ layout(location = 0) out vec3 outColour;
 
 void main() {
 
-  gl_Position = _MainCamera.proj * _MainCamera.view * ubo.model * vec4(position, 1.0);
+  gl_Position = _MainCamera.proj * _MainCamera.view * vec4(position, 1.0);
   outColour = colour;
   if (colour == vec3(0.0))
       gl_Position = vec4(-2.0,-2.0,-2.0,-2.0);

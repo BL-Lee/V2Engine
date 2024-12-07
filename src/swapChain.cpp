@@ -95,8 +95,8 @@ VkSurfaceFormatKHR VkBSwapChain::chooseSwapSurfaceFormat(const std::vector<VkSur
     
 VkPresentModeKHR VkBSwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
   //return VK_PRESENT_MODE_IMMEDIATE_KHR;
-  //return VK_PRESENT_MODE_MAILBOX_KHR; // triple buffering
-  return VK_PRESENT_MODE_FIFO_KHR; //double buffering basically (why jittery?)
+  return VK_PRESENT_MODE_MAILBOX_KHR; // triple buffering
+  //return VK_PRESENT_MODE_FIFO_KHR; //double buffering basically (why jittery?)
   //Look back in the tutorial if you want mailbox (triple buffering) or immediate mode (single buffering)
 }
 

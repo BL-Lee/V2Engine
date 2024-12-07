@@ -12,7 +12,6 @@ public:
   void record(VkPipeline pipeline,
 	      VkPipelineLayout pipelineLayout,
 	      VkBVertexBuffer* vertexBuffer,
-	      VkDescriptorSet* descriptorSet,
 	      int offset,
 	      int count
 	      );
@@ -24,7 +23,6 @@ public:
   void record(VkPipeline pipeline,
 			     VkPipelineLayout pipelineLayout,
 			     VkBVertexBuffer* vertexBuffer,
-			     VkDescriptorSet* descriptorSet,
 			     Model* model
 	      );
 
