@@ -4,7 +4,7 @@ class ForwardRenderer
 {
     VkBDrawCommandBuffer drawCommandBuffer;
     VkBGraphicsPipeline graphicsPipeline;
-
+  VkRenderPass
   void begin(VkBSwapChain* swapChain,
 	     
 	     )

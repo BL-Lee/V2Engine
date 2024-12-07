@@ -211,7 +211,9 @@ private:
     swapChain.createSwapChain(surface, window);
     swapChain.createImageViews();
     framesInFlight = (uint32_t)swapChain.imageViews.size();
-    renderPass.createRenderPass(swapChain.imageFormat);
+    renderPass.addColourAttachment(swapChain.imageFormat, true, 0);
+    renderPass.addDepthAttachment(1);
+    renderPass.createRenderPass();
         //Command pools
     createCommandPool(&drawCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
