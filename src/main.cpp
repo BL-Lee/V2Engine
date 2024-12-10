@@ -81,6 +81,8 @@ const bool enableVulkanValidationLayers = true;
 #include "VkBRayInputInfo.hpp"
 #include "BVH.hpp"
 #include "RadianceCascade3D.hpp"
+#include "ForwardRenderer.hpp"
+#include "DeferredRenderer.hpp"
 Input inputInfo = {};
 DebugConsole debugConsole;
 RayDebugPushConstant rayDebugPushConstant;
@@ -96,16 +98,22 @@ public:
   VkBRayPipeline rayPipeline;
   RadianceCascade3D radianceCascade3D;
   
-  VkBRenderPass renderPass;
+  //VkBRenderPass renderPass;
 
   VkBVertexBuffer staticVertexBuffer;
 
   VkBRayInputInfo rayInputInfo;
   VkBTexture rayBackBuffer;
+  ForwardRenderer forwardRenderer;
+  DeferredRenderer deferredRenderer;
+  VkRenderPass compositeRenderPass;
+  VkBGraphicsPipeline compositePipeline;
+  VkFramebuffer compositeFramebuffer;
+
   
   VkBUniformPool cameraUniformPool;
   Camera mainCamera;
-  VkBDrawCommandBuffer drawCommandBuffer;
+  //VkBDrawCommandBuffer drawCommandBuffer;
   VkBTexture depthTexture;
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
@@ -211,9 +219,11 @@ private:
     swapChain.createSwapChain(surface, window);
     swapChain.createImageViews();
     framesInFlight = (uint32_t)swapChain.imageViews.size();
-    renderPass.addColourAttachment(swapChain.imageFormat, true, 0);
-    renderPass.addDepthAttachment(1);
-    renderPass.createRenderPass();
+    forwardRenderer.renderPass.addColourAttachment(swapChain.imageFormat, true, 0);
+    forwardRenderer.renderPass.addDepthAttachment(1);
+    forwardRenderer.renderPass.createRenderPass();
+
+    
         //Command pools
     createCommandPool(&drawCommandPool, device, physicalDevice, surface,
 		      VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -225,6 +235,11 @@ private:
 				      swapChain.extent.width,
 				      swapChain.extent.height,
 				      nullptr);
+    
+    deferredRenderer.init(&swapChain);
+    deferredRenderer.compositeRenderPass.addColourAttachment(swapChain.imageFormat, true, 0);
+    deferredRenderer.compositeRenderPass.addDepthAttachment(1);
+    deferredRenderer.compositeRenderPass.createRenderPass();
 
     cameraUniformPool.create(1, (uint32_t)swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*3 + sizeof(float)*4);
@@ -250,7 +265,7 @@ private:
     };
 
     std::vector<VkPushConstantRange> cascadePushConstantRange = {cascadePushConstant};
-    linePipeline.createLineGraphicsPipeline(swapChain, renderPass, &uniformLayouts, &cascadePushConstantRange);
+    linePipeline.createLineGraphicsPipeline(swapChain, forwardRenderer.renderPass, &uniformLayouts, &cascadePushConstantRange);
     
     cascadePushConstantRange[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     VkPushConstantRange modelPushConstant = {
@@ -259,12 +274,28 @@ private:
       sizeof(uint32_t)
     };
     cascadePushConstantRange.push_back(modelPushConstant);
-    graphicsPipeline.createGraphicsPipeline(swapChain, renderPass, &uniformLayouts, &cascadePushConstantRange);
+    graphicsPipeline.createGraphicsPipeline(swapChain, forwardRenderer.renderPass,
+					    "../src/shaders/trianglevert.spv",
+					    "../src/shaders/trianglefrag.spv",
+					    &uniformLayouts, &cascadePushConstantRange);
+    
+
+    std::vector<VkDescriptorSetLayout> compositeLayouts = {deferredRenderer.compositeUniformPool.descriptorSetLayout};
+    compositePipeline.createGraphicsPipeline(swapChain, deferredRenderer.compositeRenderPass,
+					    "../src/shaders/deferredCompositeVert.spv",
+					    "../src/shaders/deferredCompositeFrag.spv",
+					     &compositeLayouts, nullptr);
+
+    
+    deferredRenderer.deferredPipeline.createGraphicsPipeline(swapChain, deferredRenderer.deferredRenderPass,
+							     "../src/shaders/deferredVert.spv",
+							     "../src/shaders/deferredFrag.spv",
+							     &uniformLayouts, &cascadePushConstantRange);
 
 
-
-    depthTexture.createTextureImage(VKB_TEXTURE_TYPE_DEPTH, swapChain.extent.width, swapChain.extent.height, nullptr);    
-    swapChain.createFramebuffers(renderPass, depthTexture.imageView);
+    depthTexture.createTextureImage(VKB_TEXTURE_TYPE_DEPTH, swapChain.extent.width, swapChain.extent.height, nullptr);
+    //swapChain.createFramebuffers(forwardRenderer.renderPass, depthTexture.imageView);
+    swapChain.createFramebuffers(deferredRenderer.compositeRenderPass, depthTexture.imageView);
     std::cout << "Swap Chain image count: " << swapChain.imageViews.size() << std::endl;
     
 
@@ -301,10 +332,10 @@ private:
     std::vector<VkPushConstantRange> rayPushConstantRange = {rayPushConstant};
     rayPipeline.createPipeline("../src/shaders/ray.spv", &computeUniformLayouts, &rayPushConstantRange);
     
-    drawCommandBuffer.createCommandBuffer(drawCommandPool);
+    forwardRenderer.drawCommandBuffer.createCommandBuffer(drawCommandPool);
     radianceCascade3D.initPipeline(&rayInputInfo);
     createSyncObjects();
-    debugConsole.init(&swapChain, renderPass.renderPass);
+    debugConsole.init(&swapChain, forwardRenderer.renderPass.renderPass);
     for (int i = 0; i < radianceCascade3D.lightProbeInfo.cascadeCount; i++)
       debugConsole.cascadeInfos[i] = &radianceCascade3D.cascadeInfos[i];
     debugConsole.rayDebugPushConstant = &rayDebugPushConstant;
@@ -499,123 +530,61 @@ private:
 	   takes -> pipline to bind, models, frame buffer, uniforms
 	  
 	 */
-	vkResetCommandBuffer(drawCommandBuffer.commandBuffer, 0);
-    
-	drawCommandBuffer.begin(renderPass.renderPass,
-			    swapChain.framebuffers[imageIndex],
-			    swapChain.extent);
-
-	
-	vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.pipeline);
-	
+	forwardRenderer.begin(swapChain.extent, swapChain.framebuffers[imageIndex],
+			      graphicsPipeline);
 	//Cascade debug view info
-	vkCmdPushConstants(drawCommandBuffer.commandBuffer,
+	vkCmdPushConstants(forwardRenderer.drawCommandBuffer.commandBuffer,
 			   graphicsPipeline.layout,
 			   VK_SHADER_STAGE_FRAGMENT_BIT,
 			   0, sizeof(CascadeInfo),
 			   &radianceCascade3D.cascadeInfos[viewCascade]);
 	
-	vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				graphicsPipeline.layout,
-				1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
-	vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				graphicsPipeline.layout,
-				2, 1, &radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 0, nullptr);
+	forwardRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 1);
+	forwardRenderer.bindDescriptorSet(&radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 2);
+	forwardRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
 	
-	//model matrices
-	vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				graphicsPipeline.layout,
-				0, 1,
-				&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool]
-				, 0, nullptr);
-	
-	//TODO: bind descriptor set (has index included)
-	drawCommandBuffer.record(graphicsPipeline.pipeline,
-			     graphicsPipeline.layout,
-			     &rayInputInfo.vertexBuffer,
-				 ratModel
-				 );
-	drawCommandBuffer.record(graphicsPipeline.pipeline,
-				 graphicsPipeline.layout,
-				 &rayInputInfo.vertexBuffer,
-				 cornellScene
-				 );
-	drawCommandBuffer.record(graphicsPipeline.pipeline,
-				 graphicsPipeline.layout,
-				 &rayInputInfo.vertexBuffer,
-				 cornellRightWall
-				 );
-	  
-	drawCommandBuffer.record(graphicsPipeline.pipeline,
-				 graphicsPipeline.layout,
-				 &rayInputInfo.vertexBuffer,
-				 cornellLeftWall
-				 );
-
-	drawCommandBuffer.record(graphicsPipeline.pipeline,
-			     graphicsPipeline.layout,
-			     &rayInputInfo.vertexBuffer,
-				 cornellLight
-			     );
-
-	drawCommandBuffer.record(graphicsPipeline.pipeline,
-			     graphicsPipeline.layout,
-			     &rayInputInfo.vertexBuffer,
-				 cornellCeilLight
-			     );
-    
-
+	forwardRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
+	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellScene);
+	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellRightWall);
+	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellLeftWall);
+	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellLight);
+	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellCeilLight);
 
 	// DEBUG LINES ---------------------------------------------------------------
 
 	if (DRAW_DEBUG_LINES)
 	  {
-	    
-	    vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, linePipeline.pipeline);
+	    /*
+	    forwardRenderer.changePipeline(linePipeline);
 	    //Cascade debug view info
-	    vkCmdPushConstants(drawCommandBuffer.commandBuffer,
+	    vkCmdPushConstants(forwardRenderer.drawCommandBuffer.commandBuffer,
 			       linePipeline.layout,
 			       VK_SHADER_STAGE_VERTEX_BIT,
 			       0, sizeof(CascadeInfo),
 			       &radianceCascade3D.cascadeInfos[viewCascade]);	
+	    forwardRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0);
+	    forwardRenderer.bindDescriptorSet(&radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 2);
 
-	    vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				    linePipeline.layout,
-				    1, 1, &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0, nullptr);
-	    vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-				    linePipeline.layout,
-				    2, 1, &radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 0, nullptr);
-	    
-	    drawCommandBuffer.record(linePipeline.pipeline,
-				      linePipeline.layout,
-				     &radianceCascade3D.lightProbeInfo.lineVBO,
-				     0,
-				     radianceCascade3D.lightProbeInfo.lineCount * 2
-				      );
-	    
+	    forwardRenderer.record(&radianceCascade3D.lightProbeInfo.lineVBO);
+	    */
 	  }
 
-	debugConsole.draw(drawCommandBuffer.commandBuffer);
+	debugConsole.draw(forwardRenderer.drawCommandBuffer.commandBuffer);
 	
-	drawCommandBuffer.end();
-
-	//Syncronization info for graphics 
+	std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
+	std::vector<VkSemaphore> signalSemaphores = {renderFinishedSemaphore};
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkSemaphore waitSemaphores[] = {imageAvailableSemaphore};//{probeInfoFinishedSemaphore}; //Wait for this before submitting draw
 	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
-	VkSemaphore signalSemaphores[] = {renderFinishedSemaphore}; //Signal to this when drawing is done
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
+	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
+	submitInfo.pWaitSemaphores = waitSemaphores.data();
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &drawCommandBuffer.commandBuffer;
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
-    
-	if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
-	  throw std::runtime_error("failed to submit draw command buffer!");
-	}
+	//	submitInfo.pCommandBuffers = &drawCommandBuffer.commandBuffer;
+	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
+	submitInfo.pSignalSemaphores = signalSemaphores.data();
+
+	forwardRenderer.submit(&submitInfo, inFlightFence);
 
 
 
@@ -781,15 +750,14 @@ private:
     for (auto imageView : swapChain.imageViews) {
       vkDestroyImageView(device, imageView, nullptr);
     }
-    vkDestroyPipeline(device, graphicsPipeline.pipeline, nullptr);	
-    vkDestroyPipelineLayout(device, graphicsPipeline.layout, nullptr);
+    graphicsPipeline.destroy();
 
     vkDestroyPipeline(device, linePipeline.pipeline, nullptr);	
     vkDestroyPipelineLayout(device, linePipeline.layout, nullptr);
-
+    deferredRenderer.destroy();
     debugConsole.destroy();
     rayInputInfo.destroy();
-    vkDestroyRenderPass(device, renderPass.renderPass, nullptr);
+    vkDestroyRenderPass(device, forwardRenderer.renderPass.renderPass, nullptr);
 
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
 
@@ -804,7 +772,11 @@ private:
     radianceCascade3D.lightProbeInfo.destroy();
     mainCamera.ubo.destroy();
     cameraUniformPool.destroy();
+    
+    compositePipeline.destroy();
+    vkDestroyRenderPass(device, deferredRenderer.compositeRenderPass.renderPass, nullptr);
 
+    
     depthTexture.destroy();
     rayBackBuffer.destroy();
     vkDestroyDevice(device, nullptr);

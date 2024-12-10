@@ -4,6 +4,11 @@ import subprocess
 filesToCompile = [
     'trianglevert.vert',
     'trianglefrag.frag',
+    'deferredCompositeFrag.frag',
+    'deferredCompositeVert.vert',
+    'deferredFrag.frag',
+    'deferredVert.vert',
+
     'ray.comp',
     'rayProbe.comp',
     'lineVert.vert',

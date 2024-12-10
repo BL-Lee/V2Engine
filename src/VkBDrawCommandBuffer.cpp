@@ -55,7 +55,8 @@ VkBDrawCommandBuffer::end()
   }
 }
 void
-VkBDrawCommandBuffer::record(VkPipeline pipeline,
+VkBDrawCommandBuffer::record(
+			     VkPipeline pipeline,
 			     VkPipelineLayout pipelineLayout,
 			     VkBVertexBuffer* vertexBuffer,
 			     int offset,

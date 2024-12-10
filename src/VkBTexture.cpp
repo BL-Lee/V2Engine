@@ -39,7 +39,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
     {
       format = VK_FORMAT_D32_SFLOAT;
       tiling = VK_IMAGE_TILING_OPTIMAL;
-      usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+      usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
       imageSize = width * height * depth * 4;
       channels = 1;
@@ -73,7 +73,29 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
       channels = 4;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;
-
+  case VKB_TEXTURE_TYPE_RGBA_HDR:
+    {
+      format = VK_FORMAT_R32G32B32A32_SFLOAT;
+      tiling = VK_IMAGE_TILING_OPTIMAL;
+      properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+      imageSize = width * height * depth * 4 * sizeof(float);
+      channels = 4;
+      aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    }break;
+    /*
+  case VKB_TEXTURE_TYPE_RG_HDR:
+    {
+      format = VK_FORMAT_R32G32_SFLOAT;
+      tiling = VK_IMAGE_TILING_OPTIMAL;
+      properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+      usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+      imageSize = width * height * depth * 2 * sizeof(float);
+      channels = 2;
+      aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
+    }break;
+    */
+    
   case VKB_TEXTURE_TYPE_STORAGE_RGBA:
     {
       format = VK_FORMAT_B8G8R8A8_UNORM;

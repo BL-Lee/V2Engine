@@ -3,3 +3,4 @@ build/
 *~
 CMakeCache.txt
 glslc
+.vs

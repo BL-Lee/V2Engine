@@ -4,15 +4,23 @@
 #include "VkBGlobals.hpp"
 #include <stdexcept>
 #include <fstream>
-
+void VkBGraphicsPipeline::destroy()
+{
+  vkDestroyPipeline(device, pipeline, nullptr);	
+  vkDestroyPipelineLayout(device, layout, nullptr);
+}
 void VkBGraphicsPipeline::createGraphicsPipeline(VkBSwapChain& swapChain,
 						 VkBRenderPass renderPass,
+						 const char* vertFile,
+						 const char* fragFile,
 						 std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
 						 std::vector<VkPushConstantRange>* pushConstantRanges)
 {
       //Shader stuff
-    VkShaderModule vertShaderModule = VkBShader::createShaderFromFile("../src/shaders/trianglevert.spv");
-    VkShaderModule fragShaderModule = VkBShader::createShaderFromFile("../src/shaders/trianglefrag.spv");
+  //VkShaderModule vertShaderModule = VkBShader::createShaderFromFile("../src/shaders/trianglevert.spv");
+  // VkShaderModule fragShaderModule = VkBShader::createShaderFromFile("../src/shaders/trianglefrag.spv");
+  VkShaderModule vertShaderModule = VkBShader::createShaderFromFile(vertFile);
+   VkShaderModule fragShaderModule = VkBShader::createShaderFromFile(fragFile);
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

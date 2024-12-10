@@ -25,7 +25,9 @@ public:
   VkPipelineLayout layout;
   void createGraphicsPipeline(VkBSwapChain& swapChain,
 			      VkBRenderPass renderPass,
+			      const char* vertFile,
+			      const char* fragFile,
 			      std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
 			      std::vector<VkPushConstantRange>* pushConstantRanges);
-
+  void destroy();
 };
