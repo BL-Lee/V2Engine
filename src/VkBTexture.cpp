@@ -76,10 +76,12 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
   case VKB_TEXTURE_TYPE_RGBA_HDR:
     {
       format = VK_FORMAT_R32G32B32A32_SFLOAT;
+      //format = VK_FORMAT_R8G8B8A8_UNORM;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
       usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
       imageSize = width * height * depth * 4 * sizeof(float);
+      //imageSize = width * height * depth * 4;
       channels = 4;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;

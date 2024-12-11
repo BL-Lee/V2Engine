@@ -14,5 +14,5 @@ public:
   std::optional<VkAttachmentReference> depthRef;
   void addDepthAttachment(uint32_t ind);
   void addColourAttachment(VkFormat format, bool present, uint32_t ind);
-  void createRenderPass();
+  void createRenderPass(bool deferred);
 };

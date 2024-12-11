@@ -3,12 +3,12 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
 {
   fullscreenQuad.create(6 * sizeof(Vertex));
   Vertex vertices[6];
-  vertices[0].pos = {0.0,0.0,0.0};
-  vertices[1].pos = {0.0,1.0,0.0};
+  vertices[0].pos = {-1.0,-1.0,0.0};
+  vertices[1].pos = {-1.0,1.0,0.0};
   vertices[2].pos = {1.0,1.0,0.0};
   vertices[3].pos = {1.0,1.0,0.0};
-  vertices[4].pos = {1.0,0.0,0.0};
-  vertices[5].pos = {0.0,0.0,0.0};
+  vertices[4].pos = {1.0,-1.0,0.0};
+  vertices[5].pos = {-1.0,-1.0,0.0};
   vertices[0].texCoord = {0.0,0.0};
   vertices[1].texCoord = {0.0,1.0};
   vertices[2].texCoord = {1.0,1.0};
@@ -20,11 +20,12 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   mode = 0;
   deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT,  false, 0); //normal
   deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, false, 1); //world pos
-  deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, false, 2); //UV
-  deferredRenderPass.addDepthAttachment(3);
-  deferredRenderPass.createRenderPass();
+  //  deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, false, 2); //UV
 
-  deferredTextures = (VkBTexture*)malloc(sizeof(VkBTexture) * 4);
+  deferredRenderPass.addDepthAttachment(2);
+  deferredRenderPass.createRenderPass(true);
+
+  deferredTextures = (VkBTexture*)calloc(sizeof(VkBTexture), 4);
   deferredTextures[0].createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
 					 swapChain->extent.width, swapChain->extent.height,
 					 nullptr);
@@ -39,13 +40,13 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
 					 nullptr);
   VkImageView attachments[] = { deferredTextures[0].imageView,
 				deferredTextures[1].imageView,
-				deferredTextures[2].imageView,
-				deferredTextures[3].imageView  };
+				//eferredTextures[2].imageView,
+				deferredTextures[3].imageView };
 
   VkFramebufferCreateInfo framebufferInfo{};
   framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
   framebufferInfo.renderPass = deferredRenderPass.renderPass;
-  framebufferInfo.attachmentCount = 4;
+  framebufferInfo.attachmentCount = 3;
   framebufferInfo.pAttachments = attachments;
   framebufferInfo.width = swapChain->extent.width;
   framebufferInfo.height = swapChain->extent.height;
@@ -56,24 +57,23 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   }
 
   
-  compositeUniformPool.create(1, 1, 0, true);
+  compositeUniformPool.create(1, framesInFlight, 0, true);
   compositeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
   compositeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-  compositeUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-  compositeUniformPool.addImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+  //  compositeUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+  //  compositeUniformPool.addImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
   compositeUniformPool.createDescriptorSetLayout();
   
   VkSampler samplers[] = { deferredTextures[0].textureSampler,
-				deferredTextures[1].textureSampler,
-				deferredTextures[2].textureSampler,
-				deferredTextures[3].textureSampler
+			   deferredTextures[1].textureSampler,
+			   //deferredTextures[2].textureSampler,
+			   //deferredTextures[3].textureSampler
   };
 
   compositeUniform.allocateDescriptorSets(&compositeUniformPool, attachments, samplers, nullptr);
 
-
-
-
+  drawCommandBuffer.createCommandBuffer(drawCommandPool);
+  compositeCommandBuffer.createCommandBuffer(drawCommandPool);
 }
 void DeferredRenderer::destroy()
 {
@@ -87,7 +87,7 @@ void DeferredRenderer::destroy()
   compositeUniform.destroy();
   free(deferredTextures);
   vkDestroyFramebuffer(device, deferredFramebuffer, nullptr);
-  //  deferredPipeline.destroy();
+  deferredPipeline.destroy();
 }
 
 void DeferredRenderer::setCompositeInformation(VkBGraphicsPipeline pipeline,
@@ -99,24 +99,28 @@ void DeferredRenderer::setCompositeInformation(VkBGraphicsPipeline pipeline,
   compositeRenderPass = renderPass;
 }
 
-void DeferredRenderer::begin( VkExtent2D extent, VkFramebuffer framebuffer,
-			     VkBGraphicsPipeline pipeline
-			     )
+void DeferredRenderer::begin( VkExtent2D extent  )
 {
   vkResetCommandBuffer(drawCommandBuffer.commandBuffer, 0);
     
-  drawCommandBuffer.begin(deferredRenderPass.renderPass,
-			  framebuffer,
+  drawCommandBuffer.begin(deferredRenderPass,
+			  deferredFramebuffer,
 			  extent);
 	
-  vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
-  deferredPipeline = pipeline;
+  vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, deferredPipeline.pipeline);
+  //deferredPipeline = pipeline;
 }
 
 void DeferredRenderer::bindDescriptorSet( VkDescriptorSet* dSet, uint32_t ind )
 {
   vkCmdBindDescriptorSets(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
 			  deferredPipeline.layout,
+			  ind, 1, dSet, 0, nullptr);
+}
+void DeferredRenderer::bindDescriptorSetComposite( VkDescriptorSet* dSet, uint32_t ind )
+{
+  vkCmdBindDescriptorSets(compositeCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+			  compositePipeline.layout,
 			  ind, 1, dSet, 0, nullptr);
 }
 
@@ -153,16 +157,18 @@ void DeferredRenderer::submitComposite(VkSubmitInfo* submitInfo, VkFence fence, 
       throw std::runtime_error("Attempting to submit composite stage of deferred renderer without submitting deferred stage first");
     }
   
-  vkResetCommandBuffer(drawCommandBuffer.commandBuffer, 0);
+  vkResetCommandBuffer(compositeCommandBuffer.commandBuffer, 0);
     
-  drawCommandBuffer.begin(compositeRenderPass.renderPass,
+  compositeCommandBuffer.begin(compositeRenderPass,
 			  compositeFramebuffer,
 			  extent);
-	
-  vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, compositePipeline.pipeline);
-  drawCommandBuffer.record(compositePipeline.pipeline, compositePipeline.layout, &fullscreenQuad, 0, 6);
-  drawCommandBuffer.end();
-  submitInfo->pCommandBuffers = &drawCommandBuffer.commandBuffer;
+  vkCmdBindPipeline(compositeCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, compositePipeline.pipeline);
+
+  bindDescriptorSetComposite(&compositeUniformPool.descriptorSets[0][compositeUniform.indexIntoPool], 0);
+  
+  compositeCommandBuffer.record(compositePipeline.pipeline, compositePipeline.layout, &fullscreenQuad, 0, 6);
+  compositeCommandBuffer.end();
+  submitInfo->pCommandBuffers = &compositeCommandBuffer.commandBuffer;
   //Syncronization info for graphics 
   if (vkQueueSubmit(graphicsQueue, 1, submitInfo, fence) != VK_SUCCESS) {
     throw std::runtime_error("failed to submit draw command buffer!");
@@ -177,6 +183,5 @@ void DeferredRenderer::changeDeferredPipeline(VkBGraphicsPipeline pipeline)
 }
 void DeferredRenderer::changeCompositePipeline(VkBGraphicsPipeline pipeline)
 {
-  vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
   compositePipeline = pipeline;
 }

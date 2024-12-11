@@ -5,7 +5,7 @@ void ForwardRenderer::begin( VkExtent2D extent, VkFramebuffer framebuffer,
 {
   vkResetCommandBuffer(drawCommandBuffer.commandBuffer, 0);
     
-  drawCommandBuffer.begin(renderPass.renderPass,
+  drawCommandBuffer.begin(renderPass,
 			  framebuffer,
 			  extent);
 	

@@ -2,6 +2,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 #include "VkBVertexBuffer.hpp"
+#include "VkBRenderPass.hpp"
 #include "OBJLoader.hpp"
 class VkBDrawCommandBuffer{
 
@@ -16,7 +17,7 @@ public:
 	      int count
 	      );
   void end();
-  void begin(VkRenderPass renderPass,
+  void begin(VkBRenderPass& renderPass,
 	     VkFramebuffer frameBuffer,
 	     VkExtent2D extent);
 

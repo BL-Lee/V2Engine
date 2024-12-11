@@ -42,6 +42,7 @@ VkCommandPool transientCommandPool; //For short lived command buffers
 VkCommandPool computeCommandPool;
 uint32_t framesInFlight;
 int USE_RASTER = 1; //Swap between ray and raster
+int USE_FORWARD = 0;
 int DRAW_DEBUG_LINES = 0;
 int viewCascade = 0;
 
@@ -118,6 +119,7 @@ public:
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
   VkSemaphore probeInfoFinishedSemaphore;
+  VkSemaphore deferredPassFinishedSemaphore;
   VkFence inFlightFence;
 
   Model* ratModel;
@@ -187,6 +189,10 @@ private:
 	debugConsole.show = !debugConsole.show;
       }
 
+    if (action == GLFW_PRESS && key == GLFW_KEY_T)
+      {
+	USE_FORWARD = !USE_FORWARD;
+      }
 
     if (action == GLFW_PRESS && key == GLFW_KEY_Q)
       glfwSetWindowShouldClose(window, GL_TRUE);
@@ -221,7 +227,7 @@ private:
     framesInFlight = (uint32_t)swapChain.imageViews.size();
     forwardRenderer.renderPass.addColourAttachment(swapChain.imageFormat, true, 0);
     forwardRenderer.renderPass.addDepthAttachment(1);
-    forwardRenderer.renderPass.createRenderPass();
+    forwardRenderer.renderPass.createRenderPass(false);
 
     
         //Command pools
@@ -239,7 +245,7 @@ private:
     deferredRenderer.init(&swapChain);
     deferredRenderer.compositeRenderPass.addColourAttachment(swapChain.imageFormat, true, 0);
     deferredRenderer.compositeRenderPass.addDepthAttachment(1);
-    deferredRenderer.compositeRenderPass.createRenderPass();
+    deferredRenderer.compositeRenderPass.createRenderPass(false);
 
     cameraUniformPool.create(1, (uint32_t)swapChain.imageViews.size(), sizeof(glm::mat4)*3 + sizeof(float)*4);
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*3 + sizeof(float)*4);
@@ -356,6 +362,7 @@ private:
     if (vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &probeInfoFinishedSemaphore) != VK_SUCCESS ||
+	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &deferredPassFinishedSemaphore) != VK_SUCCESS ||
 	vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
       throw std::runtime_error("failed to create semaphores!");
     }
@@ -521,74 +528,120 @@ private:
     //RASTERIZATION -----------------------------------------------------------------
     if (USE_RASTER)
       {
-	//TODO: forward renderer
-
-
-	/**
-
-	   has -> renderpass, draw command buffer,
-	   takes -> pipline to bind, models, frame buffer, uniforms
-	  
-	 */
-	forwardRenderer.begin(swapChain.extent, swapChain.framebuffers[imageIndex],
-			      graphicsPipeline);
-	//Cascade debug view info
-	vkCmdPushConstants(forwardRenderer.drawCommandBuffer.commandBuffer,
-			   graphicsPipeline.layout,
-			   VK_SHADER_STAGE_FRAGMENT_BIT,
-			   0, sizeof(CascadeInfo),
-			   &radianceCascade3D.cascadeInfos[viewCascade]);
-	
-	forwardRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 1);
-	forwardRenderer.bindDescriptorSet(&radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 2);
-	forwardRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
-	
-	forwardRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
-	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellScene);
-	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellRightWall);
-	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellLeftWall);
-	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellLight);
-	forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellCeilLight);
-
-	// DEBUG LINES ---------------------------------------------------------------
-
-	if (DRAW_DEBUG_LINES)
+	if (USE_FORWARD)
+	  //TODO: forward renderer
 	  {
-	    /*
-	    forwardRenderer.changePipeline(linePipeline);
+
+	    /**
+
+	       has -> renderpass, draw command buffer,
+	       takes -> pipline to bind, models, frame buffer, uniforms
+	  
+	    */
+	    forwardRenderer.begin(swapChain.extent, swapChain.framebuffers[imageIndex],
+				  graphicsPipeline);
 	    //Cascade debug view info
 	    vkCmdPushConstants(forwardRenderer.drawCommandBuffer.commandBuffer,
-			       linePipeline.layout,
-			       VK_SHADER_STAGE_VERTEX_BIT,
+			       graphicsPipeline.layout,
+			       VK_SHADER_STAGE_FRAGMENT_BIT,
 			       0, sizeof(CascadeInfo),
-			       &radianceCascade3D.cascadeInfos[viewCascade]);	
-	    forwardRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0);
-	    forwardRenderer.bindDescriptorSet(&radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 2);
-
-	    forwardRenderer.record(&radianceCascade3D.lightProbeInfo.lineVBO);
-	    */
-	  }
-
-	debugConsole.draw(forwardRenderer.drawCommandBuffer.commandBuffer);
+			       &radianceCascade3D.cascadeInfos[viewCascade]);
 	
-	std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
-	std::vector<VkSemaphore> signalSemaphores = {renderFinishedSemaphore};
-	VkSubmitInfo submitInfo{};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
-	submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
-	submitInfo.pWaitSemaphores = waitSemaphores.data();
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	//	submitInfo.pCommandBuffers = &drawCommandBuffer.commandBuffer;
-	submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
-	submitInfo.pSignalSemaphores = signalSemaphores.data();
+	    forwardRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 1);
+	    forwardRenderer.bindDescriptorSet(&radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 2);
+	    forwardRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
+	
+	    forwardRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
+	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellScene);
+	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellRightWall);
+	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellLeftWall);
+	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellLight);
+	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellCeilLight);
 
-	forwardRenderer.submit(&submitInfo, inFlightFence);
+	    // DEBUG LINES ---------------------------------------------------------------
+
+	    if (DRAW_DEBUG_LINES)
+	      {
+		/*
+		  forwardRenderer.changePipeline(linePipeline);
+		  //Cascade debug view info
+		  vkCmdPushConstants(forwardRenderer.drawCommandBuffer.commandBuffer,
+		  linePipeline.layout,
+		  VK_SHADER_STAGE_VERTEX_BIT,
+		  0, sizeof(CascadeInfo),
+		  &radianceCascade3D.cascadeInfos[viewCascade]);	
+		  forwardRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0);
+		  forwardRenderer.bindDescriptorSet(&radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 2);
+
+		  forwardRenderer.record(&radianceCascade3D.lightProbeInfo.lineVBO);
+		*/
+	      }
+
+	    debugConsole.draw(forwardRenderer.drawCommandBuffer.commandBuffer);
+	
+	    std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
+	    std::vector<VkSemaphore> signalSemaphores = {renderFinishedSemaphore};
+	    VkSubmitInfo submitInfo{};
+	    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
+	    submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
+	    submitInfo.pWaitSemaphores = waitSemaphores.data();
+	    submitInfo.pWaitDstStageMask = waitStages;
+	    submitInfo.commandBufferCount = 1;
+	    //	submitInfo.pCommandBuffers = &drawCommandBuffer.commandBuffer;
+	    submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
+	    submitInfo.pSignalSemaphores = signalSemaphores.data();
+
+	    forwardRenderer.submit(&submitInfo, inFlightFence);
 
 
 
+	  }
+	else //use deferred
+	  {
+	    
+	    deferredRenderer.begin(swapChain.extent);
+	    
+	    deferredRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 1);
+	    deferredRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
+
+
+	    deferredRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
+	    deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellScene);
+	    deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellRightWall);
+	    deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellLeftWall);
+	    deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellLight);
+	    deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellCeilLight);
+
+	    VkSubmitInfo submitInfo{};
+	    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
+	    submitInfo.waitSemaphoreCount = 1;
+	    submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
+	    submitInfo.pWaitDstStageMask = waitStages;
+	    submitInfo.commandBufferCount = 1;
+	    submitInfo.signalSemaphoreCount = 1;
+	    submitInfo.pSignalSemaphores = &deferredPassFinishedSemaphore;
+	    
+	    
+	    deferredRenderer.submitDeferred(&submitInfo, inFlightFence);
+	    deferredRenderer.changeCompositePipeline(compositePipeline);
+
+	    //bind descriptor sets (probes and stuff)
+	    
+	    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	    submitInfo.waitSemaphoreCount = 1;
+	    submitInfo.pWaitSemaphores = &deferredPassFinishedSemaphore;
+	    submitInfo.pWaitDstStageMask = waitStages;
+	    submitInfo.commandBufferCount = 1;
+	    submitInfo.signalSemaphoreCount = 1;
+	    submitInfo.pSignalSemaphores =  &renderFinishedSemaphore;
+	    deferredRenderer.compositeFramebuffer = swapChain.framebuffers[imageIndex];
+	    deferredRenderer.submitComposite(&submitInfo, VK_NULL_HANDLE, swapChain.extent);
+	    
+	  }
       }
+    
     //RAY -----------------------------------------------------------------
     else {
       	vkResetCommandBuffer(rayPipeline.commandBuffer, 0);

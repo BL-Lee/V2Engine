@@ -13,6 +13,7 @@ class DeferredRenderer
 {
 public:
   VkBDrawCommandBuffer drawCommandBuffer;
+  VkBDrawCommandBuffer compositeCommandBuffer;
   
   VkBGraphicsPipeline deferredPipeline;
   VkFramebuffer deferredFramebuffer;
@@ -37,10 +38,9 @@ public:
 			       VkBRenderPass renderPass,
 			       VkFramebuffer framebuffer );
 
-  void begin( VkExtent2D extent, VkFramebuffer framebuffer,
-	      VkBGraphicsPipeline pipeline
-	      );
+  void begin( VkExtent2D extent );
   void bindDescriptorSet( VkDescriptorSet* dSet, uint32_t ind );
+  void bindDescriptorSetComposite( VkDescriptorSet* dSet, uint32_t ind );
   void record(VkBVertexBuffer* vertexBuffer, Model* model);
 
   void record(VkBVertexBuffer* vertexBuffer, uint32_t start, uint32_t stop);
