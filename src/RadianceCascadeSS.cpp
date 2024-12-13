@@ -1,19 +1,18 @@
-#include "RadianceCascade3D.hpp"
+#include "RadianceCascadeSS.hpp"
 #include <stdexcept>
 
-void RadianceCascade3D::create()
+void RadianceCascadeSS::create()
 {
-   cascadeInfos[0] = {0, 0, 0.0f, 0.002f};
+   cascadeInfos[0] = {0, 0, 0.0f, 0.02f};
    cascadeInfos[1] = {1, 0, 0.02f, 0.04f};
    cascadeInfos[2] = {2, 0, 0.04f, 0.16f};
    cascadeInfos[3] = {3, 0, 0.16f, 0.32f};
-   cascadeInfos[4] = {4, 0, 0.32f, 1000.0f};
-   cascadeInfos[5] = {5, 0, 0.32f, 1000.0f};
-
-   lightProbeInfo.create(framesInFlight, false, glm::vec3(32,32,32));
+   cascadeInfos[4] = {4, 0, 0.32f, 0.64f};
+   cascadeInfos[5] = {5, 0, 0.64f, 10000.0f};
+   lightProbeInfo.create(framesInFlight, true, glm::vec3(800,800,0));
 }
 
-void RadianceCascade3D::initPipeline(VkBRayInputInfo* rayInputInfo)
+void RadianceCascadeSS::initPipeline(VkBRayInputInfo* rayInputInfo, VkDescriptorSetLayout SSInfoLayout)
 {
   VkPushConstantRange cascadePushConstant = {
     VK_SHADER_STAGE_FRAGMENT_BIT, 
@@ -24,18 +23,19 @@ void RadianceCascade3D::initPipeline(VkBRayInputInfo* rayInputInfo)
   std::vector<VkPushConstantRange> cascadePushConstantRange = {cascadePushConstant};
 
   std::vector<VkDescriptorSetLayout> probeUniformLayouts = {rayInputInfo->assemblerPool.descriptorSetLayout,
-							    lightProbeInfo.computeUniformPool.descriptorSetLayout};
+							    lightProbeInfo.computeUniformPool.descriptorSetLayout, SSInfoLayout};
   
   cascadePushConstantRange[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
   
-  lightProbePipeline.createPipeline("../src/shaders/rayProbe.spv",
+  lightProbePipeline.createPipeline("../src/shaders/SSRadianceCascade.spv",
 				    &probeUniformLayouts, &cascadePushConstantRange,
 				    lightProbeInfo.cascadeCount);
 }
 
-void RadianceCascade3D::compute3DRadianceCascade(VkBRayInputInfo* rayInputInfo,
+void RadianceCascadeSS::computeSSRadianceCascade(VkBRayInputInfo* rayInputInfo,
 						 std::vector<VkSemaphore> waitSemaphores,
 						 std::vector<VkSemaphore> signalSemaphores,
+						 VkDescriptorSet* SSInfoBuffer,
 						 uint32_t imageIndex
 						 )
 {
@@ -64,6 +64,12 @@ void RadianceCascade3D::compute3DRadianceCascade(VkBRayInputInfo* rayInputInfo,
 			      &lightProbeInfo.computeUniformPool.descriptorSets[imageIndex][lightProbeInfo.computeUniforms[i].indexIntoPool]
 			      , 0, 0);
 
+      vkCmdBindDescriptorSets(lightProbePipeline.commandBuffers[i], VK_PIPELINE_BIND_POINT_COMPUTE,
+			      lightProbePipeline.pipelineLayout,
+			      2, 1,
+			      SSInfoBuffer,
+			       0, 0);
+
 
       //Cascade info cascade 0
       vkCmdPushConstants(lightProbePipeline.commandBuffers[i],
@@ -75,7 +81,7 @@ void RadianceCascade3D::compute3DRadianceCascade(VkBRayInputInfo* rayInputInfo,
       vkCmdDispatch(lightProbePipeline.commandBuffers[i],
 		    lightProbeInfo.textures[i].width / 8,
 		    lightProbeInfo.textures[i].height / 8,
-		    lightProbeInfo.textures[i].depth / 8);
+		    1);
 	
       if (vkEndCommandBuffer(lightProbePipeline.commandBuffers[i]) != VK_SUCCESS) {
 	throw std::runtime_error("failed to record command buffer!");

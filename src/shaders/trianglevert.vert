@@ -15,7 +15,7 @@ layout(set=1, binding = 1) uniform cameraUniform {
 } _MainCamera;
 
 layout( push_constant ) uniform transformInfo {
-  layout(offset=20)
+  layout(offset=24)
   uint matIndex;
 } info;
 

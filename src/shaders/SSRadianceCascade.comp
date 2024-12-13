@@ -1,0 +1,286 @@
+#version 450
+
+#include "Vertex.comp"
+#include "BVH.comp"
+
+#define FLT_MAX 1000000.0
+layout(std140, set = 0, binding = 0) readonly buffer Vertices {
+   Vertex vertices[];
+};
+layout(std140, set = 0, binding = 1) readonly buffer Indices {
+   uint indices[];
+};
+layout(std140, set = 0, binding = 3) readonly buffer BVH {
+   BVHNode nodes[];
+};
+layout(std140, set = 0, binding = 4) readonly buffer ModelMatrices {
+   mat4 modelMatrices[];
+};
+layout(set = 0, binding = 2, rgba8) uniform restrict writeonly image2D frameBuffer; //Temp, its from the ray pipeline descriptor set
+
+
+layout(std140, set = 1, binding = 1) writeonly buffer DebugLines {
+   LineVertex lines[];
+};
+layout(set = 1, binding = 0, rgba8) uniform restrict image2D probeInfo;
+layout(set = 1, binding = 2) uniform sampler2D probeSampler;
+
+
+layout(set = 2, binding = 0) uniform sampler2D normals;
+layout(set = 2, binding = 1) uniform sampler2D worldPos;
+layout(set = 2, binding = 2) uniform sampler2D depth;
+
+
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+layout( push_constant ) uniform cascadeConstant {
+  int cascade;
+  int quadrant;
+  float bilateralBlend;
+  float start;
+  float end;
+  int lineView;
+} cascadeInfo;
+
+#include "rayHelpers.comp"
+
+float pi = 3.14159;
+vec3 center = vec3(0.0, 1.0, 0.0); //Todo: uniform
+vec3 width = vec3(2.5);
+
+//Get uv in texture, local to quadrant
+/*vec3 worldPosToImageUV(vec3 worldPos, int cascadeIndex)
+{
+  vec3 probeTexLocation = (worldPos - center) / width;
+  probeTexLocation += 0.5;
+  int dirCount = int(pow(8, cascadeIndex + 1)); //TODO unhardcode
+  int dirTilingCount = int(pow(2, cascadeIndex + 1)); //TODO cube root
+      
+  //scale down to quadrant 
+  vec3 quadrantLocalCoord = probeTexLocation / vec3(dirTilingCount, dirTilingCount, dirTilingCount);
+  
+  return quadrantLocalCoord;
+  }*/
+
+vec3 initialDirs[4] = {
+  vec3( 1, 1, 1),
+  vec3(-1, 1,-1),
+  vec3(-1,-1, 1),
+  vec3( 1,-1,-1),
+};
+
+vec3 getDirFromIndex(int dirIndex, int cascadeIndex)
+{
+  int SAMPLE_COUNT = int(pow(4, cascadeIndex + 1)); //8, 64, 64*8
+  int tmpIndex = dirIndex;
+  int tmpSampleCount = SAMPLE_COUNT;
+  int initDirIdx = int(dirIndex*4.0 / tmpSampleCount);
+  tmpIndex = dirIndex - initDirIdx * (tmpSampleCount / 4);
+  
+
+  vec3 rayDir = initialDirs[initDirIdx];
+
+
+  float contribution = 0.8;//Arbitrary, higher spreads them out, lower bunches them. This is what looked good for demos/4layers
+
+  tmpSampleCount /= 4;
+  for (int i = 0; i < cascadeIndex; i++)
+    {
+      tmpSampleCount = max(tmpSampleCount, 1);
+      int initDirIdx = int(tmpIndex * 4.0 / tmpSampleCount);
+      vec3 nextDir = initialDirs[initDirIdx]; 
+      tmpIndex -= initDirIdx * tmpSampleCount / 4;
+      tmpSampleCount /= 4;
+      rayDir += nextDir * contribution;
+      contribution *= 0.8;
+    }
+
+  rayDir = normalize(rayDir);
+  return rayDir;
+}
+
+float gaussianKernel[] = {
+  1.0/16, 1.0 / 8, 1.0/16,
+  1.0/8,  1.0 / 4, 1.0/8,
+  1.0/16, 1.0 / 8, 1.0/16
+};
+
+vec2 kernelOffsets[] = {
+  vec2(-1,-1),
+  vec2( 0,-1),
+  vec2( 1,-1),
+  vec2(-1, 0),
+  vec2( 0, 0),
+  vec2( 1, 0),
+  vec2(-1, 1),
+  vec2( 0, 1),
+  vec2( 1, 1)
+};
+
+float linearizeDepth(float val)
+{
+  float zNear = 0.01;
+  float zFar = 50.0;
+  float linearized =  zNear * zFar / (zFar + val * (zNear - zFar));
+  return linearized;// / (zFar - zNear); //0-1
+}
+
+vec4 texture2DBilateral_cascade_depth(vec2 uv, vec2 upperUV, int cascadeIndex)
+{
+
+  vec2 depthTexelSize = 1.0 / textureSize(depth,0);
+  int dirTilingCount = int(pow(2, cascadeIndex + 1));   
+  vec2 cascadeTexelSize = 1.0 / textureSize(probeSampler,0);// / dirTilingCount;
+
+  //TODO: Fix weighting, also
+  //Should be getting uv pos from the upperUV
+  float thisDepth = linearizeDepth(texture(depth, uv).r);
+  vec4 radiance = vec4(0.0);
+  float contributedPixels = 0.00001;
+  for (int j = 0; j < 9; j ++ )
+    {
+      //      vec2 offset = vec2(i,j)
+      vec2 offset = kernelOffsets[j];
+      float neighbouringDepth = linearizeDepth(texture(depth, uv + offset * cascadeTexelSize * dirTilingCount).r);
+      float depthDiff = clamp(abs(neighbouringDepth - thisDepth), 0, cascadeInfo.bilateralBlend) / cascadeInfo.bilateralBlend;
+      float depthWeighting = 1.0 - depthDiff;
+      float weight = gaussianKernel[j];
+      
+      contributedPixels += depthWeighting * weight;
+
+
+      radiance += texture(probeSampler, upperUV + offset * cascadeTexelSize) * weight * depthWeighting;
+    }
+  
+  return radiance * (1 / contributedPixels);
+}
+
+void main() {
+
+  vec4 pixel = vec4(0.0);
+
+  int cascadeIndex = cascadeInfo.cascade;
+  vec4 radiance = vec4(0.0);
+  //determine what quadrant we're in
+  //Assume powers of two
+  int dirTilingCount = int(pow(2, cascadeIndex + 1)); 
+  
+  ivec2 dirTile = ivec2(int(float(gl_GlobalInvocationID.x) / imageSize(probeInfo).x * dirTilingCount),
+			int(float(gl_GlobalInvocationID.y) / imageSize(probeInfo).y * dirTilingCount));
+
+  int dirIndex = dirTile.x + dirTile.y * dirTilingCount;
+
+  vec3 rayDir = getDirFromIndex(dirIndex, cascadeIndex);  
+
+  //Where are we inside this quadrant
+  //0-quadrantSize in pixels
+  vec2 localInvocation = (vec2(gl_GlobalInvocationID.xy) / imageSize(probeInfo)
+    - (vec2(dirTile) / dirTilingCount)) * dirTilingCount;
+
+  
+  vec4 rayOriginV = texture(worldPos, localInvocation);
+  //float inDir = dot(rayDir, texture(normals, localInvocation).rgb);
+  if (rayOriginV == vec4(0.0,0.0,0.0,1.0))// || inDir < 0.0)
+    {
+      imageStore(probeInfo, ivec2(gl_GlobalInvocationID.xy), vec4(0.0));
+      if (cascadeIndex == cascadeInfo.lineView)
+	{
+	  uint linearIdx = (gl_GlobalInvocationID.x +
+			    imageSize(probeInfo).y * gl_GlobalInvocationID.y) * 2;
+	  lines[linearIdx + 0].pos = vec3(0.0);
+	  lines[linearIdx + 1].pos = vec3(0.0);//dist;
+	}
+
+      return;
+    }
+  vec3 normal = texture(normals, localInvocation).rgb;
+  vec3 rayOrigin = rayOriginV.rgb + normal * 0.01 + (rayDir * cascadeInfo.start);
+  //vec3 rayOrigin = center + offset + (rayDir * cascadeInfo.start);
+  float maxDist = cascadeInfo.end - cascadeInfo.start;
+  vec4 emitColour = vec4(0.0);
+  uint matIndex = -1;
+
+  TraceResult result = trace(rayOrigin, rayDir, maxDist);
+  matIndex = result.matIndex;
+  float dist = result.dist;
+
+  if (matIndex == 0) //emissive
+    {
+      emitColour = vec4(1.0,0.9,0.4,1.0) * 10.0;
+      //float R = 1.0;//light falloff
+      //emitColour /= 1 + (dist * R) * (dist * R);
+      pixel = emitColour;
+      pixel.a = 1.0;
+    }
+  else if (matIndex == 1) //diffuseGrey
+    {
+      pixel = vec4(0.5,0.5,0.5,1.0) * 0.5;
+      pixel.a = 1.0;
+    }
+  else if (matIndex == 2) //red
+    {
+      pixel = vec4(1.0,0.0,0.0,1.0) * 0.5;
+      pixel.a = 1.0;
+    }
+  else if (matIndex == 3) //green
+    {
+      pixel = vec4(0.0,1.0,0.0,1.0) * 0.5;
+      pixel.a = 1.0;
+    }
+
+  
+  //Combine information from previous pass
+  if (cascadeIndex < 6 && matIndex == -1)
+    {
+
+      int upperDirCount = int(pow(4, cascadeIndex + 1 + 1)); //TODO unhardcode
+      int upperDirTilingCount = int(pow(2, cascadeIndex + 1 + 1)); //TODO cube root
+
+      vec4 contributingPixel = vec4(0.0);
+      int contributingDirs = 0;
+      int upperDirIndex = dirIndex * 4;
+      for (int dir = upperDirIndex; dir < upperDirIndex + 4; dir++)
+	{
+	  vec2 upperDirTile = vec2(dir % upperDirTilingCount,
+				   dir / upperDirTilingCount) / upperDirTilingCount;
+	  
+	  vec2 texCoord = localInvocation / upperDirTilingCount + upperDirTile;
+	  
+	  //	  vec2 texCoord = upperCoord + quadrantOffset;
+	  //vec4 val = texture(probeSampler, texCoord);
+	  vec4 val = texture2DBilateral_cascade_depth(localInvocation, texCoord, cascadeIndex + 1);
+	  contributingPixel += val / 4.0;
+
+	}
+      pixel += contributingPixel;
+
+    }
+  if (cascadeIndex != 0)
+    pixel.a = 1.0;
+
+  
+  //if (cascadeIndex == 0)
+    //   pixel.a = 1.0;
+  //pixel = vec4(localInvocation,1.0,1.0);
+  //pixel = vec4(dirTile / 2.0,1.0,1.0);
+  imageStore(probeInfo, ivec2(gl_GlobalInvocationID.xy), pixel);
+  
+  if (cascadeIndex == cascadeInfo.lineView)
+    {
+      uint linearIdx = (gl_GlobalInvocationID.x +
+			imageSize(probeInfo).y * gl_GlobalInvocationID.y) * 2;
+      if (matIndex == -1)
+	maxDist = 0;
+      lines[linearIdx + 0].pos = rayOrigin;
+      lines[linearIdx + 0].colour = pixel.rgb;
+
+      lines[linearIdx + 1].pos = rayOrigin + rayDir * maxDist;//dist;
+      lines[linearIdx + 1].colour = pixel.rgb;
+
+      lines[linearIdx + 0].pos = rayOriginV.rgb;
+      lines[linearIdx + 1].pos = rayOriginV.rgb + rayDir * 0.02;
+      //      lines[linearIdx + 0].colour = rayDir;
+      //      lines[linearIdx + 1].colour = rayDir;
+    }
+}

@@ -1,3 +1,8 @@
+#pragma once
+/*
+
+DEPRECATED : USE isLineMode in graphics pieline
+  
 #include "VkBGlobals.hpp"
 #include <iostream>
 #include <vector>
@@ -15,3 +20,4 @@ public:
 				  std::vector<VkPushConstantRange>* pushConstantRanges);
 
 };
+*/

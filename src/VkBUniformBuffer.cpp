@@ -19,8 +19,9 @@ void* VkBUniformBuffer::getBufferMemoryLocation(int imageIndex, int bufferIndex)
 }
 //TODO: to abstract
 void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool* descriptorPool,
-					      VkImageView* textureImageView,  //arrays
-					      VkSampler* textureSampler,
+					      /*VkImageView* textureImageView,  //arrays
+						VkSampler* textureSampler,*/
+					      VkBTexture** textures,
 					      VkBuffer* buffers
 					      )
   {
@@ -55,11 +56,14 @@ void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool* descriptorPool,
 		{
 		  VkDescriptorImageInfo t_imageInfo{};
 		  if (binding.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
-		    t_imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		    if (textures[imageCount]->aspectFlags & VK_IMAGE_ASPECT_DEPTH_BIT)
+		      t_imageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		    else
+		      t_imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		  else if (binding.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)
 		    t_imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-		  t_imageInfo.imageView = textureImageView[imageCount];
-		  t_imageInfo.sampler = textureSampler[imageCount];
+		  t_imageInfo.imageView = textures[imageCount]->imageView;
+		  t_imageInfo.sampler = textures[imageCount]->textureSampler;
 		  if (i == 0)
 		    imageInfo.push_back(t_imageInfo);
 		  imageInfoBuffer[imageCount] = t_imageInfo;

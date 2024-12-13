@@ -23,7 +23,7 @@ public:
     direction = glm::vec3(-1.0, 0.0, 0.0);
     fov = 45.0f;
     nearClip = 0.01f;
-    farClip = 100.0f;
+    farClip = 50.0f;
     
   }
   void createPerspective(float w, float h)

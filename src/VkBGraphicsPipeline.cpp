@@ -9,7 +9,31 @@ void VkBGraphicsPipeline::destroy()
   vkDestroyPipeline(device, pipeline, nullptr);	
   vkDestroyPipelineLayout(device, layout, nullptr);
 }
+
 void VkBGraphicsPipeline::createGraphicsPipeline(VkBSwapChain& swapChain,
+						 VkBRenderPass renderPass,
+						 const char* vertFile,
+						 const char* fragFile,
+						 std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
+						 std::vector<VkPushConstantRange>* pushConstantRanges)
+{
+  isLineMode = false;
+  createPipeline(swapChain, renderPass, vertFile, fragFile, descriptorSetLayouts, pushConstantRanges);
+}
+
+void VkBGraphicsPipeline::createLinePipeline(VkBSwapChain& swapChain,
+						 VkBRenderPass renderPass,
+						 const char* vertFile,
+						 const char* fragFile,
+						 std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
+						 std::vector<VkPushConstantRange>* pushConstantRanges)
+{
+  isLineMode = true;
+  createPipeline(swapChain, renderPass, vertFile, fragFile, descriptorSetLayouts, pushConstantRanges);
+}
+
+
+void VkBGraphicsPipeline::createPipeline(VkBSwapChain& swapChain,
 						 VkBRenderPass renderPass,
 						 const char* vertFile,
 						 const char* fragFile,
@@ -48,20 +72,42 @@ void VkBGraphicsPipeline::createGraphicsPipeline(VkBSwapChain& swapChain,
     dynamicState.pDynamicStates = dynamicStates.data();
 
     //Vertex input (How each vertex is set up)
-    auto bindingDescription = Vertex::getBindingDescription();
-    auto attributeDescriptions = Vertex::getAttributeDescriptions();
-
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
+    if (isLineMode)
+      {
+	auto bindingDescription = LineVertex::getBindingDescription();
+	auto attributeDescriptions = LineVertex::getAttributeDescriptions();
+	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
+
+      }
+    else
+      {
+	auto bindingDescription = Vertex::getBindingDescription();
+	auto attributeDescriptions = Vertex::getAttributeDescriptions();
+	vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	vertexInputInfo.vertexBindingDescriptionCount = 1;
+	vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+	vertexInputInfo.vertexAttributeDescriptionCount = (uint32_t)attributeDescriptions.size();
+	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
+      }
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // tri from every 3 without reuse
     inputAssembly.primitiveRestartEnable = VK_FALSE; //Means use element (index buffer)
+    if (isLineMode)
+      {
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST; // Line from every 2 points
+      }
+    else
+      {
+	inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; // tri from every 3 without reuse
+      }
+
+
 
     //Viewport
     VkViewport viewport{};

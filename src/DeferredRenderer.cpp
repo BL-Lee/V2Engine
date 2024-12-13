@@ -61,16 +61,16 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   compositeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
   compositeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
   //  compositeUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-  //  compositeUniformPool.addImage(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+  compositeUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
   compositeUniformPool.createDescriptorSetLayout();
   
-  VkSampler samplers[] = { deferredTextures[0].textureSampler,
-			   deferredTextures[1].textureSampler,
+  VkBTexture* texs[] = { &deferredTextures[0],
+			 &deferredTextures[1],
 			   //deferredTextures[2].textureSampler,
-			   //deferredTextures[3].textureSampler
+			   &deferredTextures[3]
   };
 
-  compositeUniform.allocateDescriptorSets(&compositeUniformPool, attachments, samplers, nullptr);
+  compositeUniform.allocateDescriptorSets(&compositeUniformPool, texs, nullptr);
 
   drawCommandBuffer.createCommandBuffer(drawCommandPool);
   compositeCommandBuffer.createCommandBuffer(drawCommandPool);
@@ -140,37 +140,71 @@ void DeferredRenderer::record(VkBVertexBuffer* vertexBuffer, uint32_t start, uin
 			   start, stop);
 }
 
-void DeferredRenderer::submitDeferred(  VkSubmitInfo* submitInfo, VkFence fence)
+void DeferredRenderer::submitDeferred(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores, VkFence fence)
 {
+
+  VkSubmitInfo submitInfo{};
+  //  std::vector<VkSemaphore> waitSemaphores = {deferredPassFinishedSemaphore, probeInfoFinishedSemaphore};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
+  submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
+  submitInfo.pWaitSemaphores = waitSemaphores.data();
+  submitInfo.pWaitDstStageMask = waitStages;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
+  submitInfo.pSignalSemaphores = signalSemaphores.data();
+  submitInfo.pCommandBuffers = &drawCommandBuffer.commandBuffer;
+  
   drawCommandBuffer.end();
-  submitInfo->pCommandBuffers = &drawCommandBuffer.commandBuffer;
+
   //Syncronization info for graphics 
-  if (vkQueueSubmit(graphicsQueue, 1, submitInfo, fence) != VK_SUCCESS) {
+  if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, fence) != VK_SUCCESS) {
     throw std::runtime_error("failed to submit draw command buffer!");
   }
   mode = 1;
 }
-void DeferredRenderer::submitComposite(VkSubmitInfo* submitInfo, VkFence fence, VkExtent2D extent)
+void DeferredRenderer::beginComposite(VkExtent2D extent, VkFramebuffer framebuffer, VkBGraphicsPipeline pipeline)
 {
+  compositePipeline = pipeline;
   if (!mode)
     {
       throw std::runtime_error("Attempting to submit composite stage of deferred renderer without submitting deferred stage first");
     }
   
   vkResetCommandBuffer(compositeCommandBuffer.commandBuffer, 0);
-    
+  compositeFramebuffer = framebuffer;    
   compositeCommandBuffer.begin(compositeRenderPass,
 			  compositeFramebuffer,
 			  extent);
   vkCmdBindPipeline(compositeCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, compositePipeline.pipeline);
 
-  bindDescriptorSetComposite(&compositeUniformPool.descriptorSets[0][compositeUniform.indexIntoPool], 0);
+
   
-  compositeCommandBuffer.record(compositePipeline.pipeline, compositePipeline.layout, &fullscreenQuad, 0, 6);
+}
+
+void DeferredRenderer::recordComposite()
+{
+    compositeCommandBuffer.record(compositePipeline.pipeline, compositePipeline.layout, &fullscreenQuad, 0, 6);
+}
+
+ void DeferredRenderer::submitComposite(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores, VkFence fence)
+{
+
   compositeCommandBuffer.end();
-  submitInfo->pCommandBuffers = &compositeCommandBuffer.commandBuffer;
+
+  VkSubmitInfo submitInfo{};
+  submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
+  submitInfo.waitSemaphoreCount = (uint32_t)waitSemaphores.size();
+  submitInfo.pWaitSemaphores = waitSemaphores.data();
+  submitInfo.pWaitDstStageMask = waitStages;
+  submitInfo.commandBufferCount = 1;
+  submitInfo.signalSemaphoreCount = (uint32_t)signalSemaphores.size();
+  submitInfo.pSignalSemaphores = signalSemaphores.data();
+  submitInfo.pCommandBuffers = &compositeCommandBuffer.commandBuffer;
+
   //Syncronization info for graphics 
-  if (vkQueueSubmit(graphicsQueue, 1, submitInfo, fence) != VK_SUCCESS) {
+  if (vkQueueSubmit(graphicsQueue, 1, &submitInfo, fence) != VK_SUCCESS) {
     throw std::runtime_error("failed to submit draw command buffer!");
   }
   mode = 0;
@@ -183,5 +217,6 @@ void DeferredRenderer::changeDeferredPipeline(VkBGraphicsPipeline pipeline)
 }
 void DeferredRenderer::changeCompositePipeline(VkBGraphicsPipeline pipeline)
 {
+  vkCmdBindPipeline(compositeCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
   compositePipeline = pipeline;
 }

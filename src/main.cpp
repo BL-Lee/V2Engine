@@ -43,7 +43,7 @@ VkCommandPool computeCommandPool;
 uint32_t framesInFlight;
 int USE_RASTER = 1; //Swap between ray and raster
 int USE_FORWARD = 0;
-int DRAW_DEBUG_LINES = 0;
+int DRAW_DEBUG_LINES = 1;
 int viewCascade = 0;
 
 GLFWwindow* window;
@@ -81,7 +81,9 @@ const bool enableVulkanValidationLayers = true;
 #include "DebugConsole.hpp"
 #include "VkBRayInputInfo.hpp"
 #include "BVH.hpp"
+
 #include "RadianceCascade3D.hpp"
+#include "RadianceCascadeSS.hpp"
 #include "ForwardRenderer.hpp"
 #include "DeferredRenderer.hpp"
 Input inputInfo = {};
@@ -95,10 +97,10 @@ public:
   VkSurfaceKHR surface;
 
   VkBGraphicsPipeline graphicsPipeline;
-  VkBLineGraphicsPipeline linePipeline;
+  VkBGraphicsPipeline linePipeline;
   VkBRayPipeline rayPipeline;
   RadianceCascade3D radianceCascade3D;
-  
+  RadianceCascadeSS radianceCascadeSS;
   //VkBRenderPass renderPass;
 
   VkBVertexBuffer staticVertexBuffer;
@@ -173,11 +175,13 @@ private:
     
     if (action == GLFW_PRESS && key == GLFW_KEY_I)
       {
-	viewCascade = (viewCascade + 1) % (4); //cascade count
-        //radianceCascade3D.cascadeInfos[0].lineViewIndex = viewCascade;
-	//radianceCascade3D.cascadeInfos[1].lineViewIndex = viewCascade;
-	//radianceCascade3D.cascadeInfos[2].lineViewIndex = viewCascade;
-	//radianceCascade3D.cascadeInfos[3].lineViewIndex = viewCascade;
+	viewCascade = (viewCascade + 1) % (6); //cascade count
+        debugConsole.cascadeInfos[0]->lineViewIndex = viewCascade;
+	debugConsole.cascadeInfos[1]->lineViewIndex = viewCascade;
+	debugConsole.cascadeInfos[2]->lineViewIndex = viewCascade;
+	debugConsole.cascadeInfos[3]->lineViewIndex = viewCascade;
+	debugConsole.cascadeInfos[4]->lineViewIndex = viewCascade;
+	debugConsole.cascadeInfos[5]->lineViewIndex = viewCascade;
       }
     //viewAllDirections = !viewAllDirections;
     if (action == GLFW_PRESS && key == GLFW_KEY_GRAVE_ACCENT)
@@ -189,7 +193,7 @@ private:
 	debugConsole.show = !debugConsole.show;
       }
 
-    if (action == GLFW_PRESS && key == GLFW_KEY_T)
+    if (action == GLFW_PRESS && key == GLFW_KEY_G)
       {
 	USE_FORWARD = !USE_FORWARD;
       }
@@ -253,14 +257,16 @@ private:
 
     mainCamera.init();
     mainCamera.createPerspective((float)swapChain.extent.width, (float)swapChain.extent.height);
-    mainCamera.ubo.allocateDescriptorSets(&cameraUniformPool, nullptr, nullptr, nullptr);
+    mainCamera.ubo.allocateDescriptorSets(&cameraUniformPool, nullptr, nullptr);
 
     radianceCascade3D.create();
+    radianceCascadeSS.create();
+    
     rayInputInfo.init();
     VkBuffer storageBuffers[] = {rayInputInfo.vertexBuffer.vertexBuffer, rayInputInfo.vertexBuffer.indexBuffer, rayInputInfo.bvh.deviceBuffer, rayInputInfo.deviceMatrixBuffer};
+    VkBTexture* backBuffer = &rayBackBuffer;
     rayInputInfo.assemblerBuffer.allocateDescriptorSets(&rayInputInfo.assemblerPool,
-						     &rayBackBuffer.imageView,
-						     &rayBackBuffer.textureSampler,
+							&backBuffer,
 						     storageBuffers);
     
     std::vector<VkDescriptorSetLayout> uniformLayouts = {rayInputInfo.assemblerPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout, radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSetLayout};
@@ -271,12 +277,15 @@ private:
     };
 
     std::vector<VkPushConstantRange> cascadePushConstantRange = {cascadePushConstant};
-    linePipeline.createLineGraphicsPipeline(swapChain, forwardRenderer.renderPass, &uniformLayouts, &cascadePushConstantRange);
+    linePipeline.createLinePipeline(swapChain, forwardRenderer.renderPass,
+					    "../src/shaders/lineVert.spv",
+					    "../src/shaders/lineFrag.spv",
+					    &uniformLayouts, &cascadePushConstantRange);
     
     cascadePushConstantRange[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     VkPushConstantRange modelPushConstant = {
       VK_SHADER_STAGE_VERTEX_BIT, 
-      20,//  offset
+      24,//  offset
       sizeof(uint32_t)
     };
     cascadePushConstantRange.push_back(modelPushConstant);
@@ -286,7 +295,7 @@ private:
 					    &uniformLayouts, &cascadePushConstantRange);
     
 
-    std::vector<VkDescriptorSetLayout> compositeLayouts = {deferredRenderer.compositeUniformPool.descriptorSetLayout};
+    std::vector<VkDescriptorSetLayout> compositeLayouts = {deferredRenderer.compositeUniformPool.descriptorSetLayout, radianceCascadeSS.lightProbeInfo.drawUniformPool.descriptorSetLayout};
     compositePipeline.createGraphicsPipeline(swapChain, deferredRenderer.compositeRenderPass,
 					    "../src/shaders/deferredCompositeVert.spv",
 					    "../src/shaders/deferredCompositeFrag.spv",
@@ -314,7 +323,7 @@ private:
     cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseRed);
     cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
     cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
-    ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &rayInputInfo.vertexBuffer, &emissive);
+    //ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &rayInputInfo.vertexBuffer, &emissive);
 	  
 
     rayInputInfo.addModel(cornellScene);
@@ -322,7 +331,7 @@ private:
     rayInputInfo.addModel(cornellCeilLight);
     rayInputInfo.addModel(cornellLeftWall);
     rayInputInfo.addModel(cornellRightWall);
-    rayInputInfo.addModel(ratModel);
+    //rayInputInfo.addModel(ratModel);
     rayInputInfo.bvh.transferBVHData();
 
     
@@ -340,10 +349,14 @@ private:
     
     forwardRenderer.drawCommandBuffer.createCommandBuffer(drawCommandPool);
     radianceCascade3D.initPipeline(&rayInputInfo);
+    radianceCascadeSS.initPipeline(&rayInputInfo, deferredRenderer.compositeUniformPool.descriptorSetLayout);
     createSyncObjects();
     debugConsole.init(&swapChain, forwardRenderer.renderPass.renderPass);
-    for (int i = 0; i < radianceCascade3D.lightProbeInfo.cascadeCount; i++)
-      debugConsole.cascadeInfos[i] = &radianceCascade3D.cascadeInfos[i];
+    for (int i = 0; i < radianceCascadeSS.lightProbeInfo.cascadeCount; i++)
+      {
+	debugConsole.cascadeInfos[i] = &radianceCascadeSS.cascadeInfos[i];
+	debugConsole.cascadeInfos[i]->bilateralBlend = 0.1;
+      }
     debugConsole.rayDebugPushConstant = &rayDebugPushConstant;
     rayDebugPushConstant.viewMode = 1;
     rayDebugPushConstant.triangleTestLimit = 140;
@@ -496,11 +509,13 @@ private:
 
     glm::mat4 modelMat = glm::scale(glm::translate(glm::mat4(1.0f),
 					  glm::vec3(0.0, glm::sin(time), 0.0)),
-			   glm::vec3(0.5f, 0.5f, 0.5f));
+			   glm::vec3(1.5f, 1.5f, 1.5f));
     
-    ratModel->modelMatrix = modelMat;
+    //ratModel->modelMatrix = modelMat;
+    cornellLight->modelMatrix = modelMat;
     mainCamera.updateMatrices(currentImage);
-    rayInputInfo.updateModelMatrix(ratModel);
+    //rayInputInfo.updateModelMatrix(ratModel);
+    rayInputInfo.updateModelMatrix(cornellLight);
     rayInputInfo.transferMatrixData();
   }
   
@@ -551,7 +566,7 @@ private:
 	    forwardRenderer.bindDescriptorSet(&radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 2);
 	    forwardRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
 	
-	    forwardRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
+	    //forwardRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
 	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellScene);
 	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellRightWall);
 	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellLeftWall);
@@ -562,19 +577,21 @@ private:
 
 	    if (DRAW_DEBUG_LINES)
 	      {
-		/*
+
 		  forwardRenderer.changePipeline(linePipeline);
 		  //Cascade debug view info
 		  vkCmdPushConstants(forwardRenderer.drawCommandBuffer.commandBuffer,
 		  linePipeline.layout,
 		  VK_SHADER_STAGE_VERTEX_BIT,
 		  0, sizeof(CascadeInfo),
-		  &radianceCascade3D.cascadeInfos[viewCascade]);	
-		  forwardRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 0);
-		  forwardRenderer.bindDescriptorSet(&radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 2);
+		  &radianceCascadeSS.cascadeInfos[viewCascade]);
+		  forwardRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 1);
+		  forwardRenderer.bindDescriptorSet(&radianceCascadeSS.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascadeSS.lightProbeInfo.drawUniform.indexIntoPool], 2);
 
-		  forwardRenderer.record(&radianceCascade3D.lightProbeInfo.lineVBO);
-		*/
+		  forwardRenderer.record(&radianceCascadeSS.lightProbeInfo.lineVBO,
+					 0,
+					 radianceCascadeSS.lightProbeInfo.lineCount * 2);
+
 	      }
 
 	    debugConsole.draw(forwardRenderer.drawCommandBuffer.commandBuffer);
@@ -606,7 +623,7 @@ private:
 	    deferredRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
 
 
-	    deferredRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
+	    //deferredRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
 	    deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellScene);
 	    deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellRightWall);
 	    deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellLeftWall);
@@ -614,31 +631,35 @@ private:
 	    deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellCeilLight);
 
 	    VkSubmitInfo submitInfo{};
-	    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
-	    submitInfo.waitSemaphoreCount = 1;
-	    submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
-	    submitInfo.pWaitDstStageMask = waitStages;
-	    submitInfo.commandBufferCount = 1;
-	    submitInfo.signalSemaphoreCount = 1;
-	    submitInfo.pSignalSemaphores = &deferredPassFinishedSemaphore;
-	    
-	    
-	    deferredRenderer.submitDeferred(&submitInfo, inFlightFence);
-	    deferredRenderer.changeCompositePipeline(compositePipeline);
+	    std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
+	    std::vector<VkSemaphore> signalSemaphores = {deferredPassFinishedSemaphore};
+	    deferredRenderer.submitDeferred(waitSemaphores, signalSemaphores, VK_NULL_HANDLE);
+
+	    if (true)
+	      {
+		std::vector<VkSemaphore> RCWaitSemaphores = {deferredPassFinishedSemaphore};
+		std::vector<VkSemaphore> RCSignalSemaphores = {probeInfoFinishedSemaphore};
+		radianceCascadeSS.computeSSRadianceCascade(&rayInputInfo,
+							   RCWaitSemaphores,
+							   RCSignalSemaphores,
+							   &deferredRenderer.compositeUniformPool.descriptorSets[imageIndex][deferredRenderer.compositeUniform.indexIntoPool],
+							   imageIndex);
+
+	      }
+
 
 	    //bind descriptor sets (probes and stuff)
+	    deferredRenderer.beginComposite(swapChain.extent, swapChain.framebuffers[imageIndex], compositePipeline);
 	    
-	    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-	    submitInfo.waitSemaphoreCount = 1;
-	    submitInfo.pWaitSemaphores = &deferredPassFinishedSemaphore;
-	    submitInfo.pWaitDstStageMask = waitStages;
-	    submitInfo.commandBufferCount = 1;
-	    submitInfo.signalSemaphoreCount = 1;
-	    submitInfo.pSignalSemaphores =  &renderFinishedSemaphore;
-	    deferredRenderer.compositeFramebuffer = swapChain.framebuffers[imageIndex];
-	    deferredRenderer.submitComposite(&submitInfo, VK_NULL_HANDLE, swapChain.extent);
+	    deferredRenderer.bindDescriptorSetComposite(&deferredRenderer.compositeUniformPool.descriptorSets[imageIndex][deferredRenderer.compositeUniform.indexIntoPool], 0);
+	    deferredRenderer.bindDescriptorSetComposite(&radianceCascadeSS.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascadeSS.lightProbeInfo.drawUniform.indexIntoPool], 1);
+	    deferredRenderer.recordComposite();
 	    
+	    debugConsole.draw(deferredRenderer.compositeCommandBuffer.commandBuffer);
+	    
+	    std::vector<VkSemaphore> waitCompositeSemaphores = {probeInfoFinishedSemaphore};
+	    std::vector<VkSemaphore> signalCompositeSemaphores = {renderFinishedSemaphore};
+	    deferredRenderer.submitComposite(waitCompositeSemaphores, signalCompositeSemaphores, inFlightFence);
 	  }
       }
     
@@ -775,7 +796,7 @@ private:
       
       processInputs();
       drawFrame();
-      //      glfwSetWindowShouldClose(window, GL_TRUE);
+      //         glfwSetWindowShouldClose(window, GL_TRUE);
 
     }
 
@@ -791,6 +812,7 @@ private:
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
     vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     vkDestroySemaphore(device, probeInfoFinishedSemaphore, nullptr);
+    vkDestroySemaphore(device, deferredPassFinishedSemaphore, nullptr);
     vkDestroyFence(device, inFlightFence, nullptr);
 	
     vkDestroyCommandPool(device, drawCommandPool, nullptr);
@@ -816,13 +838,15 @@ private:
 
     rayPipeline.destroy();
     radianceCascade3D.lightProbePipeline.destroy();
-    delete ratModel;
+    radianceCascadeSS.lightProbePipeline.destroy();
+    //    delete ratModel;
     delete cornellScene;
     delete cornellLight;
     delete cornellRightWall;
     delete cornellLeftWall;
     delete cornellCeilLight;
     radianceCascade3D.lightProbeInfo.destroy();
+    radianceCascadeSS.lightProbeInfo.destroy();
     mainCamera.ubo.destroy();
     cameraUniformPool.destroy();
     

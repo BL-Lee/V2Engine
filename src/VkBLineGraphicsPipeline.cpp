@@ -1,3 +1,7 @@
+/*
+
+DEPRECATED: use isLineMode in graphics pipeline
+  
 #include "VkBLineGraphicsPipeline.hpp"
 #include "VkBShader.hpp"
 #include "VkBGlobals.hpp"
@@ -181,3 +185,4 @@ void VkBLineGraphicsPipeline::createLineGraphicsPipeline(VkBSwapChain& swapChain
 }
 
 
+*/

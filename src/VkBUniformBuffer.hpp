@@ -4,6 +4,7 @@
 
 #include <vector>
 #include "VkBUniformPool.hpp"
+#include "VkBTexture.hpp"
 class VkBUniformBuffer
 {
   
@@ -51,10 +52,9 @@ public:
 			    int maxFramesInFlight);
   void* getBufferMemoryLocation(int imageIndex, int bufferIndex);
   void allocateDescriptorSets(VkBUniformPool* descriptorPool,
-			      VkImageView* textureImageView, //temp
-			      VkSampler* textureSampler, //temp,
-			      VkBuffer* buffers
-			      
-);
+			      //			      VkImageView* textureImageView, //temp
+			      //			      VkSampler* textureSampler, //temp,
+			      VkBTexture** textures,
+			      VkBuffer* buffers	 );
 
 };

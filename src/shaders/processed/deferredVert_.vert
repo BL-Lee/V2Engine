@@ -16,7 +16,7 @@ layout(set=1, binding = 1) uniform cameraUniform {
 
 
 layout( push_constant ) uniform transformInfo {
-  layout(offset=20)
+  layout(offset=24)
   uint matIndex;
 } info;
 
@@ -30,6 +30,7 @@ layout(location = 3) in uint materialIndex;
 layout(location = 0) out vec2 outTexCoord;
 layout(location = 1) out vec3 outWorldPos;
 layout(location = 2) out vec3 outNormal;
+layout(location = 3) out float outMatIndex;
 
 
 void main() {
@@ -38,6 +39,7 @@ void main() {
   
   outWorldPos = (modelMat * vec4(position, 1.0)).xyz;
   outTexCoord = texCoord;
-  outNormal = (modelMat * vec4(normal, 0.0)).xyz;
+  outNormal = normal;//(modelMat * vec4(normal, 0.0)).xyz;
+  outMatIndex = materialIndex;
 
 }

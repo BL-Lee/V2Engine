@@ -8,7 +8,7 @@ filesToCompile = [
     'deferredCompositeVert.vert',
     'deferredFrag.frag',
     'deferredVert.vert',
-
+    'SSRadianceCascade.comp',
     'ray.comp',
     'rayProbe.comp',
     'lineVert.vert',

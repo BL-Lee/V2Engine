@@ -14,6 +14,7 @@
 struct CascadeInfo
 {
   int cascade, quadrant;
+  float bilateralBlend;
   float start, end;
   int lineViewIndex;
 };
@@ -23,7 +24,8 @@ class VkBLightProbeInfo
 public:
   glm::vec3 gridDimensions; //total width and height and depth
   glm::vec3 center;
-  int resolution; //How many to put along each axis.
+  //int resolution; //How many to put along each axis.
+  
   int raysPerProbe;
 
   int cascadeCount;
@@ -31,7 +33,10 @@ public:
   int rayIncreasePerCascade; //TODO
   VkBTexture* textures;
   VkSemaphore* semaphoreChain;
+  
   size_t imageWidth;
+  size_t imageHeight;
+  size_t imageDepth;
 
   
   VkBUniformPool computeUniformPool;
@@ -51,14 +56,7 @@ public:
   int debugDirectionViewIndex;
   int viewDebug;
   
-  void compute3DRadianceCascade(VkBRayPipeline* lightProbePipeline,
-				VkBRayInputInfo* rayInputInfo,
-				CascadeInfo* cascadeInfos,
-				std::vector<VkSemaphore> waitSemaphores,
-				std::vector<VkSemaphore> signalSemaphores,
-				uint32_t imageIndex);
-  
-  void create(int frameCount);
+  void create(int frameCount, bool screenSpace, glm::vec3 resolution);
   void destroy();
   void transitionImagesToStorage();
   void transitionImageToSampled(int cascadeIndex);

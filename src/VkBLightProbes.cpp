@@ -3,17 +3,21 @@
 #include "VkBSingleCommandBuffer.hpp"
 #include <stdexcept>
 #include <iostream>
-void VkBLightProbeInfo::create(int frameCount)
-  {
-    resolution = 32;
 
-    cascadeCount = 4;
+//resolution being like, distance of probes?
+void VkBLightProbeInfo::create(int frameCount, bool screenSpace, glm::vec3 resolution)
+  {
+    //resolution = 32;
+
+    cascadeCount = 6;
     
     gridDimensions = glm::vec3(2.2f,2.2f,2.2f);//Doesn't do anything yet in the shader. Is defined in the shader
     center = glm::vec3(0.0f,0.0f,0.0f);//Doesn't do anything yet in the shader
     raysPerProbe = 20; //Same
 
-    imageWidth = resolution * 2;
+    imageWidth = resolution.x * 2;
+    imageHeight = resolution.y * 2;
+    imageDepth = resolution.z * 2;
 
     semaphoreChain = (VkSemaphore*)calloc(cascadeCount, sizeof(VkSemaphore));
     for(int i = 0; i < cascadeCount; i++)
@@ -27,7 +31,54 @@ void VkBLightProbeInfo::create(int frameCount)
     debugCascadeViewIndex = 0;
     debugDirectionViewIndex = 0;
     viewDebug = 0;
-    lineCount = imageWidth * imageWidth * imageWidth;
+    textures = (VkBTexture*)calloc(cascadeCount + 1, sizeof(VkBTexture));
+    
+    if (!screenSpace)
+      {
+	lineCount = imageWidth * imageHeight * imageDepth;
+	for (int i = 0; i < cascadeCount; i++)
+	  {
+	    textures[i].createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
+					     resolution.x * 2,
+					     resolution.y * 2,
+					     resolution.z * 2,
+					     nullptr);
+	  }
+
+	//Idk how to bind an empty image, so make a 1x1x1 temp image for the top cascade
+	//2x2x2 because 1x1x1 kinda implies 2d (depth=1)
+	uint8_t test_pix[2*2*2*4] = {1,0,0,0,
+				     0,1,0,0,
+				     1,1,0,0,
+				     0,0,1,0,
+				     1,0,1,0,
+				     0,1,1,0,
+				     1,1,1,0,
+				     0,0,0,0
+	};
+	textures[cascadeCount].createTextureImage3D(VKB_TEXTURE_TYPE_SAMPLED_RGBA,
+						    2,
+						    2,
+						    2,
+						    test_pix);
+      }
+    else //screenspace
+      {
+	lineCount = (uint32_t)resolution.x * resolution.y * 4;
+	for (int i = 0; i < cascadeCount; i++)
+	  {
+	    textures[i].createTextureImage(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
+					   resolution.x * 2, // times 2 because 4 dirs at the start
+					     resolution.y * 2,
+					     nullptr);
+	  }
+	uint8_t test_pix[1*4] = {1,0,0,0};
+	textures[cascadeCount].createTextureImage(VKB_TEXTURE_TYPE_SAMPLED_RGBA,
+						    1,
+						    1,
+						    test_pix);
+      }
+
     lines = (LineVertex*)calloc(2 * lineCount, sizeof(LineVertex));
     lineVBO.create(lineCount * 2 * sizeof(LineVertex));
 
@@ -37,45 +88,11 @@ void VkBLightProbeInfo::create(int frameCount)
     computeUniformPool.addStorageBuffer(1, lineCount * 2 * sizeof(LineVertex));
     computeUniformPool.createDescriptorSetLayout();
 
-    textures = (VkBTexture*)calloc(cascadeCount + 1, sizeof(VkBTexture));
-    for (int i = 0; i < cascadeCount; i++)
-      {
-	textures[i].createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
-						   resolution * 2,
-						   resolution * 2,
-						   resolution * 2,
-						   nullptr);
-      }
-
-    //Idk how to bind an empty image, so make a 1x1x1 temp image for the top cascade
-    //2x2x2 because 1x1x1 kinda implies 2d (depth=1)
-    uint8_t test_pix[2*2*2*4] = {1,0,0,0,
-      0,1,0,0,
-      1,1,0,0,
-      0,0,1,0,
-      1,0,1,0,
-      0,1,1,0,
-      1,1,1,0,
-      0,0,0,0
-    };
-    textures[cascadeCount].createTextureImage3D(VKB_TEXTURE_TYPE_SAMPLED_RGBA,
-    						   2,
-    						   2,
-    						   2,
-    						   test_pix);
-    std::cout << "buh"<< std::endl;
     computeUniforms = (VkBUniformBuffer*)calloc(cascadeCount, sizeof(VkBUniformBuffer));
     for (int i = cascadeCount - 1; i >= 0; i--)
       {
-	VkImageView probeViews[2];
-	VkSampler probeSamplers[2];
-	
-	probeViews[0] = textures[i].imageView;
-	probeSamplers[0] = textures[i].textureSampler;
-	probeViews[1] = textures[i + 1].imageView;
-	probeSamplers[1] = textures[i + 1].textureSampler;
-
-	computeUniforms[i].allocateDescriptorSets(&computeUniformPool, probeViews, probeSamplers, &lineVBO.vertexBuffer);
+	VkBTexture* textureSet[2] = {&textures[i], &textures[i+1]};
+	computeUniforms[i].allocateDescriptorSets(&computeUniformPool, textureSet, &lineVBO.vertexBuffer);
       }
     
 
@@ -85,17 +102,14 @@ void VkBLightProbeInfo::create(int frameCount)
     drawUniformPool.addStorageBuffer(1, lineCount * 2 * sizeof(LineVertex));
     drawUniformPool.createDescriptorSetLayout();
 
-    std::vector<VkImageView> probeViews;
-    std::vector<VkSampler> probeSamplers;
-    probeViews.resize(cascadeCount);
-    probeSamplers.resize(cascadeCount);
+    std::vector<VkBTexture*> probeTexs;
+    probeTexs.resize(cascadeCount);
 
     for (int i = 0; i < cascadeCount; i++)
       {
-	probeViews[i] = textures[i].imageView;
-	probeSamplers[i] = textures[i].textureSampler;
+	probeTexs[i] = &textures[i];
       }
-    drawUniform.allocateDescriptorSets(&drawUniformPool, probeViews.data(), probeSamplers.data(), &lineVBO.vertexBuffer);
+    drawUniform.allocateDescriptorSets(&drawUniformPool, probeTexs.data(), &lineVBO.vertexBuffer);
     
   }
 

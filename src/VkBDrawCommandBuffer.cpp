@@ -39,9 +39,10 @@ VkBDrawCommandBuffer::begin(VkBRenderPass& renderPass,
   std::vector<VkClearValue> clearValues(renderPass.attachments.size());
   for (int i = 0; i < renderPass.attachments.size(); i++)
     {
-      if (renderPass.attachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+      if (renderPass.attachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL ||
+	  renderPass.attachments[i].finalLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL)
 	{
-	  clearValues[1].depthStencil = {1.0f, 0};
+	  clearValues[i].depthStencil = {1.0f, 0};
 	}
       else
 	{
@@ -110,7 +111,7 @@ VkBDrawCommandBuffer::record(VkPipeline pipeline,
   vkCmdPushConstants(commandBuffer,
 		     pipelineLayout,
 		     VK_SHADER_STAGE_VERTEX_BIT,
-		     20, sizeof(uint32_t),
+		     24, sizeof(uint32_t),
 		     &model->indexIntoModelMatrixBuffer);	
 
   if (vertexBuffer->indexed)

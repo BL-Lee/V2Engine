@@ -44,9 +44,11 @@ public:
   void record(VkBVertexBuffer* vertexBuffer, Model* model);
 
   void record(VkBVertexBuffer* vertexBuffer, uint32_t start, uint32_t stop);
+  void recordComposite();
+  void submitComposite(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores, VkFence fence);
+  void submitDeferred(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores, VkFence fence);
+  void beginComposite(VkExtent2D extent, VkFramebuffer framebuffer, VkBGraphicsPipeline pipeline);
 
-  void submitDeferred(  VkSubmitInfo* submitInfo, VkFence fence);
-  void submitComposite(  VkSubmitInfo* submitInfo, VkFence fence, VkExtent2D);
   void changeDeferredPipeline(VkBGraphicsPipeline pipeline);
   void changeCompositePipeline(VkBGraphicsPipeline pipeline);
 };

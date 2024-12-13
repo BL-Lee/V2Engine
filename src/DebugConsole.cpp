@@ -73,21 +73,29 @@ void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
   ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
   ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-  for (int i = 0; i < 4; i++)
+
+
+  if (ImGui::SliderFloat("bilateral Blend", &cascadeInfos[0]->bilateralBlend, 0.0, 3.0)) {
+    for (int i =1 ; i < 6; i++)
+      {
+	cascadeInfos[i]->bilateralBlend = cascadeInfos[0]->bilateralBlend;
+      }
+  }
+
+
+
+  for (int i = 0; i < 6; i++)
     {
       ImGui::PushID(i);
 
       if (ImGui::SliderFloat("Cascade Distance", &cascadeInfos[i]->end, 0.0, 2.0)) {
-	if (i < 3)
-	  cascadeInfos[i+1]->start = cascadeInfos[i]->end;
 	if (i == 0)
 	  {
-	    for (int i = 1; i < 4; i++)
+	    for (int j = 1; j < 6; j++)
 	      {
-		cascadeInfos[i]->start = cascadeInfos[i-1]->end;
-		cascadeInfos[i]->end = cascadeInfos[i]->start * 2.5;
+		cascadeInfos[j]->start = cascadeInfos[j-1]->end;
+		cascadeInfos[j]->end = cascadeInfos[j]->start * 2.5;
 	      }
-	    cascadeInfos[3]->end = 1000.0;
 	  }
 
       }

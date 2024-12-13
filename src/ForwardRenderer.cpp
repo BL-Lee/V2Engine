@@ -52,3 +52,4 @@ void ForwardRenderer::changePipeline(VkBGraphicsPipeline pipeline)
   vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
   currentPipeline = pipeline;
 }
+
