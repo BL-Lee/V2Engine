@@ -197,25 +197,17 @@ float pi = 3.14159;
 vec3 center = vec3(0.0, 1.0, 0.0); //Todo: uniform
 vec3 width = vec3(2.5);
 
-//Get uv in texture, local to quadrant
-/*vec3 worldPosToImageUV(vec3 worldPos, int cascadeIndex)
-{
-  vec3 probeTexLocation = (worldPos - center) / width;
-  probeTexLocation += 0.5;
-  int dirCount = int(pow(8, cascadeIndex + 1)); //TODO unhardcode
-  int dirTilingCount = int(pow(2, cascadeIndex + 1)); //TODO cube root
-      
-  //scale down to quadrant 
-  vec3 quadrantLocalCoord = probeTexLocation / vec3(dirTilingCount, dirTilingCount, dirTilingCount);
-  
-  return quadrantLocalCoord;
-  }*/
-
-vec3 initialDirs[4] = {
+/*vec3 initialDirs[4] = {
   vec3( 1, 1, 1),
   vec3(-1, 1,-1),
   vec3(-1,-1, 1),
   vec3( 1,-1,-1),
+  };*/
+vec3 initialDirs[4] = {
+  vec3( 1, 1, -1),
+  vec3(-1, 1, -1),
+  vec3(-1,-1, -1),
+  vec3( 1,-1, -1),
 };
 
 vec3 getDirFromIndex(int dirIndex, int cascadeIndex)
@@ -255,17 +247,23 @@ float gaussianKernel[] = {
 };
 
 vec2 kernelOffsets[] = {
+  vec2( 0, 0),
   vec2(-1,-1),
   vec2( 0,-1),
   vec2( 1,-1),
   vec2(-1, 0),
-  vec2( 0, 0),
   vec2( 1, 0),
   vec2(-1, 1),
   vec2( 0, 1),
   vec2( 1, 1)
 };
 
+vec2 minmaxOffsets[] = {
+  vec2(-1,0),
+  vec2(0,1),
+  vec2(1,0),
+  vec2(0,-1),
+};
 float linearizeDepth(float val)
 {
   float zNear = 0.01;
@@ -274,34 +272,73 @@ float linearizeDepth(float val)
   return linearized;// / (zFar - zNear); //0-1
 }
 
-vec4 texture2DBilateral_cascade_depth(vec2 uv, vec2 upperUV, int cascadeIndex)
+vec4 texture2DBilateral_cascade_depth(vec2 fuv, vec2 upperFUV, int cascadeIndex)
 {
-
-  vec2 depthTexelSize = 1.0 / textureSize(depth,0);
-  int dirTilingCount = int(pow(2, cascadeIndex + 1));   
-  vec2 cascadeTexelSize = 1.0 / textureSize(probeSampler,0);// / dirTilingCount;
-
+  int dirTilingCount = int(pow(2, cascadeIndex));   
   //TODO: Fix weighting, also
   //Should be getting uv pos from the upperUV
-  float thisDepth = linearizeDepth(texture(depth, uv).r);
+  //  float thisDepth = linearizeDepth(texture(depth, uv).r);
+  ivec2 uv = ivec2(fuv * textureSize(depth,0));
+  //float thisDepth = texelFetch(depth, ivec2(uv), 0).r;
+  vec3 thisPos = texelFetch(worldPos, ivec2(uv), 0).rgb;
   vec4 radiance = vec4(0.0);
-  float contributedPixels = 0.00001;
+  float contributedPixels = 0;
+
+  ivec2 upperUV = ivec2(upperFUV * textureSize(probeSampler,0));
+
+  
   for (int j = 0; j < 9; j ++ )
     {
       //      vec2 offset = vec2(i,j)
       vec2 offset = kernelOffsets[j];
-      float neighbouringDepth = linearizeDepth(texture(depth, uv + offset * cascadeTexelSize * dirTilingCount).r);
-      float depthDiff = clamp(abs(neighbouringDepth - thisDepth), 0, cascadeInfo.bilateralBlend) / cascadeInfo.bilateralBlend;
-      float depthWeighting = 1.0 - depthDiff;
+      //float neighbouringDepth = texelFetch(depth, ivec2(uv + offset * dirTilingCount),0).r;
+      vec3 neighbouringPos = texelFetch(worldPos, ivec2(uv + offset * dirTilingCount),0).rgb;
+      float diff = dot(neighbouringPos - thisPos, neighbouringPos - thisPos);
+      //float depthDiff = clamp(abs(neighbouringDepth - thisDepth) * cascadeInfo.bilateralBlend, 0, 1);
+      //float depthWeighting = 1 - clamp(diff / cascadeInfo.bilateralBlend, 0, 1);
+      float depthWeighting = diff > cascadeInfo.bilateralBlend ? 0.0 : 1.0;
+  //pfloat depthWeighting = 1.0 - depthDiff;
+
+
       float weight = gaussianKernel[j];
-      
+
+      vec4 sampledRad = texelFetch(probeSampler,
+				   ivec2(upperUV + offset),0) *
+	weight * depthWeighting;
       contributedPixels += depthWeighting * weight;
-
-
-      radiance += texture(probeSampler, upperUV + offset * cascadeTexelSize) * weight * depthWeighting;
+      radiance += sampledRad;
     }
   
-  return radiance * (1 / contributedPixels);
+  return radiance / contributedPixels;
+}
+float depthDiffs(vec2 uv, int cascadeIndex)
+{
+
+  vec2 depthTexelSize = 1.0 / textureSize(depth,0);
+  int dirTilingCount = int(pow(2, cascadeIndex));   
+  vec2 cascadeTexelSize = 1.0 / textureSize(probeSampler,0);// / dirTilingCount;
+
+
+  float thisDepth = linearizeDepth(texelFetch(depth, ivec2(uv * textureSize(depth,0)), 0).r);
+  vec4 radiance = vec4(0.0);
+  float contributedPixels = 0;
+  
+  for (int j = 0; j < 9; j ++ )
+    {
+      vec2 offset = kernelOffsets[j];
+
+      float neighbouringDepth = linearizeDepth(texelFetch(depth, ivec2((uv + offset * cascadeTexelSize * dirTilingCount) * textureSize(depth,0)),0).r);
+
+      float depthDiff = clamp(abs(neighbouringDepth - thisDepth) * cascadeInfo.bilateralBlend, 0, 1);
+      
+      float depthWeighting = 1.0 - depthDiff;
+
+      float weight = gaussianKernel[j];
+
+      contributedPixels += depthWeighting * weight;
+    }
+  
+  return contributedPixels;
 }
 
 void main() {
@@ -309,102 +346,138 @@ void main() {
   vec4 pixel = vec4(0.0);
 
   int cascadeIndex = cascadeInfo.cascade;
-  vec4 radiance = vec4(0.0);
+
   //determine what quadrant we're in
   //Assume powers of two
-  int dirTilingCount = int(pow(2, cascadeIndex + 1)); 
+  int dirTilingCount = int(pow(2, cascadeIndex)); 
   
   ivec2 dirTile = ivec2(int(float(gl_GlobalInvocationID.x) / imageSize(probeInfo).x * dirTilingCount),
 			int(float(gl_GlobalInvocationID.y) / imageSize(probeInfo).y * dirTilingCount));
-
-  int dirIndex = dirTile.x + dirTile.y * dirTilingCount;
-
-  vec3 rayDir = getDirFromIndex(dirIndex, cascadeIndex);  
-
-  //Where are we inside this quadrant
-  //0-quadrantSize in pixels
   vec2 localInvocation = (vec2(gl_GlobalInvocationID.xy) / imageSize(probeInfo)
-    - (vec2(dirTile) / dirTilingCount)) * dirTilingCount;
+			  - (vec2(dirTile) / dirTilingCount)) * dirTilingCount;
 
+  //float depthDiffVal = depthDiffs(localInvocation, cascadeIndex + 1);
+
+  //imageStore(probeInfo, ivec2(gl_GlobalInvocationID.xy),vec4(depthDiffVal));
+  //return;
+    
   
-  vec4 rayOriginV = texture(worldPos, localInvocation);
-  //float inDir = dot(rayDir, texture(normals, localInvocation).rgb);
-  if (rayOriginV == vec4(0.0,0.0,0.0,1.0))// || inDir < 0.0)
+  for (int i = 0; i < 4; i++)
     {
-      imageStore(probeInfo, ivec2(gl_GlobalInvocationID.xy), vec4(0.0));
-      if (cascadeIndex == cascadeInfo.lineView)
+      vec4 radiance = vec4(0.0);
+      int dirIndex = ((dirTile.x + dirTile.y * dirTilingCount) * 4) + i;
+      vec3 rayDir = getDirFromIndex(dirIndex, cascadeIndex);  
+
+      //Where are we inside this quadrant
+      //0-quadrantSize in pixels
+  
+      vec4 rayOriginV = texelFetch(worldPos, ivec2(localInvocation * textureSize(worldPos,0)),0);
+      //vec4 rayOriginV = texture(worldPos, localInvocation);
+      if (rayOriginV == vec4(0.0,0.0,0.0,1.0))
 	{
-	  uint linearIdx = (gl_GlobalInvocationID.x +
-			    imageSize(probeInfo).y * gl_GlobalInvocationID.y) * 2;
-	  lines[linearIdx + 0].pos = vec3(0.0);
-	  lines[linearIdx + 1].pos = vec3(0.0);//dist;
+	  imageStore(probeInfo, ivec2(gl_GlobalInvocationID.xy), vec4(0.0));
+	  if (cascadeIndex == cascadeInfo.lineView)
+	    {
+	      uint linearIdx = (gl_GlobalInvocationID.x +
+				imageSize(probeInfo).y * gl_GlobalInvocationID.y
+				+ i) * 2;
+	      lines[linearIdx + 0].pos = vec3(0.0);
+	      lines[linearIdx + 1].pos = vec3(0.0);
+	    }
+
+	  continue;
 	}
+      
+      vec3 normal = normalize(texture(normals, localInvocation).rgb);
 
-      return;
-    }
-  vec3 normal = texture(normals, localInvocation).rgb;
-  vec3 rayOrigin = rayOriginV.rgb + normal * 0.01 + (rayDir * cascadeInfo.start);
-  //vec3 rayOrigin = center + offset + (rayDir * cascadeInfo.start);
-  float maxDist = cascadeInfo.end - cascadeInfo.start;
-  vec4 emitColour = vec4(0.0);
-  uint matIndex = -1;
-
-  TraceResult result = trace(rayOrigin, rayDir, maxDist);
-  matIndex = result.matIndex;
-  float dist = result.dist;
-
-  if (matIndex == 0) //emissive
-    {
-      emitColour = vec4(1.0,0.9,0.4,1.0) * 10.0;
-      //float R = 1.0;//light falloff
-      //emitColour /= 1 + (dist * R) * (dist * R);
-      pixel = emitColour;
-      pixel.a = 1.0;
-    }
-  else if (matIndex == 1) //diffuseGrey
-    {
-      pixel = vec4(0.5,0.5,0.5,1.0) * 0.5;
-      pixel.a = 1.0;
-    }
-  else if (matIndex == 2) //red
-    {
-      pixel = vec4(1.0,0.0,0.0,1.0) * 0.5;
-      pixel.a = 1.0;
-    }
-  else if (matIndex == 3) //green
-    {
-      pixel = vec4(0.0,1.0,0.0,1.0) * 0.5;
-      pixel.a = 1.0;
-    }
-
-  
-  //Combine information from previous pass
-  if (cascadeIndex < 6 && matIndex == -1)
-    {
-
-      int upperDirCount = int(pow(4, cascadeIndex + 1 + 1)); //TODO unhardcode
-      int upperDirTilingCount = int(pow(2, cascadeIndex + 1 + 1)); //TODO cube root
-
-      vec4 contributingPixel = vec4(0.0);
-      int contributingDirs = 0;
-      int upperDirIndex = dirIndex * 4;
-      for (int dir = upperDirIndex; dir < upperDirIndex + 4; dir++)
+      uint matIndex = -1;
+      if (dot(normal, -rayDir) > 1E-8)
 	{
-	  vec2 upperDirTile = vec2(dir % upperDirTilingCount,
-				   dir / upperDirTilingCount) / upperDirTilingCount;
+	  vec3 rayOrigin = rayOriginV.rgb + (rayDir * cascadeInfo.start);; //+ normal * 0.01;
+	  float maxDist = cascadeInfo.end - cascadeInfo.start;
+	  vec4 emitColour = vec4(0.0);
+
+
+	  TraceResult result = trace(rayOrigin, rayDir, maxDist);
+	  matIndex = result.matIndex;
+	  float dist = result.dist;
+	  if (dist > 0.01)
+	    {
+	      if (matIndex == 0) //emissive
+		{
+		  emitColour = vec4(1.0,0.9,0.4,1.0) * 2.5;
+		  radiance = emitColour;
+		}
+	      else if (matIndex == 1) //diffuseGrey
+		{
+		  radiance = vec4(0.5,0.5,0.5,1.0) * 0.1;
+		}
+	      else if (matIndex == 2) //red
+		{
+		  radiance = vec4(1.0,0.0,0.0,1.0) * 0.1;
+		}
+	      else if (matIndex == 3) //green
+		{
+		  radiance = vec4(0.0,1.0,0.0,1.0) * 0.1;
+		}
+	    }
+	  if (matIndex != -1)
+	    {
+	      radiance *= max(0, dot(normal, -rayDir));
+	      radiance.a = 1.0;
+	    }
+	}
+      if (cascadeIndex < 4 && matIndex == -1)
+	{
+	  int upperDirTilingCount = int(pow(2, cascadeIndex + 1)); //TODO cube root
+
+	  vec4 contributingPixel = vec4(0.0);
+	  int contributingDirs = 0;
+	  int upperDirIndex = dirIndex;
+	  vec2 upperDirTile = vec2(upperDirIndex % upperDirTilingCount,
+				   upperDirIndex / upperDirTilingCount) / upperDirTilingCount;
 	  
 	  vec2 texCoord = localInvocation / upperDirTilingCount + upperDirTile;
 	  
-	  //	  vec2 texCoord = upperCoord + quadrantOffset;
-	  //vec4 val = texture(probeSampler, texCoord);
 	  vec4 val = texture2DBilateral_cascade_depth(localInvocation, texCoord, cascadeIndex + 1);
-	  contributingPixel += val / 4.0;
-
+	  //vec4 val = texture2DBilateral_cascade_minmax(localInvocation, texCoord, cascadeIndex + 1);
+	  radiance = val;// / 4.0;
+	  //	  radiance /= 2.0;
+	  /*
+	  for (int dir = upperDirIndex; dir < upperDirIndex + 4; dir++)
+	    {
+	      vec2 upperDirTile = vec2(dir % upperDirTilingCount,
+				       dir / upperDirTilingCount) / upperDirTilingCount;
+	  
+	      vec2 texCoord = localInvocation / upperDirTilingCount + upperDirTile;
+	  
+	      vec4 val = texture2DBilateral_cascade_depth(localInvocation, texCoord, cascadeIndex + 1);
+	      pixel += val / 4.0;
+	    }
+	  */
 	}
-      pixel += contributingPixel;
+      pixel += radiance;
+      if (cascadeIndex == cascadeInfo.lineView)
+	{
+	  uint linearIdx = (i + (gl_GlobalInvocationID.x +
+				 imageSize(probeInfo).y * gl_GlobalInvocationID.y)) * 2;
+	  //	  lines[linearIdx + 0].pos = rayOrigin;
+	  lines[linearIdx + 0].colour = radiance.rgb;
+
+	  //lines[linearIdx + 1].pos = rayOrigin + rayDir * maxDist;//dist;
+	  lines[linearIdx + 1].colour = radiance.rgb;
+
+	  lines[linearIdx + 0].pos = rayOriginV.rgb;
+	  lines[linearIdx + 1].pos = rayOriginV.rgb + rayDir * 0.02;
+	}
+
 
     }
-  if (cascadeIndex != 0)
+  //  if (cascadeIndex != 4)
+    pixel /= 4.0;
+  //pixel.a = 1.0;  
+  //Combine information from previous pass
+  if (cascadeIndex == 0)
     pixel.a = 1.0;
 
   
@@ -414,21 +487,4 @@ void main() {
   //pixel = vec4(dirTile / 2.0,1.0,1.0);
   imageStore(probeInfo, ivec2(gl_GlobalInvocationID.xy), pixel);
   
-  if (cascadeIndex == cascadeInfo.lineView)
-    {
-      uint linearIdx = (gl_GlobalInvocationID.x +
-			imageSize(probeInfo).y * gl_GlobalInvocationID.y) * 2;
-      if (matIndex == -1)
-	maxDist = 0;
-      lines[linearIdx + 0].pos = rayOrigin;
-      lines[linearIdx + 0].colour = pixel.rgb;
-
-      lines[linearIdx + 1].pos = rayOrigin + rayDir * maxDist;//dist;
-      lines[linearIdx + 1].colour = pixel.rgb;
-
-      lines[linearIdx + 0].pos = rayOriginV.rgb;
-      lines[linearIdx + 1].pos = rayOriginV.rgb + rayDir * 0.02;
-      //      lines[linearIdx + 0].colour = rayDir;
-      //      lines[linearIdx + 1].colour = rayDir;
-    }
 }

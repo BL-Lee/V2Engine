@@ -1,10 +1,11 @@
+
 #pragma once
 #include <vector>
 #define GLFW_INCLUDE_VULKAN
 #include "GLFW/glfw3.h"
 
 #include "Input.hpp"
-
+#define CASCADE_COUNT 5
 extern VkDevice device;
 extern VkInstance instance;
 extern VkPhysicalDevice physicalDevice;

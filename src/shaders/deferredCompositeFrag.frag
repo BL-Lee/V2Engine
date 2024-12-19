@@ -17,6 +17,15 @@ vec3 initialDirs[4] = {
   vec3( 1,-1,-1),
 };
 
+layout( push_constant ) uniform cascadeConstant {
+  int cascade;
+  int quadrant;
+  float bilateralBlend;
+  float start;
+  float end;
+  int lineView;
+} cascadeInfo;
+
 
 vec4 toSRGB(vec4 i)
 {
@@ -26,9 +35,10 @@ vec4 toSRGB(vec4 i)
 void main() {
   vec4 val = texture(worldPos, fragTexCoord);
   vec3 worldPos = val.rgb;
-  float matIndex = val.a;
+  int matIndex = int(round(val.a));
 
   if (matIndex == 0)
+
     {
       vec4 emitColour = vec4(1.0,0.9,0.4,1.0) * 10.0;
       outColour = emitColour;
@@ -38,10 +48,10 @@ void main() {
   vec4 albedo = vec4(0.0);
   if (matIndex == 1) //diffuseGrey
       albedo = vec4(0.5,0.5,0.5,1.0) * 0.2;
-  else if (matIndex == 2) //red
-      albedo = vec4(1.0,0.0,0.0,1.0) * 0.2;
-  else if (matIndex == 3) //green
-      albedo = vec4(0.0,1.0,0.0,1.0) * 0.2;
+  if (matIndex == 2) //diffuseGrey
+    albedo = vec4(1.0,0.0,0.0,1.0) * 0.2;
+  if (matIndex == 3) //diffuseGrey
+    albedo = vec4(0.0,1.0,0.0,1.0) * 0.2;
   albedo.a = 1.0;
 
   vec3 width = vec3(2.5);
@@ -49,11 +59,11 @@ void main() {
   
   vec4 radiance = vec4(0.0);
   
-  int cascade = 0;
+  int cascade = cascadeInfo.cascade;
   //Debug show outside of range
   
-  int dirCount = int(pow(4, cascade + 1));
-  int dirTilingCount = int(pow(2, cascade + 1));
+  int dirCount = int(pow(4, cascade));
+  int dirTilingCount = int(pow(2, cascade));
 
   //vec2 texCoord = quadrantLocalCoord + quadrantOffset;
   //radiance = texture(probeSamplers[cascade], fragTexCoord);
@@ -79,8 +89,8 @@ void main() {
   outColour = radiance;
   return;
 
-  outColour = toSRGB(radiance);
+  //outColour = toSRGB(radiance);
 
   
-  return;
+  //return;
 }

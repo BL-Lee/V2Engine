@@ -9,7 +9,7 @@ void VkBLightProbeInfo::create(int frameCount, bool screenSpace, glm::vec3 resol
   {
     //resolution = 32;
 
-    cascadeCount = 6;
+    cascadeCount = CASCADE_COUNT;
     
     gridDimensions = glm::vec3(2.2f,2.2f,2.2f);//Doesn't do anything yet in the shader. Is defined in the shader
     center = glm::vec3(0.0f,0.0f,0.0f);//Doesn't do anything yet in the shader
@@ -64,12 +64,12 @@ void VkBLightProbeInfo::create(int frameCount, bool screenSpace, glm::vec3 resol
       }
     else //screenspace
       {
-	lineCount = (uint32_t)resolution.x * resolution.y * 4;
+	lineCount = (uint32_t)resolution.x * resolution.y * 2;
 	for (int i = 0; i < cascadeCount; i++)
 	  {
 	    textures[i].createTextureImage(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
-					   resolution.x * 2, // times 2 because 4 dirs at the start
-					     resolution.y * 2,
+					   resolution.x, // times 2 because 4 dirs at the start
+					     resolution.y ,
 					     nullptr);
 	  }
 	uint8_t test_pix[1*4] = {1,0,0,0};

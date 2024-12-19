@@ -8,7 +8,7 @@ public:
   VkBLightProbeInfo lightProbeInfo;
   VkBRayPipeline lightProbePipeline;
   VkSemaphore finishedSemaphore;
-  CascadeInfo cascadeInfos[6];
+  CascadeInfo cascadeInfos[CASCADE_COUNT];
 
   void create();
   void destroy();

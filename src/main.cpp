@@ -175,7 +175,7 @@ private:
     
     if (action == GLFW_PRESS && key == GLFW_KEY_I)
       {
-	viewCascade = (viewCascade + 1) % (6); //cascade count
+	viewCascade = (viewCascade + 1) % (CASCADE_COUNT); //cascade count
         debugConsole.cascadeInfos[0]->lineViewIndex = viewCascade;
 	debugConsole.cascadeInfos[1]->lineViewIndex = viewCascade;
 	debugConsole.cascadeInfos[2]->lineViewIndex = viewCascade;
@@ -299,9 +299,8 @@ private:
     compositePipeline.createGraphicsPipeline(swapChain, deferredRenderer.compositeRenderPass,
 					    "../src/shaders/deferredCompositeVert.spv",
 					    "../src/shaders/deferredCompositeFrag.spv",
-					     &compositeLayouts, nullptr);
+					     &compositeLayouts, &cascadePushConstantRange);
 
-    
     deferredRenderer.deferredPipeline.createGraphicsPipeline(swapChain, deferredRenderer.deferredRenderPass,
 							     "../src/shaders/deferredVert.spv",
 							     "../src/shaders/deferredFrag.spv",
@@ -319,7 +318,7 @@ private:
     diffuseGreen.index = 2;
     diffuseRed.index = 3;
     cornellScene = ModelImporter::loadOBJ("../models/cornell_nowalls.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseGrey);
-    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseGreen);
+    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
     cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseRed);
     cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
     cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
@@ -653,6 +652,14 @@ private:
 	    
 	    deferredRenderer.bindDescriptorSetComposite(&deferredRenderer.compositeUniformPool.descriptorSets[imageIndex][deferredRenderer.compositeUniform.indexIntoPool], 0);
 	    deferredRenderer.bindDescriptorSetComposite(&radianceCascadeSS.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascadeSS.lightProbeInfo.drawUniform.indexIntoPool], 1);
+
+	    	    //Cascade info cascade 0
+	    vkCmdPushConstants(deferredRenderer.compositeCommandBuffer.commandBuffer,
+			       deferredRenderer.compositePipeline.layout,
+			       VK_SHADER_STAGE_FRAGMENT_BIT,
+			       0, sizeof(CascadeInfo),
+			       &radianceCascadeSS.cascadeInfos[viewCascade]);	
+
 	    deferredRenderer.recordComposite();
 	    
 	    debugConsole.draw(deferredRenderer.compositeCommandBuffer.commandBuffer);
