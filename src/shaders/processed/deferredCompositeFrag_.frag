@@ -5,7 +5,7 @@ layout(set = 0, binding = 1) uniform sampler2D worldPos;
 layout(set = 0, binding = 2) uniform sampler2D uvs;
 //layout(set = 0, binding = 3) uniform sampler2D depth;
 
-layout(set = 1, binding = 2) uniform sampler2D probeSamplers[4];
+layout(set = 1, binding = 2) uniform sampler2D probeSamplers[5];
 
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 0) out vec4 outColour;
@@ -85,8 +85,9 @@ void main() {
     }
 
   radiance /= radiance.a;
+  radiance *= 4.0; //Hlaf of rays point inwards?
   //radiance.a = 1.0;
-  outColour = radiance;
+  outColour = radiance * albedo;
   return;
 
   //outColour = toSRGB(radiance);

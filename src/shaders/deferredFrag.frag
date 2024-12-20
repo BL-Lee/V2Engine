@@ -18,7 +18,7 @@ void main()
 {
 	outWorldPos = vec4(worldPos, matIndex);
 
-	outNormal = vec4(normal.xy, 1.0, 1.0);
+	outNormal = vec4(normal.xyz, 1.0);
 
 //	outUV = vec4(fragTexCoord,0.5,1.0);
 }

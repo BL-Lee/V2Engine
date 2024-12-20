@@ -76,7 +76,7 @@ void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
 
 
   //  if (ImGui::SliderFloat("bilateral Blend", &cascadeInfos[0]->bilateralBlend, 0.0, 10000.1)) {
-    if (ImGui::SliderFloat("bilateral Blend", &cascadeInfos[0]->bilateralBlend, 0.0, 1.0)) {
+    if (ImGui::SliderFloat("bilateral Blend", &cascadeInfos[0]->bilateralBlend, 0.0, 20.0)) {
     for (int i =1 ; i < CASCADE_COUNT; i++)
       {
 	cascadeInfos[i]->bilateralBlend = cascadeInfos[0]->bilateralBlend;

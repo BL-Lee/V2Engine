@@ -318,11 +318,11 @@ private:
     diffuseGreen.index = 2;
     diffuseRed.index = 3;
     cornellScene = ModelImporter::loadOBJ("../models/cornell_nowalls.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseGrey);
-    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
+    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseGreen);
     cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseRed);
     cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
     cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
-    //ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &rayInputInfo.vertexBuffer, &emissive);
+    ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &rayInputInfo.vertexBuffer, &emissive);
 	  
 
     rayInputInfo.addModel(cornellScene);
@@ -565,7 +565,7 @@ private:
 	    forwardRenderer.bindDescriptorSet(&radianceCascade3D.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascade3D.lightProbeInfo.drawUniform.indexIntoPool], 2);
 	    forwardRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
 	
-	    //forwardRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
+	    forwardRenderer.record(&rayInputInfo.vertexBuffer, ratModel);
 	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellScene);
 	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellRightWall);
 	    forwardRenderer.record(&rayInputInfo.vertexBuffer, cornellLeftWall);
@@ -846,7 +846,7 @@ private:
     rayPipeline.destroy();
     radianceCascade3D.lightProbePipeline.destroy();
     radianceCascadeSS.lightProbePipeline.destroy();
-    //    delete ratModel;
+    delete ratModel;
     delete cornellScene;
     delete cornellLight;
     delete cornellRightWall;

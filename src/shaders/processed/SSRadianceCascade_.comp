@@ -204,9 +204,9 @@ vec3 width = vec3(2.5);
   vec3( 1,-1,-1),
   };*/
 vec3 initialDirs[4] = {
-  vec3( 1, 1, -1),
+  vec3( 1, 1, 1),
   vec3(-1, 1, -1),
-  vec3(-1,-1, -1),
+  vec3(-1,-1, 1),
   vec3( 1,-1, -1),
 };
 
@@ -272,6 +272,11 @@ float linearizeDepth(float val)
   return linearized;// / (zFar - zNear); //0-1
 }
 
+float normpdf(float x, float sigma)
+{
+  return 0.39894*exp(-0.5*x*x/(sigma*sigma)) / sigma;
+}
+#define kernelRad 2
 vec4 texture2DBilateral_cascade_depth(vec2 fuv, vec2 upperFUV, int cascadeIndex)
 {
   int dirTilingCount = int(pow(2, cascadeIndex));   
@@ -279,14 +284,15 @@ vec4 texture2DBilateral_cascade_depth(vec2 fuv, vec2 upperFUV, int cascadeIndex)
   //Should be getting uv pos from the upperUV
   //  float thisDepth = linearizeDepth(texture(depth, uv).r);
   ivec2 uv = ivec2(fuv * textureSize(depth,0));
-  //float thisDepth = texelFetch(depth, ivec2(uv), 0).r;
-  vec3 thisPos = texelFetch(worldPos, ivec2(uv), 0).rgb;
+  float thisDepth = linearizeDepth(texelFetch(depth, ivec2(uv), 0).r);
+  vec3 thisNorm = texelFetch(normals, ivec2(uv), 0).rgb;
+
   vec4 radiance = vec4(0.0);
   float contributedPixels = 0;
 
   ivec2 upperUV = ivec2(upperFUV * textureSize(probeSampler,0));
 
-  
+  /*
   for (int j = 0; j < 9; j ++ )
     {
       //      vec2 offset = vec2(i,j)
@@ -307,6 +313,38 @@ vec4 texture2DBilateral_cascade_depth(vec2 fuv, vec2 upperFUV, int cascadeIndex)
 	weight * depthWeighting;
       contributedPixels += depthWeighting * weight;
       radiance += sampledRad;
+    }
+  */
+  float kernel[kernelRad * 2 + 1];
+
+  for (int i = 0; i < kernelRad * 2 + 1; i++)
+    {
+      kernel[i] = normpdf(i - kernelRad, 10.0);
+    }
+  for (int i = -kernelRad; i < kernelRad + 1; i++)
+    {
+      for (int j = -kernelRad; j < kernelRad + 1; j++)
+	{
+	  vec2 offset = vec2(i,j);
+
+	  vec3 neighbouringNormal = texelFetch(normals, ivec2(uv + offset * dirTilingCount),0).rgb;
+	  float normDiff = dot(neighbouringNormal, thisNorm) < 0.9 ? 0.0 : 1.0;
+	  if (normDiff == 0.0) continue;
+	  
+	  float weight = kernel[i + kernelRad] * kernel[j + kernelRad];
+	  float neighbouringDepth = linearizeDepth(texelFetch(depth, ivec2(uv + offset * dirTilingCount),0).r);
+	  
+	  float depthDiff = abs(thisDepth- neighbouringDepth);
+	  float dFactor = depthDiff * cascadeInfo.bilateralBlend;
+	  float depthWeighting = exp(-(dFactor * dFactor)) * normDiff;
+
+	  
+	  
+	  vec4 sampledRad = texelFetch(probeSampler,
+				       ivec2(upperUV + offset),0) * weight * depthWeighting;
+	  contributedPixels += depthWeighting * weight;
+	  radiance += sampledRad;
+	}
     }
   
   return radiance / contributedPixels;
@@ -391,7 +429,7 @@ void main() {
       vec3 normal = normalize(texture(normals, localInvocation).rgb);
 
       uint matIndex = -1;
-      if (dot(normal, -rayDir) > 1E-8)
+      if (dot(normal, rayDir) > 1E-8)
 	{
 	  vec3 rayOrigin = rayOriginV.rgb + (rayDir * cascadeInfo.start);; //+ normal * 0.01;
 	  float maxDist = cascadeInfo.end - cascadeInfo.start;
@@ -405,26 +443,24 @@ void main() {
 	    {
 	      if (matIndex == 0) //emissive
 		{
-		  emitColour = vec4(1.0,0.9,0.4,1.0) * 2.5;
+		  emitColour = vec4(1.0,0.9,0.4,1.0) * 20.5;
 		  radiance = emitColour;
 		}
 	      else if (matIndex == 1) //diffuseGrey
 		{
-		  radiance = vec4(0.5,0.5,0.5,1.0) * 0.1;
+		  radiance = vec4(0.5,0.5,0.5,1.0) * 0.5;
 		}
 	      else if (matIndex == 2) //red
 		{
-		  radiance = vec4(1.0,0.0,0.0,1.0) * 0.1;
+		  radiance = vec4(1.0,0.0,0.0,1.0) * 0.5;
 		}
 	      else if (matIndex == 3) //green
 		{
-		  radiance = vec4(0.0,1.0,0.0,1.0) * 0.1;
+		  radiance = vec4(0.0,1.0,0.0,1.0) * 0.5;
 		}
-	    }
-	  if (matIndex != -1)
-	    {
-	      radiance *= max(0, dot(normal, -rayDir));
-	      radiance.a = 1.0;
+	      //Naturally falls off from missing rays, changes the attenuation
+	      //radiance *= exp(cascadeIndex * 0.2) ;
+	      //radiance.a = 1.0;
 	    }
 	}
       if (cascadeIndex < 4 && matIndex == -1)
