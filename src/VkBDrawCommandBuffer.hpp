@@ -17,6 +17,7 @@ public:
 	      int count
 	      );
   void end();
+
   void begin(VkBRenderPass& renderPass,
 	     VkFramebuffer frameBuffer,
 	     VkExtent2D extent);

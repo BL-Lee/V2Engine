@@ -64,6 +64,7 @@ void VkBGraphicsPipeline::createPipeline(VkBSwapChain& swapChain,
     std::vector<VkDynamicState> dynamicStates = {
       // VK_DYNAMIC_STATE_VIEWPORT,
       //VK_DYNAMIC_STATE_SCISSOR
+      VK_DYNAMIC_STATE_STENCIL_WRITE_MASK
     };
 	
     VkPipelineDynamicStateCreateInfo dynamicState{};
@@ -215,10 +216,8 @@ void VkBGraphicsPipeline::createPipeline(VkBSwapChain& swapChain,
     depthStencil.depthBoundsTestEnable = VK_FALSE;
     depthStencil.minDepthBounds = 0.0f; // Optional Could do some funky stuff with this
     depthStencil.maxDepthBounds = 1.0f; // Optional
-    depthStencil.stencilTestEnable = VK_FALSE;
-    depthStencil.front = {}; // Optional
-    depthStencil.back = {}; // Optional
- 
+    depthStencil.stencilTestEnable = VK_FALSE; 
+
 
     VkGraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

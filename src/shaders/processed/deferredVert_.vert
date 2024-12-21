@@ -30,7 +30,7 @@ layout(location = 3) in uint materialIndex;
 layout(location = 0) out vec2 outTexCoord;
 layout(location = 1) out vec3 outWorldPos;
 layout(location = 2) out vec3 outNormal;
-layout(location = 3) out float outMatIndex;
+layout(location = 3) out uint outMatIndex;
 
 
 void main() {

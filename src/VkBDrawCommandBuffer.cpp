@@ -56,7 +56,11 @@ VkBDrawCommandBuffer::begin(VkBRenderPass& renderPass,
   */
   renderPassInfo.clearValueCount = (uint32_t)renderPass.attachments.size();
   renderPassInfo.pClearValues = clearValues.data();
-	
+
+
+
+
+  
   vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
@@ -68,6 +72,9 @@ VkBDrawCommandBuffer::end()
     throw std::runtime_error("failed to record command buffer!");
   }
 }
+
+
+
 void
 VkBDrawCommandBuffer::record(
 			     VkPipeline pipeline,

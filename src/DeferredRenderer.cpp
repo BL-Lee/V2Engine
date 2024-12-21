@@ -60,14 +60,19 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   compositeUniformPool.create(1, framesInFlight, 0, true);
   compositeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
   compositeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-  //  compositeUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
   compositeUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+  compositeUniformPool.addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+  compositeUniformPool.addImage(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+
   compositeUniformPool.createDescriptorSetLayout();
   
   VkBTexture* texs[] = { &deferredTextures[0],
 			 &deferredTextures[1],
 			   //deferredTextures[2].textureSampler,
-			   &deferredTextures[3]
+			 &deferredTextures[3],
+			 &deferredTextures[0],
+			 &deferredTextures[1],
+			   //deferredTextures[2].textureSampler,
   };
 
   compositeUniform.allocateDescriptorSets(&compositeUniformPool, texs, nullptr);
@@ -139,6 +144,8 @@ void DeferredRenderer::record(VkBVertexBuffer* vertexBuffer, uint32_t start, uin
 			   vertexBuffer,
 			   start, stop);
 }
+
+
 
 void DeferredRenderer::submitDeferred(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores, VkFence fence)
 {

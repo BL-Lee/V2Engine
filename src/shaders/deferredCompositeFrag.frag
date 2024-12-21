@@ -1,8 +1,9 @@
 #version 450
 
+#include "DeferredHelpers.comp"
 layout(set = 0, binding = 0) uniform sampler2D normals;
-layout(set = 0, binding = 1) uniform sampler2D worldPos;
-layout(set = 0, binding = 2) uniform sampler2D uvs;
+layout(set = 0, binding = 1) uniform sampler2D albedos;
+layout(set = 0, binding = 2) uniform sampler2D depth;
 //layout(set = 0, binding = 3) uniform sampler2D depth;
 
 layout(set = 1, binding = 2) uniform sampler2D probeSamplers[5];
@@ -26,6 +27,17 @@ layout( push_constant ) uniform cascadeConstant {
   int lineView;
 } cascadeInfo;
 
+layout(set = 2, binding = 1) uniform cameraUniform {
+  mat4 view;
+  mat4 proj;
+  mat4 invViewProj;
+  float width;
+  float height;
+  float nearClip;
+  float farClip;
+} _MainCamera;
+
+
 
 vec4 toSRGB(vec4 i)
 {
@@ -33,8 +45,12 @@ vec4 toSRGB(vec4 i)
 }
 
 void main() {
-  vec4 val = texture(worldPos, fragTexCoord);
-  vec3 worldPos = val.rgb;
+  vec3 col = texture(albedos, fragTexCoord).xyz;
+  //float depth = texture(depth, fragTexCoord).r;
+  //vec3 worldPos = worldPosFromDepth(depth, fragTexCoord, _MainCamera.invViewProj);
+
+  //  vec3 worldPos = val.rgb;
+  /*
   int matIndex = int(round(val.a));
 
   if (matIndex == 0)
@@ -52,8 +68,15 @@ void main() {
     albedo = vec4(1.0,0.0,0.0,1.0) * 0.2;
   if (matIndex == 3) //diffuseGrey
     albedo = vec4(0.0,1.0,0.0,1.0) * 0.2;
+  //if (matIndex == 4) //reflective
+  else
+    albedo = vec4(1.0,1.0,0.0,1.0);
+    
   albedo.a = 1.0;
-
+  */
+  outColour = vec4(col,1.0);
+   return ;
+  
   vec3 width = vec3(2.5);
   vec3 center = vec3(0.0,1.0,0.0);
   
@@ -87,7 +110,7 @@ void main() {
   radiance /= radiance.a;
   radiance *= 4.0; //Hlaf of rays point inwards?
   //radiance.a = 1.0;
-  outColour = radiance * albedo;
+  //  outColour = radiance * albedo;
   return;
 
   //outColour = toSRGB(radiance);

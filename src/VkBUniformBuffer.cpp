@@ -57,7 +57,7 @@ void VkBUniformBuffer::allocateDescriptorSets(VkBUniformPool* descriptorPool,
 		  VkDescriptorImageInfo t_imageInfo{};
 		  if (binding.descriptorType == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
 		    if (textures[imageCount]->aspectFlags & VK_IMAGE_ASPECT_DEPTH_BIT)
-		      t_imageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+ 		      t_imageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 		    else
 		      t_imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		  else if (binding.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_IMAGE)

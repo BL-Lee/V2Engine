@@ -14,7 +14,7 @@ struct Vertex
   alignas(sizeof(glm::vec4)) glm::vec3 pos;
   alignas(sizeof(glm::vec4)) glm::vec3 normal;
   alignas(sizeof(glm::vec2)) glm::vec2 texCoord;
-  alignas(sizeof(float)) uint32_t materialIndex;//for ray tracing
+  alignas(sizeof(float)) uint32_t materialIndex;
 
   bool operator==(const Vertex& other) const {
     return pos == other.pos && texCoord == other.texCoord;

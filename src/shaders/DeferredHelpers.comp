@@ -1,0 +1,11 @@
+
+vec3 worldPosFromDepth(float depth, vec2 screenPos, mat4 invProjView)
+{
+  vec4 clipPos;
+  clipPos.xy = screenPos * 2.0 - 1.0;
+  clipPos.z = depth;
+  clipPos.w = 1.0;
+
+  vec4 homoCoord = invProjView * clipPos;
+  return homoCoord.xyz / homoCoord.w;
+}

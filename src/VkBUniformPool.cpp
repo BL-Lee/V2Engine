@@ -164,7 +164,7 @@ void VkBUniformPool::addStorageBuffer(int dstBinding, size_t size)
   uboLayoutBinding.binding = dstBinding; //It'll say where in the shader
   uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
   uboLayoutBinding.descriptorCount = 1; //To bet set when creating
-  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT; //Should specify this.
+  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; //Should specify this.
   uboLayoutBinding.pImmutableSamplers = nullptr; // For texture stuff
   storageBufferSizes.push_back(size);
   descriptorLayoutBindings.push_back(uboLayoutBinding);
@@ -182,7 +182,8 @@ void VkBUniformPool::addBuffer(int dstBinding, size_t bufferSize)
   uboLayoutBinding.binding = dstBinding; //It'll say where in the shader
   uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   uboLayoutBinding.descriptorCount = 1; //To bet set when creating
-  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT; //Should specify this.
+  uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT; //Should specify this.
+
   uboLayoutBinding.pImmutableSamplers = nullptr; // For texture stuff
 
   size_t trueSize = std::ceil((float)bufferSize / props.limits.minUniformBufferOffsetAlignment) * props.limits.minUniformBufferOffsetAlignment;

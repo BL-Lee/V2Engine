@@ -37,7 +37,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
   switch (type){
   case VKB_TEXTURE_TYPE_DEPTH:
     {
-      format = VK_FORMAT_D32_SFLOAT;
+      format = VK_FORMAT_D24_UNORM_S8_UINT;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
@@ -79,7 +79,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
       //format = VK_FORMAT_R8G8B8A8_UNORM;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-      usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+      usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
       imageSize = width * height * depth * 4 * sizeof(float);
       //imageSize = width * height * depth * 4;
       channels = 4;
@@ -381,7 +381,7 @@ void VkBTexture::createDeviceImage()
   imageInfo.extent.depth = depth;
   imageInfo.mipLevels = 1;
   imageInfo.arrayLayers = 1;
-  imageInfo.format = format;
+  imageInfo.format = format; 
   imageInfo.tiling = tiling;
   imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
   imageInfo.usage = usage;

@@ -99,7 +99,7 @@ void VkBRenderPass::createRenderPass(bool deferred) {
 void VkBRenderPass::addDepthAttachment(uint32_t ind)
 {
   VkAttachmentDescription depthAttachment{};
-  depthAttachment.format = VK_FORMAT_D32_SFLOAT;
+  depthAttachment.format = VK_FORMAT_D24_UNORM_S8_UINT;//VK_FORMAT_D32_SFLOAT;
   depthAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
   depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
   depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE ;

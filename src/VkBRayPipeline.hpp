@@ -35,8 +35,10 @@ public:
 
   //Shader stuff
   void transitionSwapChainForComputeWrite(VkImage image, VkImage swapImage);
-  void transitionSwapChainForComputeTransfer(VkImage image);
-  void transitionSwapChainForComputePresent(VkImage swapImage);
+  void transitionImageForComputeTransfer(VkImage image);
+  void transitionImageForComputeSample(VkImage image);
+  void transitionSampledImageForComputeWrite(VkImage image);
+  void transitionImageForComputePresent(VkImage swapImage);
   void copyTextureToSwapChain(VkImage swapChainImage, VkImage sourceImage,
 			      uint32_t width, uint32_t height);
 
