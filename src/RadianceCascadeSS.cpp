@@ -3,19 +3,21 @@
 
 void RadianceCascadeSS::create()
 {
-   cascadeInfos[0] = {0, 0, 0.0f, 0.02f};
-   cascadeInfos[1] = {1, 0, 0.02f, 0.04f};
-   cascadeInfos[2] = {2, 0, 0.04f, 0.16f};
-   cascadeInfos[3] = {3, 0, 0.16f, 0.32f};
-   cascadeInfos[4] = {4, 0, 0.32f, 0.64f};
-   cascadeInfos[5] = {5, 0, 0.64f, 10000.0f};
+  for (int i = 0; i < CASCADE_COUNT; i++)
+    {
+      if (i == 0)
+	cascadeInfos[i] = {i, 0, 15.0f, 0.0f, 0.02f, 0};
+      else
+	cascadeInfos[i] = {i, 0, 15.0f,  cascadeInfos[i-1].end, cascadeInfos[i-1].end * 5.0f,0};
+
+    }
    lightProbeInfo.create(framesInFlight, true, glm::vec3(800,800,0));
 }
 
 void RadianceCascadeSS::initPipeline(VkBRayInputInfo* rayInputInfo, VkDescriptorSetLayout SSInfoLayout)
 {
   VkPushConstantRange cascadePushConstant = {
-    VK_SHADER_STAGE_FRAGMENT_BIT, 
+    VK_SHADER_STAGE_COMPUTE_BIT, 
     0,//  offset
     sizeof(CascadeInfo)
   };
@@ -24,8 +26,6 @@ void RadianceCascadeSS::initPipeline(VkBRayInputInfo* rayInputInfo, VkDescriptor
 
   std::vector<VkDescriptorSetLayout> probeUniformLayouts = {rayInputInfo->assemblerPool.descriptorSetLayout,
 							    lightProbeInfo.computeUniformPool.descriptorSetLayout, SSInfoLayout};
-  
-  cascadePushConstantRange[0].stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
   
   lightProbePipeline.createPipeline("../src/shaders/SSRadianceCascade.spv",
 				    &probeUniformLayouts, &cascadePushConstantRange,

@@ -9,7 +9,7 @@
 #include "VkBVertexBuffer.hpp"
 #include "VkBUniformPool.hpp"
 #include "VkBUniformBuffer.hpp"
-#include "VkBRayPipeline.hpp"
+#include "VkBComputePipeline.hpp"
 #include "VkBRayInputInfo.hpp"
 struct CascadeInfo
 {

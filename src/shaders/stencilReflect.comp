@@ -71,6 +71,7 @@ void main() {
   vec4 loc = vec4(rayOrigin + result.dist * rayDir,1.0);
   uint matIndex = result.matIndex;
   
+  imageStore(normals, ivec2(gl_GlobalInvocationID.xy), vec4(result.hitNormal,1.0));
   vec4 albedo = vec4(0.0);
   if (matIndex == 1) //diffuseGrey
       albedo = vec4(0.5,0.5,0.5,1.0) * 0.2;

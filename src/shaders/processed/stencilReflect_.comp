@@ -71,6 +71,7 @@ struct TraceResult
   uint matIndex;
   float dist;
   vec3 bounceNormal;
+  vec3 hitNormal;
   uint triangleTests;
   uint boxTests;
 };
@@ -153,7 +154,7 @@ float rand(vec2 co){
 
 TraceResult trace(vec3 rayOrigin, vec3 rayDir, float maxDist)
 {
-  TraceResult result = {-1, min(100000.0, maxDist), vec3(0.0,1.0,0.0), 0,0};
+  TraceResult result = {-1, min(100000.0, maxDist), vec3(0.0,0.0,0.0),vec3(0.0,1.0,0.0), 0,0};
   
   for (int box = 0; box < 6; box++)
     {
@@ -187,6 +188,7 @@ TraceResult trace(vec3 rayOrigin, vec3 rayDir, float maxDist)
 		  result.matIndex = v0.materialIndex;
 		  result.dist = testDist;
 		  result.bounceNormal = rayDir - 2.0 * normal * dot(rayDir, normal);
+		  result.hitNormal = normal;
 		}
 	    }
 
@@ -229,6 +231,7 @@ void main() {
   vec4 loc = vec4(rayOrigin + result.dist * rayDir,1.0);
   uint matIndex = result.matIndex;
   
+  imageStore(normals, ivec2(gl_GlobalInvocationID.xy), vec4(result.hitNormal,1.0));
   vec4 albedo = vec4(0.0);
   if (matIndex == 1) //diffuseGrey
       albedo = vec4(0.5,0.5,0.5,1.0) * 0.2;
@@ -240,7 +243,6 @@ void main() {
     albedo = vec4(1.0,1.0,0.0,1.0);
     
   albedo.a = 1.0;
-
   albedo += vec4(133, 214, 214, 255) / 255 * 0.5;
 
   imageStore(albedos, ivec2(gl_GlobalInvocationID.xy), albedo);

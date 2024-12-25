@@ -1,0 +1,99 @@
+#version 450
+
+
+vec3 worldPosFromDepth(float depth, vec2 screenPos, mat4 invProjView)
+{
+  vec4 clipPos;
+  clipPos.xy = screenPos * 2.0 - 1.0;
+  clipPos.z = depth;
+  clipPos.w = 1.0;
+
+  vec4 homoCoord = invProjView * clipPos;
+  return homoCoord.xyz / homoCoord.w;
+}
+layout(set = 0, binding = 0) uniform sampler2D normals;
+//layout(set = 0, binding = 1) uniform sampler2D albedos;
+layout(set = 0, binding = 2) uniform sampler2D depth;
+layout(set = 0, binding = 4, rgba32f) uniform restrict image2D albedos;
+
+layout(set = 1, binding = 1) uniform cameraUniform {
+  mat4 view;
+  mat4 proj;
+  mat4 invViewProj;
+  float width;
+  float height;
+  float nearClip;
+  float farClip;
+} _MainCamera;
+
+layout( push_constant ) uniform ssaoInfo {
+  float sigma;
+  float beta;
+  float alpha;
+} aoInfo;
+
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+float linearizeDepth(float val)
+{
+  float zNear = 0.01;
+  float zFar = 50.0;
+  float linearized =  zNear * zFar / (zFar + val * (zNear - zFar));
+  return linearized;// / (zFar - zNear); //0-1
+}
+
+#define KERNEL_RAD 4
+//Alchemy ao, slightly based off of https://gist.github.com/gordonnl/0a604ae7c515978d2e6d
+//Should extend to multiple pass using de-interleaved depth buffer
+// see https://github.com/Outrider0x400/Unity-AlchemyAmbientObscurance
+void main() {
+
+  ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
+  vec2 uv = vec2(gl_GlobalInvocationID.xy) / imageSize(albedos);
+  
+  float thisDepth = texelFetch(depth, texel, 0).r;
+  vec3 thisPos = worldPosFromDepth(thisDepth, uv, _MainCamera.invViewProj);
+
+  vec3 normal = texelFetch(normals, texel, 0).rgb;
+
+  float avgDot = 0;
+  float sigma = aoInfo.sigma;
+  float beta = aoInfo.beta;
+  float alpha = aoInfo.alpha;
+  float sampleCount = (KERNEL_RAD * 2) * (KERNEL_RAD * 2) - 1;
+  float p = 0;
+  float o = 0;
+  for (int i = -KERNEL_RAD; i < KERNEL_RAD + 1; i++)
+    {
+      for (int j = -KERNEL_RAD; j < KERNEL_RAD + 1; j++)
+	{
+	  float skip = 1.0;
+	  if (i == 0 && j == 0) continue;;
+	  vec2 offset = vec2(i,j) / imageSize(albedos);
+	  float d = texelFetch(depth, texel + ivec2(i,j), 0).r;
+
+	  vec3 pos = worldPosFromDepth(d, uv + offset, _MainCamera.invViewProj);
+	  vec3 diff = pos - thisPos;
+	  //float linDepth = linearizeDepth(d);
+	  float linDepth = d;
+	  
+	  float alchemyVal = min(max(0, dot(normalize(diff), normal) - linDepth * beta) /
+				 (dot(diff,diff) * alpha + 1e-6), 1);
+	  avgDot += alchemyVal * skip;
+	}
+    }
+  avgDot = max(0.0f, 1.0f - sigma * avgDot / sampleCount);
+    //avgDot = 1 - avgDot / (8.0 * 8.0 - 1.0);
+
+
+  //avgDot = min(avgDot, 1.0);
+  vec4 currentAlbedo = imageLoad(albedos, texel);
+
+  currentAlbedo *= avgDot;
+  currentAlbedo.a = 1.0;
+
+  vec4 test = vec4(p, 0,o, 1.0);
+
+  imageStore(albedos, texel, currentAlbedo);
+    
+}

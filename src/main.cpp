@@ -26,8 +26,7 @@ std::vector<const char*> validationLayers = {
   "VK_LAYER_KHRONOS_validation"
 };
 std::vector<const char*> deviceExtensions = {
-  VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-  "VK_EXT_extended_dynamic_state"
+  VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 VkInstance instance = VK_NULL_HANDLE;  
 
@@ -47,7 +46,6 @@ int USE_FORWARD = 0;
 int DRAW_DEBUG_LINES = 1;
 int COMPUTE_RADIANCE_CASCADE = 0;
 int viewCascade = 0;
-
 GLFWwindow* window;
 double mouseX = 0;
 double mouseY = 0;
@@ -79,7 +77,7 @@ const bool enableVulkanValidationLayers = true;
 #include "Camera.hpp"
 #include "Input.hpp"
 #include "VkBLightProbes.hpp"
-#include "VkBRayPipeline.hpp"
+#include "VkBComputePipeline.hpp"
 #include "DebugConsole.hpp"
 #include "VkBRayInputInfo.hpp"
 #include "BVH.hpp"
@@ -88,6 +86,7 @@ const bool enableVulkanValidationLayers = true;
 #include "RadianceCascadeSS.hpp"
 #include "ForwardRenderer.hpp"
 #include "DeferredRenderer.hpp"
+#include "SSAOPass.hpp"
 Input inputInfo = {};
 DebugConsole debugConsole;
 RayDebugPushConstant rayDebugPushConstant;
@@ -100,11 +99,11 @@ public:
 
   VkBGraphicsPipeline graphicsPipeline;
   VkBGraphicsPipeline linePipeline;
-  VkBRayPipeline rayPipeline;
-  VkBRayPipeline reflectPipeline;
+  VkBComputePipeline rayPipeline;
+  VkBComputePipeline reflectPipeline;
   RadianceCascade3D radianceCascade3D;
   RadianceCascadeSS radianceCascadeSS;
-  //VkBRenderPass renderPass;
+  SSAOPass ssaoPass;
 
   VkBVertexBuffer staticVertexBuffer;
 
@@ -119,11 +118,11 @@ public:
   
   VkBUniformPool cameraUniformPool;
   Camera mainCamera;
-  //VkBDrawCommandBuffer drawCommandBuffer;
   VkBTexture depthTexture;
   VkSemaphore imageAvailableSemaphore;
   VkSemaphore renderFinishedSemaphore;
   VkSemaphore probeInfoFinishedSemaphore;
+  VkSemaphore reflectionsFinishedSemaphore;
   VkSemaphore deferredPassFinishedSemaphore;
   VkFence inFlightFence;
 
@@ -298,7 +297,9 @@ private:
 					    "../src/shaders/trianglevert.spv",
 					    "../src/shaders/trianglefrag.spv",
 					    &uniformLayouts, &cascadePushConstantRange);
-    
+
+    ssaoPass.init(deferredRenderer.compositeUniformPool.descriptorSetLayout,
+		  cameraUniformPool.descriptorSetLayout);
 
     std::vector<VkDescriptorSetLayout> compositeLayouts = {deferredRenderer.compositeUniformPool.descriptorSetLayout, radianceCascadeSS.lightProbeInfo.drawUniformPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
     compositePipeline.createGraphicsPipeline(swapChain, deferredRenderer.compositeRenderPass,
@@ -327,6 +328,7 @@ private:
     cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseGreen);
     cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseRed);
     cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
+    //cornellLight = ModelImporter::loadOBJ("../models/sphere.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
     cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
     //ratModel = ModelImporter::loadOBJ("../models/rat.obj", "../models/rat.png", &rayInputInfo.vertexBuffer, &emissive);
     mirrorModel = ModelImporter::loadOBJ("../models/cornellMirror.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &reflective);	  
@@ -369,6 +371,7 @@ private:
 	debugConsole.cascadeInfos[i]->bilateralBlend = 0.1;
       }
     debugConsole.rayDebugPushConstant = &rayDebugPushConstant;
+    debugConsole.ssaoInfo = &ssaoPass.pushInfo;
     rayDebugPushConstant.viewMode = 1;
     rayDebugPushConstant.triangleTestLimit = 140;
     rayDebugPushConstant.boxTestLimit = 3;
@@ -387,6 +390,7 @@ private:
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &probeInfoFinishedSemaphore) != VK_SUCCESS ||
 	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &deferredPassFinishedSemaphore) != VK_SUCCESS ||
+	vkCreateSemaphore(device, &semaphoreInfo, nullptr, &reflectionsFinishedSemaphore) != VK_SUCCESS ||
 	vkCreateFence(device, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
       throw std::runtime_error("failed to create semaphores!");
     }
@@ -520,7 +524,7 @@ private:
 
     glm::mat4 modelMat = glm::scale(glm::translate(glm::mat4(1.0f),
 					  glm::vec3(0.0, glm::sin(time), 0.0)),
-			   glm::vec3(1.5f, 1.5f, 1.5f));
+				    glm::vec3(1.5f, 1.5f, 1.5f));
     
     //ratModel->modelMatrix = modelMat;
     cornellLight->modelMatrix = modelMat;
@@ -574,22 +578,11 @@ private:
 	std::vector<VkSemaphore> signalSemaphores = {deferredPassFinishedSemaphore};
 	deferredRenderer.submitDeferred(waitSemaphores, signalSemaphores, VK_NULL_HANDLE);
 
-	if (COMPUTE_RADIANCE_CASCADE)
-	  {
-	    std::vector<VkSemaphore> RCWaitSemaphores = {deferredPassFinishedSemaphore};
-	    std::vector<VkSemaphore> RCSignalSemaphores = {probeInfoFinishedSemaphore};
-	    radianceCascadeSS.computeSSRadianceCascade(&rayInputInfo,
-						       RCWaitSemaphores,
-						       RCSignalSemaphores,
-						       &deferredRenderer.compositeUniformPool.descriptorSets[imageIndex][deferredRenderer.compositeUniform.indexIntoPool],
-						       imageIndex);
-
-	  }
-	else
+	if (true) //
 	  {
 	    vkResetCommandBuffer(reflectPipeline.commandBuffer, 0);
-	    reflectPipeline.transitionSampledImageForComputeWrite(deferredRenderer.deferredTextures[0].image);
-	    reflectPipeline.transitionSampledImageForComputeWrite(deferredRenderer.deferredTextures[1].image);
+	    reflectPipeline.transitionSampledImageForComputeWrite(deferredRenderer.normalTexture.image);
+	    reflectPipeline.transitionSampledImageForComputeWrite(deferredRenderer.albedoTexture.image);
 
 	    // reflectPipeline.transitionSampledImageForComputeWrite(deferredRenderer.deferredTextures[2].image);
 
@@ -629,7 +622,7 @@ private:
 	    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	    VkSemaphore waitSemaphores[] = {deferredPassFinishedSemaphore}; //Wait for this before submitting draw
 	    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT}; //Wait for this stage before writing to image
-	    VkSemaphore signalSemaphores[] = {probeInfoFinishedSemaphore}; //Signal to this when drawing is done
+	    VkSemaphore signalSemaphores[] = {reflectionsFinishedSemaphore}; //Signal to this when drawing is done
 	    submitInfo.waitSemaphoreCount = 1;
 	    submitInfo.pWaitSemaphores = waitSemaphores;
 	    submitInfo.pWaitDstStageMask = waitStages;
@@ -642,11 +635,30 @@ private:
 	    if (vkQueueSubmit(computeQueue, 1, &submitInfo, nullptr) != VK_SUCCESS) {
 	      throw std::runtime_error("failed to submit compute command buffer!");
 	    };
-	    reflectPipeline.transitionImageForComputeSample(deferredRenderer.deferredTextures[0].image);
-	    reflectPipeline.transitionImageForComputeSample(deferredRenderer.deferredTextures[1].image);
+	    reflectPipeline.transitionImageForComputeSample(deferredRenderer.normalTexture.image);
+	    reflectPipeline.transitionImageForComputeSample(deferredRenderer.albedoTexture.image);
 	    //reflectPipeline.transitionImageForComputeSample(deferredRenderer.deferredTextures[2].image);
 	  }
+	if (COMPUTE_RADIANCE_CASCADE)
+	  {
+	    std::vector<VkSemaphore> RCWaitSemaphores = {reflectionsFinishedSemaphore};
+	    std::vector<VkSemaphore> RCSignalSemaphores = {probeInfoFinishedSemaphore};
+	    radianceCascadeSS.computeSSRadianceCascade(&rayInputInfo,
+						       RCWaitSemaphores,
+						       RCSignalSemaphores,
+						       &deferredRenderer.compositeUniformPool.descriptorSets[imageIndex][deferredRenderer.compositeUniform.indexIntoPool],
+						       imageIndex);
 
+	  }
+	if (true)
+	{
+	    std::vector<VkSemaphore> RCWaitSemaphores = {reflectionsFinishedSemaphore};
+	    std::vector<VkSemaphore> RCSignalSemaphores = {probeInfoFinishedSemaphore};
+	    ssaoPass.compute(RCWaitSemaphores, RCSignalSemaphores,
+			     &deferredRenderer.albedoTexture,
+			     &deferredRenderer.compositeUniformPool.descriptorSets[imageIndex][deferredRenderer.compositeUniform.indexIntoPool],
+			     &cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool]);
+	}
 
 	//bind descriptor sets (probes and stuff)
 	deferredRenderer.beginComposite(swapChain.extent, swapChain.framebuffers[imageIndex], compositePipeline);
@@ -660,7 +672,7 @@ private:
 			   deferredRenderer.compositePipeline.layout,
 			   VK_SHADER_STAGE_FRAGMENT_BIT,
 			   0, sizeof(CascadeInfo),
-			   &radianceCascadeSS.cascadeInfos[viewCascade]);	
+			   &radianceCascadeSS.cascadeInfos[0]);	
 
 	deferredRenderer.recordComposite();
 	    
@@ -668,8 +680,8 @@ private:
 	std::vector<VkSemaphore> waitCompositeSemaphores;
 	//if (COMPUTE_RADIANCE_CASCADE)
 	  waitCompositeSemaphores = {probeInfoFinishedSemaphore};
-	  //else
-	  //waitCompositeSemaphores = {deferredPassFinishedSemaphore};
+	//	else
+	// waitCompositeSemaphores = {reflectionsFinishedSemaphore};
 	std::vector<VkSemaphore> signalCompositeSemaphores = {renderFinishedSemaphore};
 	deferredRenderer.submitComposite(waitCompositeSemaphores, signalCompositeSemaphores, inFlightFence);
       }
@@ -824,6 +836,7 @@ private:
     vkDestroySemaphore(device, imageAvailableSemaphore, nullptr);
     vkDestroySemaphore(device, renderFinishedSemaphore, nullptr);
     vkDestroySemaphore(device, probeInfoFinishedSemaphore, nullptr);
+    vkDestroySemaphore(device, reflectionsFinishedSemaphore, nullptr);
     vkDestroySemaphore(device, deferredPassFinishedSemaphore, nullptr);
     vkDestroyFence(device, inFlightFence, nullptr);
 	
@@ -845,7 +858,7 @@ private:
     debugConsole.destroy();
     rayInputInfo.destroy();
     vkDestroyRenderPass(device, forwardRenderer.renderPass.renderPass, nullptr);
-
+    ssaoPass.destroy();
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
 
     rayPipeline.destroy();

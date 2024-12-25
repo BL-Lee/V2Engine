@@ -10,6 +10,7 @@ filesToCompile = [
     'deferredVert.vert',
     'SSRadianceCascade.comp',
     'stencilReflect.comp',
+    'SSAO.comp',
     'ray.comp',
     'rayProbe.comp',
     'lineVert.vert',

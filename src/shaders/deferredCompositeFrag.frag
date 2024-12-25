@@ -6,7 +6,7 @@ layout(set = 0, binding = 1) uniform sampler2D albedos;
 layout(set = 0, binding = 2) uniform sampler2D depth;
 //layout(set = 0, binding = 3) uniform sampler2D depth;
 
-layout(set = 1, binding = 2) uniform sampler2D probeSamplers[5];
+layout(set = 1, binding = 2) uniform sampler2D probeSamplers[4];
 
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 0) out vec4 outColour;
@@ -45,41 +45,71 @@ vec4 toSRGB(vec4 i)
 }
 
 void main() {
-  vec3 col = texture(albedos, fragTexCoord).xyz;
-  //float depth = texture(depth, fragTexCoord).r;
-  //vec3 worldPos = worldPosFromDepth(depth, fragTexCoord, _MainCamera.invViewProj);
+  vec3 col = texture(albedos, fragTexCoord).rgb;
+  vec3 normal = texture(normals, fragTexCoord).xyz;
+  float depth = texture(depth, fragTexCoord).r;
+  
+  vec3 worldPos = worldPosFromDepth(depth, fragTexCoord, _MainCamera.invViewProj);
+  
+  //vec3 normalDirection = normalize(varyingNormalDirection);
+  vec3 fiberDirection = normalize(vec3(1.0,0.0,1.0));
+  vec3 tangentDirection = normalize(cross(normal, fiberDirection));
 
-  //  vec3 worldPos = val.rgb;
-  /*
-  int matIndex = int(round(val.a));
+  
+  vec4 cameraPosV = _MainCamera.invViewProj * vec4(0.0,0.0,0.0,1.0);
+  vec3 cameraPos = cameraPosV.xyz / cameraPosV.w;
+  
+  vec3 viewDirection = normalize(cameraPos - worldPos);
+  vec3 lightDirection = normalize(vec3(1.0,1.0,0.0));
+  float attenuation = 1.0;
 
-  if (matIndex == 0)
+  
+  vec3 halfwayVector = 
+    normalize(lightDirection + viewDirection);
+  vec3 binormal = 
+    cross(normal, tangentDirection);
+  float dotLN = dot(lightDirection, normal); 
+  // compute this dot product only once
+  vec3 matDiffuseColor = col;            
+  vec3 ambientLighting = vec3(0.3,0.3,0.3) * col; 
+  vec3 lightColor0 = vec3(1.0,0.9,0.4);
 
+  vec3 diffuseReflection = attenuation * lightColor0 
+    * vec3(matDiffuseColor) * max(0.0, dotLN);
+            
+  vec3 specularReflection = vec3(0.0);
+
+  if (dotLN < 0.0) // light source on the wrong side?
     {
-      vec4 emitColour = vec4(1.0,0.9,0.4,1.0) * 10.0;
-      outColour = emitColour;
-      return;
+      specularReflection = vec3(0.0, 0.0, 0.0); 
+      // no specular reflection
     }
+  else // light source on the right side
+    {
+      float dotHN = dot(halfwayVector, normal);
+      float dotVN = dot(viewDirection, normal);
+      //float _AlphaX = cascadeInfo.bilateralBlend;
+      //float _AlphaY = cascadeInfo.end;
+      float _AlphaX = 0.1;
+      float _AlphaY = 0.9;
+      
+      float dotHTAlphaX = 
+	dot(halfwayVector, tangentDirection) / _AlphaX;
+      float dotHBAlphaY = dot(halfwayVector, 
+			      binormal) / _AlphaY;
 
-  vec4 albedo = vec4(0.0);
-  if (matIndex == 1) //diffuseGrey
-      albedo = vec4(0.5,0.5,0.5,1.0) * 0.2;
-  if (matIndex == 2) //diffuseGrey
-    albedo = vec4(1.0,0.0,0.0,1.0) * 0.2;
-  if (matIndex == 3) //diffuseGrey
-    albedo = vec4(0.0,1.0,0.0,1.0) * 0.2;
-  //if (matIndex == 4) //reflective
-  else
-    albedo = vec4(1.0,1.0,0.0,1.0);
-    
-  albedo.a = 1.0;
-  */
-  outColour = vec4(col,1.0);
-   return ;
-  
-  vec3 width = vec3(2.5);
-  vec3 center = vec3(0.0,1.0,0.0);
-  
+      vec3 matSpecularColor = vec3(0.9,0.9,0.9);
+      
+      specularReflection = attenuation * vec3(matSpecularColor) 
+	* sqrt(max(0.0, dotLN / dotVN)) 
+	* exp(-2.0 * (dotHTAlphaX * dotHTAlphaX 
+		      + dotHBAlphaY * dotHBAlphaY) / (1.0 + dotHN));
+    }
+  outColour = vec4(ambientLighting 
+		      + diffuseReflection + specularReflection, 1.0);
+  return;
+
+  /*
   vec4 radiance = vec4(0.0);
   
   int cascade = cascadeInfo.cascade;
@@ -88,33 +118,20 @@ void main() {
   int dirCount = int(pow(4, cascade));
   int dirTilingCount = int(pow(2, cascade));
 
-  //vec2 texCoord = quadrantLocalCoord + quadrantOffset;
-  //radiance = texture(probeSamplers[cascade], fragTexCoord);
+  //  vec2 texCoord = quadrantLocalCoord + quadrantOffset;
+  radiance = texture(probeSamplers[0], fragTexCoord);
   //radiance += val / dirCount;
 
-
-  //scale down to quadrant 
-  vec2 quadrantLocalCoord = fragTexCoord / vec2(dirTilingCount);
-  //vec3 coord = vec3(quadrantLocalCoord * textureSize(probeSamplers[cascade],0));
-  for (int dir = 0; dir < dirCount; dir++)
-    //for (int dir = 0; dir < 1; dir++)
-    {
-      vec2 quadrantOffset = vec2(dir % dirTilingCount,
-				   dir / dirTilingCount) / dirTilingCount;
-      vec2 texCoord = quadrantLocalCoord + quadrantOffset;
-      vec4 val = texture(probeSamplers[cascade], texCoord);
-      radiance += val / dirCount;
-
-    }
-
   radiance /= radiance.a;
-  radiance *= 4.0; //Hlaf of rays point inwards?
+  //  radiance = 4.0; //Hlaf of rays point inwards?
   //radiance.a = 1.0;
   //  outColour = radiance * albedo;
+
+  ////outColour = toSRGB(radiance);
+  outColour = radiance;
   return;
-
-  //outColour = toSRGB(radiance);
-
+  vec3 ambientLighting = radiance.rgb;
+  */
   
   //return;
 }

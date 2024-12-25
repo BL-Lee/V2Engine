@@ -13,7 +13,7 @@ struct RayDebugPushConstant
 };
 
 
-class VkBRayPipeline
+class VkBComputePipeline
 {
 public:
   

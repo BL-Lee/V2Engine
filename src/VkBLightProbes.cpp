@@ -15,9 +15,9 @@ void VkBLightProbeInfo::create(int frameCount, bool screenSpace, glm::vec3 resol
     center = glm::vec3(0.0f,0.0f,0.0f);//Doesn't do anything yet in the shader
     raysPerProbe = 20; //Same
 
-    imageWidth = resolution.x * 2;
-    imageHeight = resolution.y * 2;
-    imageDepth = resolution.z * 2;
+    imageWidth = (size_t)resolution.x * 2;
+    imageHeight = (size_t)resolution.y * 2;
+    imageDepth = (size_t)resolution.z * 2;
 
     semaphoreChain = (VkSemaphore*)calloc(cascadeCount, sizeof(VkSemaphore));
     for(int i = 0; i < cascadeCount; i++)
@@ -35,13 +35,13 @@ void VkBLightProbeInfo::create(int frameCount, bool screenSpace, glm::vec3 resol
     
     if (!screenSpace)
       {
-	lineCount = imageWidth * imageHeight * imageDepth;
+	lineCount = (int) imageWidth * imageHeight * imageDepth;
 	for (int i = 0; i < cascadeCount; i++)
 	  {
 	    textures[i].createTextureImage3D(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
-					     resolution.x * 2,
-					     resolution.y * 2,
-					     resolution.z * 2,
+					     (uint32_t)resolution.x * 2,
+					     (uint32_t)resolution.y * 2,
+					     (uint32_t)resolution.z * 2,
 					     nullptr);
 	  }
 
@@ -64,12 +64,12 @@ void VkBLightProbeInfo::create(int frameCount, bool screenSpace, glm::vec3 resol
       }
     else //screenspace
       {
-	lineCount = (uint32_t)resolution.x * resolution.y * 2;
+	lineCount = (uint32_t)resolution.x * (uint32_t)resolution.y * 2;
 	for (int i = 0; i < cascadeCount; i++)
 	  {
 	    textures[i].createTextureImage(VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA,
-					   resolution.x, // times 2 because 4 dirs at the start
-					     resolution.y ,
+					   (int)resolution.x,
+					   (int)resolution.y ,
 					     nullptr);
 	  }
 	uint8_t test_pix[1*4] = {1,0,0,0};

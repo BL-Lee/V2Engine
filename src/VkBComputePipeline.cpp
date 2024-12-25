@@ -1,7 +1,7 @@
-#include "VkBRayPipeline.hpp"
+#include "VkBComputePipeline.hpp"
 #include "VkBShader.hpp"
 #include "VkBSingleCommandBuffer.hpp"
-void VkBRayPipeline::createPipeline(const char* filePath,
+void VkBComputePipeline::createPipeline(const char* filePath,
 		      std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
 		      std::vector<VkPushConstantRange>* pushConstantRanges,
 		      int commandBufferCount)
@@ -76,13 +76,13 @@ void VkBRayPipeline::createPipeline(const char* filePath,
 
 }
 
-void VkBRayPipeline::createPipeline(const char* filePath,
+void VkBComputePipeline::createPipeline(const char* filePath,
 				    std::vector<VkDescriptorSetLayout>* descriptorSetLayouts,
 				    std::vector<VkPushConstantRange>* pushConstantRanges) {
   createPipeline(filePath, descriptorSetLayouts, pushConstantRanges,1);
 }
 
-void VkBRayPipeline::transitionSampledImageForComputeWrite(VkImage image) {
+void VkBComputePipeline::transitionSampledImageForComputeWrite(VkImage image) {
 
   VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
     
@@ -118,7 +118,7 @@ void VkBRayPipeline::transitionSampledImageForComputeWrite(VkImage image) {
   vKEndSingleTimeCommandBuffer(commandBuffer);
 
 }
-void VkBRayPipeline::transitionImageForComputeSample(VkImage image) {
+void VkBComputePipeline::transitionImageForComputeSample(VkImage image) {
   VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
     
   VkImageMemoryBarrier barrier{};
@@ -154,7 +154,7 @@ void VkBRayPipeline::transitionImageForComputeSample(VkImage image) {
 
 }
 
-void VkBRayPipeline::transitionSwapChainForComputeWrite(VkImage image, VkImage swapImage) {
+void VkBComputePipeline::transitionSwapChainForComputeWrite(VkImage image, VkImage swapImage) {
 
   VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
     
@@ -220,7 +220,7 @@ void VkBRayPipeline::transitionSwapChainForComputeWrite(VkImage image, VkImage s
 
 
 }
-void VkBRayPipeline::transitionImageForComputeTransfer(VkImage image) {
+void VkBComputePipeline::transitionImageForComputeTransfer(VkImage image) {
 
   VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
     
@@ -258,7 +258,7 @@ void VkBRayPipeline::transitionImageForComputeTransfer(VkImage image) {
 
 }
   
-void VkBRayPipeline::transitionImageForComputePresent(VkImage swapImage)
+void VkBComputePipeline::transitionImageForComputePresent(VkImage swapImage)
 {
   VkCommandBuffer commandBuffer = vKBeginSingleTimeCommandBuffer();
     
@@ -298,7 +298,7 @@ void VkBRayPipeline::transitionImageForComputePresent(VkImage swapImage)
 }
 
 
-void VkBRayPipeline::copyTextureToSwapChain(VkImage swapChainImage,
+void VkBComputePipeline::copyTextureToSwapChain(VkImage swapChainImage,
 					    VkImage sourceImage,
 			    uint32_t width, uint32_t height)
 {
@@ -334,7 +334,7 @@ void VkBRayPipeline::copyTextureToSwapChain(VkImage swapChainImage,
   vKEndSingleTimeCommandBuffer(transferCommandBuffer);
 
 }
-void VkBRayPipeline::destroy()
+void VkBComputePipeline::destroy()
 {
   vkDestroyPipeline(device, pipeline, nullptr);	
   vkDestroyPipelineLayout(device, pipelineLayout, nullptr);

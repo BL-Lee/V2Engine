@@ -19,29 +19,22 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   fullscreenQuad.fill(vertices, 6, &s);
   mode = 0;
   deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT,  false, 0); //normal
-  deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, false, 1); //world pos
-  //  deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT, false, 2); //UV
-
+  deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT,  false, 1); //normal
   deferredRenderPass.addDepthAttachment(2);
   deferredRenderPass.createRenderPass(true);
 
-  deferredTextures = (VkBTexture*)calloc(sizeof(VkBTexture), 4);
-  deferredTextures[0].createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
+  albedoTexture.createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
 					 swapChain->extent.width, swapChain->extent.height,
 					 nullptr);
-  deferredTextures[1].createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
+  normalTexture.createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
 					 swapChain->extent.width, swapChain->extent.height,
 					 nullptr);
-  deferredTextures[2].createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
+  depthTexture.createTextureImage(VKB_TEXTURE_TYPE_DEPTH,
 					 swapChain->extent.width, swapChain->extent.height,
 					 nullptr);
-  deferredTextures[3].createTextureImage(VKB_TEXTURE_TYPE_DEPTH,
-					 swapChain->extent.width, swapChain->extent.height,
-					 nullptr);
-  VkImageView attachments[] = { deferredTextures[0].imageView,
-				deferredTextures[1].imageView,
-				//eferredTextures[2].imageView,
-				deferredTextures[3].imageView };
+  VkImageView attachments[] = { normalTexture.imageView,
+				albedoTexture.imageView,
+				depthTexture.imageView };
 
   VkFramebufferCreateInfo framebufferInfo{};
   framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -66,13 +59,11 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
 
   compositeUniformPool.createDescriptorSetLayout();
   
-  VkBTexture* texs[] = { &deferredTextures[0],
-			 &deferredTextures[1],
-			   //deferredTextures[2].textureSampler,
-			 &deferredTextures[3],
-			 &deferredTextures[0],
-			 &deferredTextures[1],
-			   //deferredTextures[2].textureSampler,
+  VkBTexture* texs[] = { &normalTexture,
+			 &albedoTexture,
+			 &depthTexture,
+			 &normalTexture,
+			 &albedoTexture,
   };
 
   compositeUniform.allocateDescriptorSets(&compositeUniformPool, texs, nullptr);
@@ -84,13 +75,12 @@ void DeferredRenderer::destroy()
 {
   fullscreenQuad.destroy();
   vkDestroyRenderPass(device, deferredRenderPass.renderPass, nullptr);
-  for (int i = 0; i < 4; i++)
-    {
-      deferredTextures[i].destroy();
-    }
+  albedoTexture.destroy();
+  normalTexture.destroy();
+  depthTexture.destroy();
   compositeUniformPool.destroy();
   compositeUniform.destroy();
-  free(deferredTextures);
+
   vkDestroyFramebuffer(device, deferredFramebuffer, nullptr);
   deferredPipeline.destroy();
 }

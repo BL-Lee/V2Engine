@@ -26,7 +26,10 @@ public:
   VkBUniformPool compositeUniformPool;
   VkBUniformBuffer compositeUniform;
 
-  VkBTexture* deferredTextures;
+  //VkBTexture* deferredTextures;
+  VkBTexture albedoTexture;
+  VkBTexture normalTexture;
+  VkBTexture depthTexture;
   
   uint32_t mode = 0; //0: deferred, 1: composite
   VkBVertexBuffer fullscreenQuad;

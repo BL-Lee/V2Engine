@@ -21,16 +21,15 @@ void main()
   if (matIndex == 0) //diffuseGrey
     albedo = vec4(1.0,1.0,1.0,1.0);
   else if (matIndex == 1) //diffuseGrey
-    albedo = vec4(0.5,0.5,0.5,1.0) * 0.2;
+    albedo = vec4(0.5,0.5,0.5,1.0);// * 0.2;
   else if (matIndex == 2) //diffuseGrey
-    albedo = vec4(1.0,0.0,0.0,1.0) * 0.2;
+    albedo = vec4(1.0,0.0,0.0,1.0);// * 0.2;
   else if (matIndex == 3) //diffuseGrey
-    albedo = vec4(0.0,1.0,0.0,1.0) * 0.2;
+    albedo = vec4(0.0,1.0,0.0,1.0);// * 0.2;
   //if (matIndex == 4) //reflective
   else
     albedo = vec4(1.0,1.0,0.0,1.0);
   
-  albedo *= clamp(dot(normal, vec3(0.0,1.0,0.0)) + 0.8, 0, 1);
   outAlbedo = vec4(albedo.rgb, matIndex);
 
   float reflective = abs(matIndex - 4.0) < 0.01 ? 1.0 : 0.0;

@@ -1,12 +1,12 @@
 #pragma once
 #include "VkBGlobals.hpp"
 #include "VkBLightProbes.hpp"
-#include "VkBRayPipeline.hpp"
+#include "VkBComputePipeline.hpp"
 class RadianceCascadeSS
 {
 public:
   VkBLightProbeInfo lightProbeInfo;
-  VkBRayPipeline lightProbePipeline;
+  VkBComputePipeline lightProbePipeline;
   VkSemaphore finishedSemaphore;
   CascadeInfo cascadeInfos[CASCADE_COUNT];
 

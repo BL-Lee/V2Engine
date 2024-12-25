@@ -61,7 +61,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
   case VKB_TEXTURE_TYPE_STORAGE_SAMPLED_RGBA:
     {
       format = VK_FORMAT_R8G8B8A8_UNORM;
-      format = VK_FORMAT_R32G32B32A32_SFLOAT;
+      //      format = VK_FORMAT_R32G32B32A32_SFLOAT;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
       usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT |

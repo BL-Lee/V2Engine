@@ -132,9 +132,7 @@ float normpdf(float x, float sigma)
 vec4 texture2DBilateral_cascade_depth(vec2 fuv, vec2 upperFUV, int cascadeIndex)
 {
   int dirTilingCount = int(pow(2, cascadeIndex));   
-  //TODO: Fix weighting, also
-  //Should be getting uv pos from the upperUV
-  //  float thisDepth = linearizeDepth(texture(depth, uv).r);
+
   ivec2 uv = ivec2(fuv * textureSize(depth,0));
   float thisDepth = linearizeDepth(texelFetch(depth, ivec2(uv), 0).r);
   vec3 thisNorm = texelFetch(normals, ivec2(uv), 0).rgb;
@@ -144,29 +142,6 @@ vec4 texture2DBilateral_cascade_depth(vec2 fuv, vec2 upperFUV, int cascadeIndex)
 
   ivec2 upperUV = ivec2(upperFUV * textureSize(probeSampler,0));
 
-  /*
-  for (int j = 0; j < 9; j ++ )
-    {
-      //      vec2 offset = vec2(i,j)
-      vec2 offset = kernelOffsets[j];
-      //float neighbouringDepth = texelFetch(depth, ivec2(uv + offset * dirTilingCount),0).r;
-      vec3 neighbouringPos = texelFetch(worldPos, ivec2(uv + offset * dirTilingCount),0).rgb;
-      float diff = dot(neighbouringPos - thisPos, neighbouringPos - thisPos);
-      //float depthDiff = clamp(abs(neighbouringDepth - thisDepth) * cascadeInfo.bilateralBlend, 0, 1);
-      //float depthWeighting = 1 - clamp(diff / cascadeInfo.bilateralBlend, 0, 1);
-      float depthWeighting = diff > cascadeInfo.bilateralBlend ? 0.0 : 1.0;
-  //pfloat depthWeighting = 1.0 - depthDiff;
-
-
-      float weight = gaussianKernel[j];
-
-      vec4 sampledRad = texelFetch(probeSampler,
-				   ivec2(upperUV + offset),0) *
-	weight * depthWeighting;
-      contributedPixels += depthWeighting * weight;
-      radiance += sampledRad;
-    }
-  */
   float kernel[kernelRad * 2 + 1];
 
   for (int i = 0; i < kernelRad * 2 + 1; i++)
@@ -201,35 +176,6 @@ vec4 texture2DBilateral_cascade_depth(vec2 fuv, vec2 upperFUV, int cascadeIndex)
   
   return radiance / contributedPixels;
 }
-float depthDiffs(vec2 uv, int cascadeIndex)
-{
-
-  vec2 depthTexelSize = 1.0 / textureSize(depth,0);
-  int dirTilingCount = int(pow(2, cascadeIndex));   
-  vec2 cascadeTexelSize = 1.0 / textureSize(probeSampler,0);// / dirTilingCount;
-
-
-  float thisDepth = linearizeDepth(texelFetch(depth, ivec2(uv * textureSize(depth,0)), 0).r);
-  vec4 radiance = vec4(0.0);
-  float contributedPixels = 0;
-  
-  for (int j = 0; j < 9; j ++ )
-    {
-      vec2 offset = kernelOffsets[j];
-
-      float neighbouringDepth = linearizeDepth(texelFetch(depth, ivec2((uv + offset * cascadeTexelSize * dirTilingCount) * textureSize(depth,0)),0).r);
-
-      float depthDiff = clamp(abs(neighbouringDepth - thisDepth) * cascadeInfo.bilateralBlend, 0, 1);
-      
-      float depthWeighting = 1.0 - depthDiff;
-
-      float weight = gaussianKernel[j];
-
-      contributedPixels += depthWeighting * weight;
-    }
-  
-  return contributedPixels;
-}
 
 void main() {
 
@@ -246,12 +192,6 @@ void main() {
   vec2 localInvocation = (vec2(gl_GlobalInvocationID.xy) / imageSize(probeInfo)
 			  - (vec2(dirTile) / dirTilingCount)) * dirTilingCount;
 
-  //float depthDiffVal = depthDiffs(localInvocation, cascadeIndex + 1);
-
-  //imageStore(probeInfo, ivec2(gl_GlobalInvocationID.xy),vec4(depthDiffVal));
-  //return;
-    
-  
   for (int i = 0; i < 4; i++)
     {
       vec4 radiance = vec4(0.0);
@@ -310,12 +250,17 @@ void main() {
 		{
 		  radiance = vec4(0.0,1.0,0.0,1.0) * 0.5;
 		}
+	      else if (matIndex == 4) //green
+		{
+		  matIndex = -1;
+		}
+
 	      //Naturally falls off from missing rays, changes the attenuation
 	      //radiance *= exp(cascadeIndex * 0.2) ;
 	      //radiance.a = 1.0;
 	    }
 	}
-      if (cascadeIndex < 4 && matIndex == -1)
+      if (cascadeIndex < 3 && matIndex == -1)
 	{
 	  int upperDirTilingCount = int(pow(2, cascadeIndex + 1)); //TODO cube root
 

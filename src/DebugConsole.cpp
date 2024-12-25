@@ -74,45 +74,64 @@ void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
 
   ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
 
-
-  //  if (ImGui::SliderFloat("bilateral Blend", &cascadeInfos[0]->bilateralBlend, 0.0, 10000.1)) {
-    if (ImGui::SliderFloat("bilateral Blend", &cascadeInfos[0]->bilateralBlend, 0.0, 20.0)) {
-    for (int i =1 ; i < CASCADE_COUNT; i++)
-      {
-	cascadeInfos[i]->bilateralBlend = cascadeInfos[0]->bilateralBlend;
-      }
-  }
-
-
-
-  for (int i = 0; i < CASCADE_COUNT; i++)
+  if (ImGui::CollapsingHeader("Cascade Info"))
     {
-      ImGui::PushID(i);
 
-      if (ImGui::SliderFloat("Cascade Distance", &cascadeInfos[i]->end, 0.0, 2.0)) {
-	if (i == 0)
+      //  if (ImGui::SliderFloat("bilateral Blend", &cascadeInfos[0]->bilateralBlend, 0.0, 10000.1)) {
+      if (ImGui::SliderFloat("bilateral Blend", &cascadeInfos[0]->bilateralBlend, 0.0, 20.0)) {
+	for (int i =1 ; i < CASCADE_COUNT; i++)
 	  {
-	    for (int j = 1; j < CASCADE_COUNT; j++)
-	      {
-		cascadeInfos[j]->start = cascadeInfos[j-1]->end;
-		cascadeInfos[j]->end = cascadeInfos[j]->start * 5.0;
-	      }
+	    cascadeInfos[i]->bilateralBlend = cascadeInfos[0]->bilateralBlend;
 	  }
-
       }
-      ImGui::PopID();
+
+
+
+      for (int i = 0; i < CASCADE_COUNT; i++)
+	{
+	  ImGui::PushID(i);
+
+	  if (ImGui::SliderFloat("Cascade Distance", &cascadeInfos[i]->end, 0.0, 2.0)) {
+	    if (i == 0)
+	      {
+		for (int j = 1; j < CASCADE_COUNT; j++)
+		  {
+		    cascadeInfos[j]->start = cascadeInfos[j-1]->end;
+		    cascadeInfos[j]->end = cascadeInfos[j]->start * 5.0;
+		  }
+	      }
+
+	  }
+	  ImGui::PopID();
+	}
     }
-  static const char* items[] = {"0","1","2","3"};
-  static int selectedItem = 0;
-  ImGui::Combo("MyCombo", &selectedItem, items, IM_ARRAYSIZE(items));
-  rayDebugPushConstant->viewMode = (uint32_t)selectedItem;
+  if (ImGui::CollapsingHeader("SSAO Info"))
+    {
+      ImGui::SliderFloat("SSAO sigma", &ssaoInfo->sigma, 0.0, 2.0);
+      ImGui::SliderFloat("SSAO beta", &ssaoInfo->beta, 0.0, 2.0);
+      ImGui::SliderFloat("SSAO alpha", &ssaoInfo->alpha, 0.0, 20.0);
+    }
+  if (ImGui::CollapsingHeader("Ray Info"))
+    {
+      static const char* items[] = {"0","1","2","3"};
+      static int selectedItem = 0;
+      ImGui::Combo("MyCombo", &selectedItem, items, IM_ARRAYSIZE(items));
+      rayDebugPushConstant->viewMode = (uint32_t)selectedItem;
   
-  ImGui::SliderFloat("RayTriangleLimit", &rayDebugPushConstant->triangleTestLimit, 0.0, 300.0);
-  ImGui::SliderFloat("RayBoxLimit", &rayDebugPushConstant->boxTestLimit, 0.0, 10.0);
+      ImGui::SliderFloat("RayTriangleLimit", &rayDebugPushConstant->triangleTestimit, 0.0, 300.0);
+      ImGui::SliderFloat("RayBoxLimit", &rayDebugPushConstant->boxTestLimit, 0.0, 10.0);
+    }
+  if (ImGui::CollapsingHeader("GPU Profilings"))
+    {
+
+    }
+  
+  
   ImGui::End();
   
 
-
+  ImGui::ShowDemoWindow(); // Show demo window! :)
+ 
 
   
   // Rendering

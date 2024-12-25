@@ -2,7 +2,8 @@
 #include "VkBGlobals.hpp"
 #include "swapChain.hpp"
 #include "VkBLightProbes.hpp"
-#include "VkBRayPipeline.hpp"
+#include "VkBComputePipeline.hpp"
+#include "SSAOPass.hpp"
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
@@ -31,6 +32,7 @@ public:
   bool show = false;
   
   CascadeInfo* cascadeInfos[CASCADE_COUNT];
+  SSAOPushInfo* ssaoInfo;
   RayDebugPushConstant* rayDebugPushConstant;
   void init(VkBSwapChain* swapChain, VkRenderPass renderPass);
   void destroy();
