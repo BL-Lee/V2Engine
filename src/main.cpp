@@ -558,9 +558,19 @@ private:
     //RASTERIZATION -----------------------------------------------------------------
     if (USE_RASTER)
       {
+	VkCommandBuffer resetBuffer = vKBeginSingleTimeCommandBuffer();
+	vkCmdResetQueryPool(resetBuffer,
+			    debugConsole.queryPoolTimeStamps, 0,
+			    2);
+	vKEndSingleTimeCommandBuffer(resetBuffer);
 	    
 	deferredRenderer.begin(swapChain.extent);
-	    
+
+	vkCmdWriteTimestamp(deferredRenderer.drawCommandBuffer.commandBuffer,
+			    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			    debugConsole.queryPoolTimeStamps, 0);
+
+
 	deferredRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 1);
 	deferredRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
 
@@ -679,11 +689,16 @@ private:
 	debugConsole.draw(deferredRenderer.compositeCommandBuffer.commandBuffer);
 	std::vector<VkSemaphore> waitCompositeSemaphores;
 	//if (COMPUTE_RADIANCE_CASCADE)
-	  waitCompositeSemaphores = {probeInfoFinishedSemaphore};
+	waitCompositeSemaphores = {probeInfoFinishedSemaphore};
 	//	else
 	// waitCompositeSemaphores = {reflectionsFinishedSemaphore};
 	std::vector<VkSemaphore> signalCompositeSemaphores = {renderFinishedSemaphore};
+	vkCmdWriteTimestamp(deferredRenderer.compositeCommandBuffer.commandBuffer,
+			    VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			    debugConsole.queryPoolTimeStamps, 1);
+
 	deferredRenderer.submitComposite(waitCompositeSemaphores, signalCompositeSemaphores, inFlightFence);
+	debugConsole.gatherTimings();
       }
 
     

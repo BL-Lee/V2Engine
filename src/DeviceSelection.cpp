@@ -111,4 +111,8 @@ void VkBDeviceSelection::printPhysicalDeviceProperties(VkPhysicalDevicePropertie
   std::cout << "Max descriptorSet samplers: " <<
     props->limits.maxDescriptorSetSamplers << std::endl;
 
+
+  std::cout << "Supports timers? : " <<
+    (props->limits.timestampPeriod > 0 ? "True" : "False") << std::endl;
+
 }

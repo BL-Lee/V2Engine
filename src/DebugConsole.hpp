@@ -7,6 +7,9 @@
 #include "imgui.h"
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
+#include "implot.h"
+#include "implot_internal.h"
+#define GPU_TIMINGS_ALLOC_SIZE 100
 class DebugConsole
 {
 public:
@@ -34,7 +37,20 @@ public:
   CascadeInfo* cascadeInfos[CASCADE_COUNT];
   SSAOPushInfo* ssaoInfo;
   RayDebugPushConstant* rayDebugPushConstant;
+
+  uint32_t timingFrame;
+  double* totalGPUTime;
+  double* SSAOTime;
+  double* deferredTime;
+  double* compositeTime;
+  double* reflectTime;
+  double* xs;
+  std::vector<uint64_t> timeStamps;
+
+  VkQueryPool queryPoolTimeStamps;
+  
   void init(VkBSwapChain* swapChain, VkRenderPass renderPass);
   void destroy();
+  void gatherTimings();
   void draw(VkCommandBuffer drawCommandBuffer);
 };

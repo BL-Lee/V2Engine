@@ -30,6 +30,7 @@ include_directories(libraries/glfw-3.4/include)
 include_directories(libraries/tinyobjloader)
 include_directories(libraries/stb)
 include_directories(libraries/imgui)
+include_directories(libraries/implot)
 include_directories(libraries/imgui/backends)
 #other libs
 find_package(Vulkan REQUIRED)
@@ -46,9 +47,12 @@ file(GLOB IMGUI_SRC
 	libraries/imgui/backends/imgui_impl_glfw.cpp
 	libraries/imgui/backends/imgui_impl_vulkan.cpp
 )
+file(GLOB IMPLOT_SRC
+		libraries/implot/*.cpp
+)
 
 add_executable(V2Engine src/main.cpp ${LDFLAGS})
-target_sources(V2Engine PUBLIC ${SRC} ${IMGUI_SRC})
+target_sources(V2Engine PUBLIC ${SRC} ${IMGUI_SRC} ${IMPLOT_SRC})
 #add_executable(V2Engine src/main.cpp ${LDFLAGS})
 
 if (VULKAN_FOUND)

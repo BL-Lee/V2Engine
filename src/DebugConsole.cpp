@@ -1,7 +1,29 @@
 #include "DebugConsole.hpp"
-
+#include <stdexcept>
 void DebugConsole::init(VkBSwapChain* swapChain, VkRenderPass renderPass)
 {
+  totalGPUTime = (double*)calloc(sizeof(double), GPU_TIMINGS_ALLOC_SIZE);
+  SSAOTime = (double*)calloc(sizeof(double), GPU_TIMINGS_ALLOC_SIZE);
+  deferredTime = (double*)calloc(sizeof(double), GPU_TIMINGS_ALLOC_SIZE);
+  compositeTime = (double*)calloc(sizeof(double), GPU_TIMINGS_ALLOC_SIZE);
+  reflectTime = (double*)calloc(sizeof(double), GPU_TIMINGS_ALLOC_SIZE);
+  xs = (double*)calloc(sizeof(double), GPU_TIMINGS_ALLOC_SIZE);
+  timingFrame = 0;
+  timeStamps = std::vector<uint64_t>(2);
+
+  for (int i = 0; i < GPU_TIMINGS_ALLOC_SIZE; i++)
+    {
+      xs[i] = i;
+    }
+
+  VkQueryPoolCreateInfo queryPoolInfo{};
+  queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+  queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
+  queryPoolInfo.queryCount = 2;
+  if (vkCreateQueryPool(device, &queryPoolInfo, nullptr, &queryPoolTimeStamps) != VK_SUCCESS)
+    {
+      throw std::runtime_error("Failed to create timer query pool");
+    }
 
   
   // Create Descriptor Pool
@@ -25,6 +47,8 @@ void DebugConsole::init(VkBSwapChain* swapChain, VkRenderPass renderPass)
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
+  ImPlot::CreateContext();
+
   ImGuiIO& io = ImGui::GetIO(); (void)io;
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
   io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -51,18 +75,44 @@ void DebugConsole::init(VkBSwapChain* swapChain, VkRenderPass renderPass)
   init_info.Allocator = nullptr;
   init_info.CheckVkResultFn = nullptr;
   ImGui_ImplVulkan_Init(&init_info);
+
+  
     
 }
 void DebugConsole::destroy()
 {
 
+
+  free(totalGPUTime);
+  free(SSAOTime);
+  free(deferredTime);
+  free(compositeTime);
+  free(reflectTime);
+  free(xs);
+  vkDestroyQueryPool(device, queryPoolTimeStamps, nullptr);
   ImGui_ImplVulkan_Shutdown();
   ImGui_ImplGlfw_Shutdown();
+  ImPlot::DestroyContext();
   ImGui::DestroyContext();
   vkDestroyDescriptorPool(device, g_DescriptorPool, nullptr);
 }
 
+void DebugConsole::gatherTimings()
+{
+  vkGetQueryPoolResults(device,
+			queryPoolTimeStamps,
+			0,
+			2,
+			2 * sizeof(uint64_t),
+			timeStamps.data(),
+			sizeof(uint64_t),
+			VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
+
+
+  totalGPUTime[timingFrame] = (timeStamps[1] - timeStamps[0]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;;
+  timingFrame = (timingFrame + 1) % GPU_TIMINGS_ALLOC_SIZE;
+}
 void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
 {
   // Start the Dear ImGui frame
@@ -118,19 +168,22 @@ void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
       ImGui::Combo("MyCombo", &selectedItem, items, IM_ARRAYSIZE(items));
       rayDebugPushConstant->viewMode = (uint32_t)selectedItem;
   
-      ImGui::SliderFloat("RayTriangleLimit", &rayDebugPushConstant->triangleTestimit, 0.0, 300.0);
+      ImGui::SliderFloat("RayTriangleLimit", &rayDebugPushConstant->triangleTestLimit, 0.0, 300.0);
       ImGui::SliderFloat("RayBoxLimit", &rayDebugPushConstant->boxTestLimit, 0.0, 10.0);
     }
   if (ImGui::CollapsingHeader("GPU Profilings"))
     {
-
+      static ImPlotShadedFlags flags = 0;
+      if (ImPlot::BeginPlot("TimingsPlot")) {
+	ImPlot::PlotLine("Stock 1", xs, totalGPUTime, GPU_TIMINGS_ALLOC_SIZE);
+	ImPlot::EndPlot();
+      }
     }
   
   
   ImGui::End();
   
-
-  ImGui::ShowDemoWindow(); // Show demo window! :)
+  //ImGui::ShowDemoWindow(); // Show demo window! :)
  
 
   
