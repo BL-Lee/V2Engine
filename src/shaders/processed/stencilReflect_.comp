@@ -31,6 +31,17 @@ vec3 worldPosFromDepth(float depth, vec2 screenPos, mat4 invProjView)
   vec4 homoCoord = invProjView * clipPos;
   return homoCoord.xyz / homoCoord.w;
 }
+vec3 viewPosFromDepth(float depth, vec2 screenPos, mat4 invProj)
+{
+  vec4 clipPos;
+  clipPos.xy = screenPos * 2.0 - 1.0;
+  clipPos.z = depth;
+  clipPos.w = 1.0;
+
+  vec4 homoCoord = invProj * clipPos;
+  return homoCoord.xyz / homoCoord.w;
+}
+
 #define FLT_MAX 1000000.0
 layout(std140, set = 0, binding = 0) readonly buffer Vertices {
    Vertex vertices[];

@@ -1,12 +1,14 @@
 #include "VkBRayInputInfo.hpp"
 #include "VkBBuffer.hpp"
+#define TEMP_VERTEX_MAX 10000
 void VkBRayInputInfo::init()
 {
   //TODO: should know how to up this size dynamically, and everything else
-  vertexBuffer.create(sizeof(Vertex) * 5000, sizeof(uint32_t) * 5000);
+  
+  vertexBuffer.create(sizeof(Vertex) * TEMP_VERTEX_MAX, sizeof(uint32_t) * TEMP_VERTEX_MAX);
   assemblerPool.create(1, framesInFlight, 0, true);
-  assemblerPool.addStorageBuffer(0,(5000) * sizeof(Vertex));
-  assemblerPool.addStorageBuffer(1, (5000) * sizeof(uint32_t));
+  assemblerPool.addStorageBuffer(0,(TEMP_VERTEX_MAX) * sizeof(Vertex));
+  assemblerPool.addStorageBuffer(1, (TEMP_VERTEX_MAX) * sizeof(uint32_t));
   assemblerPool.addStorageBuffer(3, (8)*sizeof(BVHNode));
   assemblerPool.addStorageBuffer(4, (16)*sizeof(glm::mat4));
 

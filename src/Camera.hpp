@@ -6,6 +6,7 @@ public:
   //Keep these together
   glm::mat4 view;
   glm::mat4 projection;
+  glm::mat4 invProj;
   glm::mat4 invViewProj;
   float width, height, nearClip, farClip;
   
@@ -43,8 +44,9 @@ public:
 		       direction + position,
 		       glm::vec3(0.0f, 1.0f, 0.0f));
     invViewProj = glm::inverse(projection * view);
+    invProj = glm::inverse(projection);
     //Since theyre next to each other in the class, can memcpy from view    
-    memcpy(ubo.getBufferMemoryLocation(imageIndex,0), &view, sizeof(glm::mat4)*3 + sizeof(float)*4);
+    memcpy(ubo.getBufferMemoryLocation(imageIndex,0), &view, sizeof(glm::mat4)*4 + sizeof(float)*4);
   }
 
 };

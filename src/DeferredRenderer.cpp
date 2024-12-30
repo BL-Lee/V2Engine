@@ -29,12 +29,17 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   normalTexture.createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
 					 swapChain->extent.width, swapChain->extent.height,
 					 nullptr);
+  ssaoTexture.createTextureImage(VKB_TEXTURE_TYPE_R_HDR,
+				   swapChain->extent.width, swapChain->extent.height,
+				   nullptr);
+
   depthTexture.createTextureImage(VKB_TEXTURE_TYPE_DEPTH,
 					 swapChain->extent.width, swapChain->extent.height,
 					 nullptr);
   VkImageView attachments[] = { normalTexture.imageView,
 				albedoTexture.imageView,
-				depthTexture.imageView };
+				depthTexture.imageView
+  };
 
   VkFramebufferCreateInfo framebufferInfo{};
   framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -56,6 +61,8 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   compositeUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
   compositeUniformPool.addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
   compositeUniformPool.addImage(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+  compositeUniformPool.addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+  compositeUniformPool.addImage(6, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
 
   compositeUniformPool.createDescriptorSetLayout();
   
@@ -64,6 +71,9 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
 			 &depthTexture,
 			 &normalTexture,
 			 &albedoTexture,
+			 &ssaoTexture,
+			 &ssaoTexture,
+
   };
 
   compositeUniform.allocateDescriptorSets(&compositeUniformPool, texs, nullptr);
@@ -78,6 +88,7 @@ void DeferredRenderer::destroy()
   albedoTexture.destroy();
   normalTexture.destroy();
   depthTexture.destroy();
+  ssaoTexture.destroy();
   compositeUniformPool.destroy();
   compositeUniform.destroy();
 

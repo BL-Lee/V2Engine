@@ -14,7 +14,8 @@ vec3 worldPosFromDepth(float depth, vec2 screenPos, mat4 invProjView)
 layout(set = 0, binding = 0) uniform sampler2D normals;
 //layout(set = 0, binding = 1) uniform sampler2D albedos;
 layout(set = 0, binding = 2) uniform sampler2D depth;
-layout(set = 0, binding = 4, rgba32f) uniform restrict image2D albedos;
+//layout(set = 0, binding = 4, rgba32f) uniform restrict image2D albedos;
+layout(set = 0, binding = 6, r32f) uniform restrict image2D ssaoOut;
 
 layout(set = 1, binding = 1) uniform cameraUniform {
   mat4 view;
@@ -42,14 +43,14 @@ float linearizeDepth(float val)
   return linearized;// / (zFar - zNear); //0-1
 }
 
-#define KERNEL_RAD 4
+#define KERNEL_RAD 1
 //Alchemy ao, slightly based off of https://gist.github.com/gordonnl/0a604ae7c515978d2e6d
 //Should extend to multiple pass using de-interleaved depth buffer
 // see https://github.com/Outrider0x400/Unity-AlchemyAmbientObscurance
 void main() {
 
   ivec2 texel = ivec2(gl_GlobalInvocationID.xy);
-  vec2 uv = vec2(gl_GlobalInvocationID.xy) / imageSize(albedos);
+  vec2 uv = vec2(gl_GlobalInvocationID.xy) / imageSize(ssaoOut);
   
   float thisDepth = texelFetch(depth, texel, 0).r;
   vec3 thisPos = worldPosFromDepth(thisDepth, uv, _MainCamera.invViewProj);
@@ -69,7 +70,7 @@ void main() {
 	{
 	  float skip = 1.0;
 	  if (i == 0 && j == 0) continue;;
-	  vec2 offset = vec2(i,j) / imageSize(albedos);
+	  vec2 offset = vec2(i,j) / textureSize(depth,0);
 	  float d = texelFetch(depth, texel + ivec2(i,j), 0).r;
 
 	  vec3 pos = worldPosFromDepth(d, uv + offset, _MainCamera.invViewProj);
@@ -87,13 +88,13 @@ void main() {
 
 
   //avgDot = min(avgDot, 1.0);
-  vec4 currentAlbedo = imageLoad(albedos, texel);
+  //  vec4 currentAlbedo = imageLoad(albedos, texel);
 
-  currentAlbedo *= avgDot;
-  currentAlbedo.a = 1.0;
+  //currentAlbedo *= avgDot;
+  //currentAlbedo.a = 1.0;
 
   vec4 test = vec4(p, 0,o, 1.0);
 
-  imageStore(albedos, texel, currentAlbedo);
+  imageStore(ssaoOut, texel, vec4(avgDot));
     
 }

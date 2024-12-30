@@ -85,18 +85,18 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
       channels = 4;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;
-    /*
-  case VKB_TEXTURE_TYPE_RG_HDR:
+
+  case VKB_TEXTURE_TYPE_R_HDR:
     {
-      format = VK_FORMAT_R32G32_SFLOAT;
+      format = VK_FORMAT_R32_SFLOAT;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-      usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-      imageSize = width * height * depth * 2 * sizeof(float);
-      channels = 2;
+      usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+      imageSize = width * height * depth * sizeof(float);
+      channels = 1;
       aspectFlags = VK_IMAGE_ASPECT_COLOR_BIT;
     }break;
-    */
+
     
   case VKB_TEXTURE_TYPE_STORAGE_RGBA:
     {
@@ -220,10 +220,10 @@ void VkBTexture::initSampler() {
   
   VkSamplerCreateInfo samplerInfo{};
   samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-  samplerInfo.magFilter = VK_FILTER_LINEAR;
-  samplerInfo.minFilter = VK_FILTER_LINEAR;
-  //samplerInfo.magFilter = VK_FILTER_NEAREST;
-  //samplerInfo.minFilter = VK_FILTER_NEAREST;
+  //samplerInfo.magFilter = VK_FILTER_LINEAR;
+  //samplerInfo.minFilter = VK_FILTER_LINEAR;
+  samplerInfo.magFilter = VK_FILTER_NEAREST;
+  samplerInfo.minFilter = VK_FILTER_NEAREST;
 
   samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
   samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;

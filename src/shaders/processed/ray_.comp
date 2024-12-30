@@ -3,6 +3,7 @@
 layout(set=1, binding = 1) uniform cameraUniform {
   mat4 view;
   mat4 proj;
+    mat4 invProj;	
   mat4 invViewProj;
   float width;
   float height;

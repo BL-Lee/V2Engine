@@ -23,3 +23,5 @@ extern VkCommandPool transientCommandPool; //For short lived command buffers
 extern VkCommandPool computeCommandPool; 
 extern Input inputInfo;
 extern uint32_t framesInFlight;
+extern uint32_t windowWidth;
+extern uint32_t windowHeight;

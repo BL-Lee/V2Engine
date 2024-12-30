@@ -60,5 +60,5 @@ https://vulkan-tutorial.com/en/Vertex_buffers/Index_buffer
 	    );
   void fill(const LineVertex* vertices, uint32_t vertexCount, uint32_t*);
   void fill(const Vertex* vertices, uint32_t vertexCount, uint32_t*);
-
+  void reallocBuffers(bool doVertices, bool doIndices);
 };

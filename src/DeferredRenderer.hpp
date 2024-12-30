@@ -26,7 +26,7 @@ public:
   VkBUniformPool compositeUniformPool;
   VkBUniformBuffer compositeUniform;
 
-  //VkBTexture* deferredTextures;
+  VkBTexture ssaoTexture;
   VkBTexture albedoTexture;
   VkBTexture normalTexture;
   VkBTexture depthTexture;

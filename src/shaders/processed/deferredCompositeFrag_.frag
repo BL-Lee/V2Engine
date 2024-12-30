@@ -11,11 +11,22 @@ vec3 worldPosFromDepth(float depth, vec2 screenPos, mat4 invProjView)
   vec4 homoCoord = invProjView * clipPos;
   return homoCoord.xyz / homoCoord.w;
 }
+vec3 viewPosFromDepth(float depth, vec2 screenPos, mat4 invProj)
+{
+  vec4 clipPos;
+  clipPos.xy = screenPos * 2.0 - 1.0;
+  clipPos.z = depth;
+  clipPos.w = 1.0;
+
+  vec4 homoCoord = invProj * clipPos;
+  return homoCoord.xyz / homoCoord.w;
+}
+
 layout(set = 0, binding = 0) uniform sampler2D normals;
 layout(set = 0, binding = 1) uniform sampler2D albedos;
 layout(set = 0, binding = 2) uniform sampler2D depth;
 //layout(set = 0, binding = 3) uniform sampler2D depth;
-
+layout(set = 0, binding = 5) uniform sampler2D ssao;
 layout(set = 1, binding = 2) uniform sampler2D probeSamplers[4];
 
 layout(location = 0) in vec2 fragTexCoord;
@@ -40,6 +51,7 @@ layout( push_constant ) uniform cascadeConstant {
 layout(set = 2, binding = 1) uniform cameraUniform {
   mat4 view;
   mat4 proj;
+  mat4 invProj;	
   mat4 invViewProj;
   float width;
   float height;
@@ -47,14 +59,15 @@ layout(set = 2, binding = 1) uniform cameraUniform {
   float farClip;
 } _MainCamera;
 
-
-
 vec4 toSRGB(vec4 i)
 {
   return pow(i, vec4(2.2,2.2,2.2,1.0));
 }
 
 void main() {
+
+
+  
   vec3 col = texture(albedos, fragTexCoord).rgb;
   vec3 normal = texture(normals, fragTexCoord).xyz;
   float depth = texture(depth, fragTexCoord).r;
@@ -80,8 +93,13 @@ void main() {
     cross(normal, tangentDirection);
   float dotLN = dot(lightDirection, normal); 
   // compute this dot product only once
-  vec3 matDiffuseColor = col;            
-  vec3 ambientLighting = vec3(0.3,0.3,0.3) * col; 
+  vec3 matDiffuseColor = col;
+
+  float ssaoVal = texture(ssao, fragTexCoord).r;
+  vec3 ambientLighting = vec3(0.3,0.3,0.3) * col;
+  //outColour = vec4(ssaoVal);
+  //return;
+  
   vec3 lightColor0 = vec3(1.0,0.9,0.4);
 
   vec3 diffuseReflection = attenuation * lightColor0 
@@ -115,8 +133,8 @@ void main() {
 	* exp(-2.0 * (dotHTAlphaX * dotHTAlphaX 
 		      + dotHBAlphaY * dotHBAlphaY) / (1.0 + dotHN));
     }
-  outColour = vec4(ambientLighting 
-		      + diffuseReflection + specularReflection, 1.0);
+  outColour = vec4(ssaoVal * (ambientLighting 
+		   + diffuseReflection) + specularReflection , 1.0);
   return;
 
   /*

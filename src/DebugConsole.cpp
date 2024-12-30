@@ -9,7 +9,7 @@ void DebugConsole::init(VkBSwapChain* swapChain, VkRenderPass renderPass)
   reflectTime = (double*)calloc(sizeof(double), GPU_TIMINGS_ALLOC_SIZE);
   xs = (double*)calloc(sizeof(double), GPU_TIMINGS_ALLOC_SIZE);
   timingFrame = 0;
-  timeStamps = std::vector<uint64_t>(2);
+  timeStamps.resize(5);
 
   for (int i = 0; i < GPU_TIMINGS_ALLOC_SIZE; i++)
     {
@@ -19,7 +19,7 @@ void DebugConsole::init(VkBSwapChain* swapChain, VkRenderPass renderPass)
   VkQueryPoolCreateInfo queryPoolInfo{};
   queryPoolInfo.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
   queryPoolInfo.queryType = VK_QUERY_TYPE_TIMESTAMP;
-  queryPoolInfo.queryCount = 2;
+  queryPoolInfo.queryCount = (uint32_t)timeStamps.size();
   if (vkCreateQueryPool(device, &queryPoolInfo, nullptr, &queryPoolTimeStamps) != VK_SUCCESS)
     {
       throw std::runtime_error("Failed to create timer query pool");
@@ -102,15 +102,20 @@ void DebugConsole::gatherTimings()
   vkGetQueryPoolResults(device,
 			queryPoolTimeStamps,
 			0,
-			2,
-			2 * sizeof(uint64_t),
+			timeStamps.size(),
+			timeStamps.size() * sizeof(uint64_t),
 			timeStamps.data(),
 			sizeof(uint64_t),
 			VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
 
 
 
-  totalGPUTime[timingFrame] = (timeStamps[1] - timeStamps[0]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;;
+  totalGPUTime[timingFrame] = (timeStamps[4] - timeStamps[0]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
+  deferredTime[timingFrame] = (timeStamps[1] - timeStamps[0]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
+  reflectTime[timingFrame] = (timeStamps[2] - timeStamps[1]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
+  compositeTime[timingFrame] = (timeStamps[4] - timeStamps[3]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
+
+  SSAOTime[timingFrame] = (timeStamps[3] - timeStamps[2]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
   timingFrame = (timingFrame + 1) % GPU_TIMINGS_ALLOC_SIZE;
 }
 void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
@@ -160,6 +165,7 @@ void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
       ImGui::SliderFloat("SSAO sigma", &ssaoInfo->sigma, 0.0, 2.0);
       ImGui::SliderFloat("SSAO beta", &ssaoInfo->beta, 0.0, 2.0);
       ImGui::SliderFloat("SSAO alpha", &ssaoInfo->alpha, 0.0, 20.0);
+      ImGui::SliderFloat("SSAO theta", &ssaoInfo->theta, 0.0, 1.0);
     }
   if (ImGui::CollapsingHeader("Ray Info"))
     {
@@ -175,7 +181,11 @@ void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
     {
       static ImPlotShadedFlags flags = 0;
       if (ImPlot::BeginPlot("TimingsPlot")) {
-	ImPlot::PlotLine("Stock 1", xs, totalGPUTime, GPU_TIMINGS_ALLOC_SIZE);
+	ImPlot::PlotLine("Total", xs, totalGPUTime, GPU_TIMINGS_ALLOC_SIZE);
+	ImPlot::PlotLine("Deferred", xs, deferredTime, GPU_TIMINGS_ALLOC_SIZE);
+	ImPlot::PlotLine("Reflect", xs, reflectTime, GPU_TIMINGS_ALLOC_SIZE);
+	ImPlot::PlotLine("SSAO", xs, SSAOTime, GPU_TIMINGS_ALLOC_SIZE);
+	ImPlot::PlotLine("composite", xs, compositeTime, GPU_TIMINGS_ALLOC_SIZE);
 	ImPlot::EndPlot();
       }
     }
