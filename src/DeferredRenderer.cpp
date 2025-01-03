@@ -15,12 +15,15 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   vertices[3].texCoord = {1.0,1.0};
   vertices[4].texCoord = {1.0,0.0};
   vertices[5].texCoord = {0.0,0.0};
-  uint32_t s;
+  
+  uint32_t s; //throwaway, dont need the offset
   fullscreenQuad.fill(vertices, 6, &s);
+  
   mode = 0;
   deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT,  false, 0); //normal
-  deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT,  false, 1); //normal
-  deferredRenderPass.addDepthAttachment(2);
+  deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT,  false, 1); //albedo
+  deferredRenderPass.addColourAttachment(VK_FORMAT_R32G32B32A32_SFLOAT,  false, 2); //uv
+  deferredRenderPass.addDepthAttachment(3);
   deferredRenderPass.createRenderPass(true);
 
   albedoTexture.createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
@@ -29,6 +32,10 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   normalTexture.createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
 					 swapChain->extent.width, swapChain->extent.height,
 					 nullptr);
+  uvTexture.createTextureImage(VKB_TEXTURE_TYPE_RGBA_HDR,
+				   swapChain->extent.width, swapChain->extent.height,
+				   nullptr);
+
   ssaoTexture.createTextureImage(VKB_TEXTURE_TYPE_R_HDR,
 				   swapChain->extent.width, swapChain->extent.height,
 				   nullptr);
@@ -38,13 +45,14 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
 					 nullptr);
   VkImageView attachments[] = { normalTexture.imageView,
 				albedoTexture.imageView,
+				uvTexture.imageView,
 				depthTexture.imageView
   };
 
   VkFramebufferCreateInfo framebufferInfo{};
   framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
   framebufferInfo.renderPass = deferredRenderPass.renderPass;
-  framebufferInfo.attachmentCount = 3;
+  framebufferInfo.attachmentCount = 4;
   framebufferInfo.pAttachments = attachments;
   framebufferInfo.width = swapChain->extent.width;
   framebufferInfo.height = swapChain->extent.height;
@@ -54,26 +62,32 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
     throw std::runtime_error("failed to create framebuffer!");
   }
 
+
+  diffuseAtlas.init(1024,1024, VKB_TEXTURE_TYPE_SAMPLED_RGBA, 128);
   
   compositeUniformPool.create(1, framesInFlight, 0, true);
-  compositeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-  compositeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-  compositeUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-  compositeUniformPool.addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-  compositeUniformPool.addImage(4, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-  compositeUniformPool.addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
-  compositeUniformPool.addImage(6, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+  compositeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //normal
+  compositeUniformPool.addImage(1, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE); //normal
+  compositeUniformPool.addImage(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //albedo
+  compositeUniformPool.addImage(3, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE); //albedo
+  compositeUniformPool.addImage(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //depth
+  compositeUniformPool.addImage(5, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //uv
+  compositeUniformPool.addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //ssao
+  compositeUniformPool.addImage(7, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE); //ssao
+  compositeUniformPool.addImage(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //diffuse atlas
+
 
   compositeUniformPool.createDescriptorSetLayout();
   
   VkBTexture* texs[] = { &normalTexture,
-			 &albedoTexture,
-			 &depthTexture,
 			 &normalTexture,
 			 &albedoTexture,
+			 &albedoTexture,
+			 &depthTexture,
+			 &uvTexture,
 			 &ssaoTexture,
 			 &ssaoTexture,
-
+			 &diffuseAtlas.atlas
   };
 
   compositeUniform.allocateDescriptorSets(&compositeUniformPool, texs, nullptr);
@@ -89,9 +103,10 @@ void DeferredRenderer::destroy()
   normalTexture.destroy();
   depthTexture.destroy();
   ssaoTexture.destroy();
+  uvTexture.destroy();
   compositeUniformPool.destroy();
   compositeUniform.destroy();
-
+  diffuseAtlas.destroy();
   vkDestroyFramebuffer(device, deferredFramebuffer, nullptr);
   deferredPipeline.destroy();
 }

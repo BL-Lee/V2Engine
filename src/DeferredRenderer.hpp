@@ -7,6 +7,7 @@
 #include "VkBTexture.hpp"
 #include "VkBUniformPool.hpp"
 #include "VkBUniformBuffer.hpp"
+#include "TextureAtlas.hpp"
 #include "OBJLoader.hpp"
 #include <vector>
 class DeferredRenderer
@@ -26,14 +27,25 @@ public:
   VkBUniformPool compositeUniformPool;
   VkBUniformBuffer compositeUniform;
 
+  //G-Buffer
   VkBTexture ssaoTexture;
   VkBTexture albedoTexture;
+  VkBTexture uvTexture;
   VkBTexture normalTexture;
   VkBTexture depthTexture;
   
   uint32_t mode = 0; //0: deferred, 1: composite
   VkBVertexBuffer fullscreenQuad;
 
+  
+  TextureAtlas diffuseAtlas;
+  /*
+
+    todo: atlas's?
+
+   */
+
+  
   void init(VkBSwapChain* swapChain);
   void destroy();
 

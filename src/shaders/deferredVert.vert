@@ -33,7 +33,6 @@ layout(location = 1) out vec3 outWorldPos;
 layout(location = 2) out vec3 outNormal;
 layout(location = 3) out uint outMatIndex;
 
-
 void main() {
   mat4 modelMat = modelMatrices[info.matIndex];
   gl_Position = _MainCamera.proj * _MainCamera.view * modelMat * vec4(position, 1.0);
@@ -41,5 +40,4 @@ void main() {
   outTexCoord = texCoord;
   outNormal = normal;//(modelMat * vec4(normal, 0.0)).xyz;
   outMatIndex = materialIndex;
-
 }

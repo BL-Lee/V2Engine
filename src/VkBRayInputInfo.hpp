@@ -17,6 +17,7 @@ public:
   BVH bvh;
 
   int matrixCount;
+  int maxMatrixCount;
   VkDeviceMemory stagingMatrixBufferMemory;
   glm::mat4* stagingMatrixData;
   VkBuffer stagingMatrixBuffer;

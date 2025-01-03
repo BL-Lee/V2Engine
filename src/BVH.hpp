@@ -30,7 +30,7 @@ public:
   VkBuffer deviceBuffer;
   VkDeviceMemory deviceBufferMemory;
 
-  void init();
+  void init(int maxNodeCount);
   void addModel(Model* model);
   void transferBVHData();
   void destroy();

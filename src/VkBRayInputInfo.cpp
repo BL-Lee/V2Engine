@@ -1,6 +1,7 @@
 #include "VkBRayInputInfo.hpp"
 #include "VkBBuffer.hpp"
-#define TEMP_VERTEX_MAX 10000
+#include <stdexcept>
+#define TEMP_VERTEX_MAX 1000000
 void VkBRayInputInfo::init()
 {
   //TODO: should know how to up this size dynamically, and everything else
@@ -9,20 +10,21 @@ void VkBRayInputInfo::init()
   assemblerPool.create(1, framesInFlight, 0, true);
   assemblerPool.addStorageBuffer(0,(TEMP_VERTEX_MAX) * sizeof(Vertex));
   assemblerPool.addStorageBuffer(1, (TEMP_VERTEX_MAX) * sizeof(uint32_t));
-  assemblerPool.addStorageBuffer(3, (8)*sizeof(BVHNode));
-  assemblerPool.addStorageBuffer(4, (16)*sizeof(glm::mat4));
+  maxMatrixCount = 800;
+  assemblerPool.addStorageBuffer(3, (maxMatrixCount)*sizeof(BVHNode));
+  assemblerPool.addStorageBuffer(4, (maxMatrixCount)*sizeof(glm::mat4));
 
   assemblerPool.addImage(2, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
   assemblerPool.createDescriptorSetLayout();
 
-  bvh.init();
+  bvh.init(maxMatrixCount);
 
 
   matrixCount = 0;
   VkMemoryPropertyFlags stagingMemFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
   VkBufferUsageFlags stagingUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-  stagingMatrixBufferSize = sizeof(glm::mat4) * 16;
+  stagingMatrixBufferSize = sizeof(glm::mat4) * maxMatrixCount;
   createBuffer(stagingMatrixBufferSize, stagingUsageFlags, stagingMemFlags, stagingMatrixBuffer, stagingMatrixBufferMemory);
   vkMapMemory(device, stagingMatrixBufferMemory,
 	      0,
@@ -44,6 +46,10 @@ void VkBRayInputInfo::init()
 //TODO: model matrices, 
 void VkBRayInputInfo::addModel(Model* model)
 {
+  if (matrixCount + 2 >= maxMatrixCount)
+    {
+      throw std::runtime_error("Matrix buffer overfull. (VkBRayInputInfo)");
+    }
   model->indexIntoModelMatrixBuffer = matrixCount;
   bvh.addModel(model);
   updateModelMatrix(model);

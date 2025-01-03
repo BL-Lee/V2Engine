@@ -2,11 +2,25 @@
 
 #include "DeferredHelpers.comp"
 layout(set = 0, binding = 0) uniform sampler2D normals;
-layout(set = 0, binding = 1) uniform sampler2D albedos;
-layout(set = 0, binding = 2) uniform sampler2D depth;
-//layout(set = 0, binding = 3) uniform sampler2D depth;
-layout(set = 0, binding = 5) uniform sampler2D ssao;
+layout(set = 0, binding = 2) uniform sampler2D albedos;
+layout(set = 0, binding = 4) uniform sampler2D depth;
+layout(set = 0, binding = 5) uniform sampler2D uvs;
+layout(set = 0, binding = 6) uniform sampler2D ssao;
+layout(set = 0, binding = 8) uniform sampler2D diffuseAtlas;
+
 layout(set = 1, binding = 2) uniform sampler2D probeSamplers[4];
+
+
+struct Material {
+  vec4 colour;
+  vec2 atlasMin;
+  vec2 atlasMax;
+};
+
+layout(std140, set = 3, binding = 0) readonly buffer Materials {
+   Material materials[];
+};
+
 
 layout(location = 0) in vec2 fragTexCoord;
 layout(location = 0) out vec4 outColour;
@@ -43,14 +57,32 @@ vec4 toSRGB(vec4 i)
   return pow(i, vec4(2.2,2.2,2.2,1.0));
 }
 
+vec2 repeatUV(vec2 uv, vec2 width)
+{
+  return fract(uv) * width;
+}
+
 void main() {
-
-
   
-  vec3 col = texture(albedos, fragTexCoord).rgb;
+  vec4 albedo = texture(albedos, fragTexCoord);
+  
+  uint matIndex = uint(albedo.a);
+  Material m = materials[matIndex];
+  
+  /*  vec2 uv = (texture(uvs, fragTexCoord).rg)
+   * (m.atlasMax - m.atlasMin) + m.atlasMin, ;*/
+  vec2 tileWidth = m.atlasMax - m.atlasMin;
+  vec2 uv = repeatUV((texture(uvs, fragTexCoord).rg), tileWidth) + m.atlasMin;
+  
+  
+  vec3 col = texture(diffuseAtlas, uv).rgb;
+
+  outColour = vec4(col,1.0);
+  return;
+  
   vec3 normal = texture(normals, fragTexCoord).xyz;
   float depth = texture(depth, fragTexCoord).r;
-  
+
   vec3 worldPos = worldPosFromDepth(depth, fragTexCoord, _MainCamera.invViewProj);
   
   //vec3 normalDirection = normalize(varyingNormalDirection);

@@ -3,6 +3,7 @@
 #include "VkBBuffer.hpp"
 #include <limits>
 #include <iostream>
+#include <stdexcept>
 void BVHNode::init()
 {
   modelMatrixIndex = -1;
@@ -16,13 +17,14 @@ void BVHNode::grow(glm::vec3 pos)
   max = glm::max(pos, max);
 }
 
-void BVH::init()
+void BVH::init(int maxNodeCount)
 {
   nodeCount = 0;
+  nodeCapacity = maxNodeCount;
   VkMemoryPropertyFlags stagingMemFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
     VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
   VkBufferUsageFlags stagingUsageFlags = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-  size_t stagingBufferSize = sizeof(BVHNode) * 10;
+  stagingBufferSize = sizeof(BVHNode) * maxNodeCount;
   createBuffer(stagingBufferSize, stagingUsageFlags, stagingMemFlags, stagingBuffer, stagingBufferMemory);
   vkMapMemory(device, stagingBufferMemory,
 	      0,
@@ -52,8 +54,14 @@ void BVH::destroy()
   
 }
 
+//void BVH::reorderVertices(Vertex* vertices, 
+
 void BVH::addModel(Model* model)
 {
+  if (nodeCount >= nodeCapacity - 1)
+    {
+      throw std::runtime_error("BVH full");
+    }
   BVHNode* node = &stagingNodeData[nodeCount++];
   node->init();
   for (int i = 0; i < model->vertexCount; i++) //assume unindexed for now
@@ -63,6 +71,7 @@ void BVH::addModel(Model* model)
   node->triangleCount = model->vertexCount;
   node->triangleOrChildIndex = model->vertexOffset;
   node->modelMatrixIndex = model->indexIntoModelMatrixBuffer;
+  model->rootBVHNode = node;
 }
 
 void BVH::transferBVHData()

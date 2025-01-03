@@ -81,7 +81,7 @@ const bool enableVulkanValidationLayers = true;
 #include "DebugConsole.hpp"
 #include "VkBRayInputInfo.hpp"
 #include "BVH.hpp"
-
+#include "Material.hpp"
 #include "RadianceCascade3D.hpp"
 #include "RadianceCascadeSS.hpp"
 #include "ForwardRenderer.hpp"
@@ -89,6 +89,10 @@ const bool enableVulkanValidationLayers = true;
 #include "SSAOPass.hpp"
 Input inputInfo = {};
 DebugConsole debugConsole;
+uint32_t TEMP_MODEL_BUFFER_SIZE = 400;
+uint32_t modelsLoaded = 0;
+Model** tempModelBuffer;
+
 RayDebugPushConstant rayDebugPushConstant;
 
 class V2Engine {
@@ -134,6 +138,8 @@ public:
   Model* cornellLight;
   Model* cornellCeilLight;
   Model* mirrorModel;
+
+  MaterialHandler materialHandler;
   Material emissive;
   Material diffuseGreen;
   Material diffuseRed;
@@ -260,6 +266,7 @@ private:
     cameraUniformPool.addBuffer(1, sizeof(glm::mat4)*4 + sizeof(float)*4);
     cameraUniformPool.createDescriptorSetLayout();
 
+    
     mainCamera.init();
     mainCamera.createPerspective((float)swapChain.extent.width, (float)swapChain.extent.height);
     mainCamera.ubo.allocateDescriptorSets(&cameraUniformPool, nullptr, nullptr);
@@ -301,8 +308,11 @@ private:
 
     ssaoPass.init(deferredRenderer.compositeUniformPool.descriptorSetLayout,
 		  cameraUniformPool.descriptorSetLayout);
-
-    std::vector<VkDescriptorSetLayout> compositeLayouts = {deferredRenderer.compositeUniformPool.descriptorSetLayout, radianceCascadeSS.lightProbeInfo.drawUniformPool.descriptorSetLayout, cameraUniformPool.descriptorSetLayout};
+    materialHandler.init(TEMP_MODEL_BUFFER_SIZE);
+    std::vector<VkDescriptorSetLayout> compositeLayouts = {deferredRenderer.compositeUniformPool.descriptorSetLayout,
+							   radianceCascadeSS.lightProbeInfo.drawUniformPool.descriptorSetLayout,
+							   cameraUniformPool.descriptorSetLayout,
+							   materialHandler.uniformPool.descriptorSetLayout};
     compositePipeline.createGraphicsPipeline(swapChain, deferredRenderer.compositeRenderPass,
 					    "../src/shaders/deferredCompositeVert.spv",
 					    "../src/shaders/deferredCompositeFrag.spv",
@@ -318,34 +328,98 @@ private:
     //swapChain.createFramebuffers(forwardRenderer.renderPass, depthTexture.imageView);
     swapChain.createFramebuffers(deferredRenderer.compositeRenderPass, depthTexture.imageView);
     std::cout << "Swap Chain image count: " << swapChain.imageViews.size() << std::endl;
+
+
+    emissive.atlasMin = glm::vec2(0.0,0.0);
+    emissive.atlasMax = glm::vec2(0.5,0.5);
+    uint32_t emissiveMatIndex = materialHandler.fill(&emissive);
+    
+    diffuseGrey = emissive;
+    diffuseGreen = emissive;
+    diffuseRed = emissive;
     
 
-    emissive.index = 0;
-    diffuseGrey.index = 1;
-    diffuseGreen.index = 2;
-    diffuseRed.index = 3;
-    reflective.index = 4;
-    sponzaModel = ModelImporter::loadOBJ("../models/sponza.obj", "../models/rat.png", &rayInputInfo.vertexBuffer, &diffuseGreen);
-    cornellScene = ModelImporter::loadOBJ("../models/cornell_nowalls.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseGrey);
-    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseGreen);
-    cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &diffuseRed);
-    cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
-    //cornellLight = ModelImporter::loadOBJ("../models/sphere.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
-    cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &emissive);
+    
+    tempModelBuffer = (Model**)calloc(sizeof(Model*), TEMP_MODEL_BUFFER_SIZE);
+    /*
+    sponzaModel = ModelImporter::loadOBJ("../models/sponza.obj",
+					 &rayInputInfo.vertexBuffer, &diffuseGreen);
+    cornellScene = ModelImporter::loadOBJ("../models/cornell_nowalls.obj",
+					  &rayInputInfo.vertexBuffer, &diffuseGrey);
+    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj",
+					      &rayInputInfo.vertexBuffer, &diffuseGreen);
+    cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj",
+					     &rayInputInfo.vertexBuffer, &diffuseRed);
+    cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj",
+					  &rayInputInfo.vertexBuffer, &emissive);
+    cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj",
+					      &rayInputInfo.vertexBuffer, &emissive);
+    mirrorModel = ModelImporter::loadOBJ("../models/cornellMirror.obj",
+					 &rayInputInfo.vertexBuffer, &reflective);	  
+    */
+    Model** sponzaModels = ModelImporter::loadOBJ("../models/sponza.obj",
+						  &diffuseGreen, &modelsLoaded);
+    if (modelsLoaded >= TEMP_MODEL_BUFFER_SIZE)
+      {
+	throw std::runtime_error("Model buffer too small for loaded models");
+      }
+    for (int i = 0; i < modelsLoaded; i++)
+      {
+	Model* model = sponzaModels[i];
+	std::cout << "Diffuse: " << model->diffuseTexturePath << std::endl;
+	std::cout << "Ambient: " << model->ambientTexturePath << std::endl;
+	//model->normalizeUVs();
+	
+	if (model->diffuseTexturePath.length())
+	  {
+	    glm::ivec2 posOffset = deferredRenderer.diffuseAtlas.checkIfTextureExists(model->diffuseTexturePath);
+	    if (posOffset == glm::ivec2(-1,-1))
+	      {
+		posOffset = deferredRenderer.diffuseAtlas.requestAtlasPage();
 
-    mirrorModel = ModelImporter::loadOBJ("../models/cornellMirror.obj", "../models/cornell.png", &rayInputInfo.vertexBuffer, &reflective);	  
+	      }
+	    int w, h, c;
+	    std::string path = "../models/" + model->diffuseTexturePath;
+	    stbi_uc* pixels = stbi_load(path.c_str(), &w, &h, &c, STBI_rgb_alpha);
+      
+	    if (!pixels) {
+	      throw std::runtime_error(std::string("failed to load texture image: ") + path);
+	    }
 
+	    deferredRenderer.diffuseAtlas.addToAtlas(pixels, posOffset, model->diffuseTexturePath);
+
+	    glm::vec2 atlasDims = glm::vec2(deferredRenderer.diffuseAtlas.atlas.width,
+					    deferredRenderer.diffuseAtlas.atlas.height);					
+	    model->material.atlasMin = glm::vec2(posOffset) / atlasDims;
+	    model->material.atlasMax = glm::vec2((posOffset + glm::ivec2(128,128))) / atlasDims;
+
+	    model->indexIntoMaterialBuffer = materialHandler.fill(&model->material);
+	    stbi_image_free(pixels);
+	    model->setVerticesMatIndex();
+	  }
+	
+	model->addToVBO(&rayInputInfo.vertexBuffer);
+
+	rayInputInfo.addModel(model);
+	tempModelBuffer[i] = model;
+
+      }
+    /*
     rayInputInfo.addModel(cornellScene);
     rayInputInfo.addModel(cornellLight);
     rayInputInfo.addModel(cornellCeilLight);
     rayInputInfo.addModel(cornellLeftWall);
     rayInputInfo.addModel(cornellRightWall);
     rayInputInfo.addModel(mirrorModel);
-    //rayInputInfo.addModel(ratModel);
+    */
+    //    rayInputInfo.addModel(sponzaModel);
+
     rayInputInfo.bvh.transferBVHData();
 
+
+
     
-    
+    deferredRenderer.diffuseAtlas.transitionAtlasToSample();
     std::vector<VkDescriptorSetLayout> computeUniformLayouts = {rayInputInfo.assemblerPool.descriptorSetLayout,
 								cameraUniformPool.descriptorSetLayout};
     VkPushConstantRange rayPushConstant = {
@@ -378,6 +452,15 @@ private:
     rayDebugPushConstant.triangleTestLimit = 140;
     rayDebugPushConstant.boxTestLimit = 3;
 
+    glm::mat4 sponzaShrinkMat = glm::scale(glm::vec3(0.01f, 0.01f, 0.01f));
+    for (int i = 0; i < modelsLoaded; i++)
+      {
+	tempModelBuffer[i]->modelMatrix = sponzaShrinkMat;
+	rayInputInfo.updateModelMatrix(tempModelBuffer[i]);
+      }
+    rayInputInfo.transferMatrixData();
+
+    
   }
 
   void createSyncObjects() {
@@ -529,13 +612,13 @@ private:
 				    glm::vec3(1.5f, 1.5f, 1.5f));
     glm::mat4 sponzaShrinkMat = glm::scale(glm::vec3(0.01f, 0.01f, 0.01f));
     
-    //ratModel->modelMatrix = modelMat;
-    cornellLight->modelMatrix = modelMat;
-    sponzaModel->modelMatrix = sponzaShrinkMat;
+    
+    for (int i = 0; i < modelsLoaded; i++)
+      {
+	tempModelBuffer[i]->modelMatrix = sponzaShrinkMat;
+	rayInputInfo.updateModelMatrix(tempModelBuffer[i]);
+	}
     mainCamera.updateMatrices(currentImage);
-    //rayInputInfo.updateModelMatrix(ratModel);
-    rayInputInfo.updateModelMatrix(cornellLight);
-    rayInputInfo.updateModelMatrix(sponzaModel);
     rayInputInfo.transferMatrixData();
   }
   
@@ -548,6 +631,16 @@ private:
     //Get image index we'll draw to, indicating the semaphore for the presentation engine to signal when its done using it. After that we can write to it
     uint32_t imageIndex;
     vkAcquireNextImageKHR(device, swapChain.swapChain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+    VkCommandBuffer resetBuffer = vKBeginSingleTimeCommandBuffer();
+    vkCmdResetQueryPool(resetBuffer,
+			debugConsole.queryPoolTimeStamps, 0,
+			debugConsole.timeStamps.size());
+    //That means that the timer value will not be written until all previously submitted commands reached the specified stage
+    vkCmdWriteTimestamp(resetBuffer,
+			VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+			debugConsole.queryPoolTimeStamps, 0);
+
+    vKEndSingleTimeCommandBuffer(resetBuffer);
     
     updateProjectionMatrices(imageIndex);
     //Radiance Cascades ------------------------------------------------------------
@@ -564,24 +657,17 @@ private:
     //RASTERIZATION -----------------------------------------------------------------
     if (USE_RASTER)
       {
-	VkCommandBuffer resetBuffer = vKBeginSingleTimeCommandBuffer();
-	vkCmdResetQueryPool(resetBuffer,
-			    debugConsole.queryPoolTimeStamps, 0,
-			    debugConsole.timeStamps.size());
-	vKEndSingleTimeCommandBuffer(resetBuffer);
 	    
 	deferredRenderer.begin(swapChain.extent);
-
 	vkCmdWriteTimestamp(deferredRenderer.drawCommandBuffer.commandBuffer,
 			    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-			    debugConsole.queryPoolTimeStamps, 0);
-
+			    debugConsole.queryPoolTimeStamps, 1);
 
 	deferredRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 1);
 	deferredRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
 
 
-
+	/*
 	deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellScene);
 	deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellRightWall);
 	deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellLeftWall);
@@ -589,14 +675,41 @@ private:
 	deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellCeilLight);
 	deferredRenderer.record(&rayInputInfo.vertexBuffer, mirrorModel);
 	deferredRenderer.record(&rayInputInfo.vertexBuffer, sponzaModel);
-	    
+	*/
+	for (int i = 0; i < modelsLoaded; i++)
+	  {
+	    //TODO check if bounding box in camera frustum
+	    bool doNaiveCull = false;
+	    if (doNaiveCull)
+	      {
+		BVHNode* node = (BVHNode*)tempModelBuffer[i]->rootBVHNode;
+		glm::vec3 aabbCenter = (node->min + node->max) / 2.0f;
+		bool cameraInsideAABB = mainCamera.position.x > node->min.x &&
+		  mainCamera.position.x < node->max.x &&
+					  mainCamera.position.y > node->min.y &&
+		  mainCamera.position.y < node->max.y &&
+					  mainCamera.position.z > node->min.z &&
+		  mainCamera.position.z < node->max.z;
+
+		bool cameraPointedTowardsAABB = glm::dot(mainCamera.direction,
+							 glm::normalize(aabbCenter - mainCamera.position)) > 0.0;
+		if (cameraPointedTowardsAABB || cameraInsideAABB)
+		  {
+		    deferredRenderer.record(&rayInputInfo.vertexBuffer, tempModelBuffer[i]);
+		  }
+	      }
+	    else
+	      {
+		deferredRenderer.record(&rayInputInfo.vertexBuffer, tempModelBuffer[i]);
+	      }
+	  }
 	VkSubmitInfo submitInfo{};
 	std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
 	std::vector<VkSemaphore> signalSemaphores = {deferredPassFinishedSemaphore};
-
 	vkCmdWriteTimestamp(deferredRenderer.drawCommandBuffer.commandBuffer,
-			    VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-			    debugConsole.queryPoolTimeStamps, 1);
+			    VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+			    debugConsole.queryPoolTimeStamps, 2);
+
 
 	deferredRenderer.submitDeferred(waitSemaphores, signalSemaphores, VK_NULL_HANDLE);
 
@@ -635,10 +748,10 @@ private:
 
 	
 	    vkCmdDispatch(reflectPipeline.commandBuffer, swapChain.extent.width / 8, swapChain.extent.height / 8,  1); //switch to swapchain width and height
-	    
+	    /*
 	    vkCmdWriteTimestamp(reflectPipeline.commandBuffer,
 				VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-				debugConsole.queryPoolTimeStamps, 2);
+				debugConsole.queryPoolTimeStamps, 2);*/
 
 	
 	    if (vkEndCommandBuffer(reflectPipeline.commandBuffer) != VK_SUCCESS) {
@@ -681,7 +794,7 @@ private:
 						       imageIndex);
 
 	  }
-	if (true)
+	if (false)
 	{
 	  //std::vector<VkSemaphore> RCWaitSemaphores = {reflectionsFinishedSemaphore};
 	  std::vector<VkSemaphore> RCWaitSemaphores = {deferredPassFinishedSemaphore};
@@ -702,11 +815,11 @@ private:
 
 	//bind descriptor sets (probes and stuff)
 	deferredRenderer.beginComposite(swapChain.extent, swapChain.framebuffers[imageIndex], compositePipeline);
-
+	/*
 	vkCmdWriteTimestamp(deferredRenderer.compositeCommandBuffer.commandBuffer,
 			    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			    debugConsole.queryPoolTimeStamps, 2);
-	
+	*/
 	vkCmdWriteTimestamp(deferredRenderer.compositeCommandBuffer.commandBuffer,
 			    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			    debugConsole.queryPoolTimeStamps, 3);
@@ -715,7 +828,7 @@ private:
 	deferredRenderer.bindDescriptorSetComposite(&deferredRenderer.compositeUniformPool.descriptorSets[imageIndex][deferredRenderer.compositeUniform.indexIntoPool], 0);
 	deferredRenderer.bindDescriptorSetComposite(&radianceCascadeSS.lightProbeInfo.drawUniformPool.descriptorSets[imageIndex][radianceCascadeSS.lightProbeInfo.drawUniform.indexIntoPool], 1);
 	deferredRenderer.bindDescriptorSetComposite(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 2);
-
+	deferredRenderer.bindDescriptorSetComposite(&materialHandler.uniformPool.descriptorSets[imageIndex][materialHandler.uniform.indexIntoPool], 3);
 	//Cascade info cascade 0
 	vkCmdPushConstants(deferredRenderer.compositeCommandBuffer.commandBuffer,
 			   deferredRenderer.compositePipeline.layout,
@@ -728,7 +841,7 @@ private:
 	debugConsole.draw(deferredRenderer.compositeCommandBuffer.commandBuffer);
 	std::vector<VkSemaphore> waitCompositeSemaphores;
 	//if (COMPUTE_RADIANCE_CASCADE)
-	waitCompositeSemaphores = {probeInfoFinishedSemaphore};
+	waitCompositeSemaphores = {deferredPassFinishedSemaphore};
 	//	else
 	// waitCompositeSemaphores = {reflectionsFinishedSemaphore};
 	std::vector<VkSemaphore> signalCompositeSemaphores = {renderFinishedSemaphore};
@@ -905,7 +1018,9 @@ private:
       vkDestroyImageView(device, imageView, nullptr);
     }
     graphicsPipeline.destroy();
-
+    
+    free(tempModelBuffer);
+    materialHandler.destroy();
     vkDestroyPipeline(device, linePipeline.pipeline, nullptr);	
     vkDestroyPipelineLayout(device, linePipeline.layout, nullptr);
     deferredRenderer.destroy();

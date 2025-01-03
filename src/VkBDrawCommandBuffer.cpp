@@ -119,8 +119,8 @@ VkBDrawCommandBuffer::record(VkPipeline pipeline,
 		     pipelineLayout,
 		     VK_SHADER_STAGE_VERTEX_BIT,
 		     24, sizeof(uint32_t),
-		     &model->indexIntoModelMatrixBuffer);	
-
+		     &model->indexIntoModelMatrixBuffer);
+  
   if (vertexBuffer->indexed)
     vkCmdDrawIndexed(commandBuffer, model->indexCount, 1, model->startIndex, model->vertexOffset, 0);
   else

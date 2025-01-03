@@ -112,8 +112,8 @@ void DebugConsole::gatherTimings()
 
   totalGPUTime[timingFrame] = (timeStamps[4] - timeStamps[0]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
   deferredTime[timingFrame] = (timeStamps[1] - timeStamps[0]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
-  reflectTime[timingFrame] = (timeStamps[2] - timeStamps[1]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
-  compositeTime[timingFrame] = (timeStamps[4] - timeStamps[3]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
+  reflectTime[timingFrame] = (timeStamps[2] - timeStamps[0]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
+  compositeTime[timingFrame] = (timeStamps[3] - timeStamps[0]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
 
   SSAOTime[timingFrame] = (timeStamps[3] - timeStamps[2]) * physicalDeviceProperties.limits.timestampPeriod / 1000000.0f;
   timingFrame = (timingFrame + 1) % GPU_TIMINGS_ALLOC_SIZE;
@@ -182,9 +182,9 @@ void DebugConsole::draw(VkCommandBuffer drawCommandBuffer)
       static ImPlotShadedFlags flags = 0;
       if (ImPlot::BeginPlot("TimingsPlot")) {
 	ImPlot::PlotLine("Total", xs, totalGPUTime, GPU_TIMINGS_ALLOC_SIZE);
-	ImPlot::PlotLine("Deferred", xs, deferredTime, GPU_TIMINGS_ALLOC_SIZE);
-	ImPlot::PlotLine("Reflect", xs, reflectTime, GPU_TIMINGS_ALLOC_SIZE);
-	ImPlot::PlotLine("SSAO", xs, SSAOTime, GPU_TIMINGS_ALLOC_SIZE);
+	ImPlot::PlotLine("Matrix Update", xs, deferredTime, GPU_TIMINGS_ALLOC_SIZE);
+	ImPlot::PlotLine("Deferred Draws", xs, reflectTime, GPU_TIMINGS_ALLOC_SIZE);
+	ImPlot::PlotLine("Should Be Near 0", xs, SSAOTime, GPU_TIMINGS_ALLOC_SIZE);
 	ImPlot::PlotLine("composite", xs, compositeTime, GPU_TIMINGS_ALLOC_SIZE);
 	ImPlot::EndPlot();
       }

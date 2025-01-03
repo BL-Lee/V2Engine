@@ -77,11 +77,9 @@ glm::vec4* rotMats = (glm::vec4*)depthSliceUniform.getBufferMemoryLocation(0, 0)
 
 void SSAOPass::deinterleaveDepth(std::vector<VkSemaphore> waitSemaphores,
 				 std::vector<VkSemaphore> signalSemaphores,
-				 VkBTexture* ssaoTex,
 			         VkDescriptorSet* deferredUniform)
 {
   vkResetCommandBuffer(depthDeinterleavePipeline.commandBuffer, 0);
-  //depthDeinterleavePipeline.transitionSampledImageForComputeWrite(ssaoTex->image);
 
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -124,7 +122,7 @@ void SSAOPass::deinterleaveDepth(std::vector<VkSemaphore> waitSemaphores,
   if (vkQueueSubmit(computeQueue, 1, &submitInfo, nullptr) != VK_SUCCESS) {
     throw std::runtime_error("failed to submit compute command buffer!");
   };
-  //depthDeinterleavePipeline.transitionImageForComputeSample(ssaoTex->image);  
+
 }
 void SSAOPass::interleave(std::vector<VkSemaphore> waitSemaphores,
 				 std::vector<VkSemaphore> signalSemaphores,
@@ -184,13 +182,9 @@ void SSAOPass::compute(std::vector<VkSemaphore> waitSemaphores,
 		       VkDescriptorSet* cameraUniform
 		       )
 {
-
-  std::vector<VkSemaphore> signalDeinterleaveDone = {doneDeinterleaving};
-  deinterleaveDepth(waitSemaphores, signalDeinterleaveDone, ssaoTex, deferredUniform);
-
   pipeline.transitionSampledImageForComputeWrite(ssaoTex->image);
-  pipeline.transitionSampledImageForComputeWrite(albedoTexture->image);
-
+  std::vector<VkSemaphore> signalDeinterleaveDone = {doneDeinterleaving};
+  deinterleaveDepth(waitSemaphores, signalDeinterleaveDone,  deferredUniform);
   vkResetCommandBuffer(pipeline.commandBuffer, 0);
 
   VkCommandBufferBeginInfo beginInfo{};
@@ -250,7 +244,7 @@ void SSAOPass::compute(std::vector<VkSemaphore> waitSemaphores,
 
   interleave(signalInterleave, signalSemaphores, ssaoTex, deferredUniform);
   pipeline.transitionImageForComputeSample(ssaoTex->image);
-  pipeline.transitionImageForComputeSample(albedoTexture->image);
+  //pipeline.transitionImageForComputeSample(albedoTexture->image);
 }
 
 

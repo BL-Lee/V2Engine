@@ -42,7 +42,6 @@ public:
 		       );
   void deinterleaveDepth(std::vector<VkSemaphore> waitSemaphores,
 			 std::vector<VkSemaphore> signalSemaphores,
-			 VkBTexture* ssaoTex,
 			 VkDescriptorSet* deferredUniform);
   void interleave(std::vector<VkSemaphore> waitSemaphores,
 				 std::vector<VkSemaphore> signalSemaphores,

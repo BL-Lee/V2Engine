@@ -79,7 +79,7 @@ void VkBTexture::setPropertiesFromType(VkBTextureType type) {
       //format = VK_FORMAT_R8G8B8A8_UNORM;
       tiling = VK_IMAGE_TILING_OPTIMAL;
       properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-      usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+      usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
       imageSize = width * height * depth * 4 * sizeof(float);
       //imageSize = width * height * depth * 4;
       channels = 4;
@@ -225,12 +225,12 @@ void VkBTexture::initSampler() {
   samplerInfo.magFilter = VK_FILTER_NEAREST;
   samplerInfo.minFilter = VK_FILTER_NEAREST;
 
-  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-  //  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  //  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-  //  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  //samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+  //samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+  //samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+  samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+  samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 
   //samplerInfo.anisotropyEnable = VK_FALSE;
   samplerInfo.anisotropyEnable = VK_TRUE;

@@ -44,11 +44,9 @@ layout(set = 1, binding = 0, rgba8) uniform restrict image2D probeInfo;
 layout(set = 1, binding = 2) uniform sampler2D probeSampler;
 
 
+
 layout(set = 2, binding = 0) uniform sampler2D normals;
-layout(set = 2, binding = 1) uniform sampler2D worldPos;
-layout(set = 2, binding = 2) uniform sampler2D depth;
-
-
+layout(set = 2, binding = 4) uniform sampler2D depth;
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
@@ -351,7 +349,8 @@ void main() {
       //Where are we inside this quadrant
       //0-quadrantSize in pixels
   
-      vec4 rayOriginV = texelFetch(worldPos, ivec2(localInvocation * textureSize(worldPos,0)),0);
+      //vec4 rayOriginV = texelFetch(worldPos, ivec2(localInvocation * textureSize(worldPos,0)),0);
+      vec4 rayOriginV = vec4(0.0,0.0,2.0,1.0);
       //vec4 rayOriginV = texture(worldPos, localInvocation);
       if (rayOriginV == vec4(0.0,0.0,0.0,1.0))
 	{
