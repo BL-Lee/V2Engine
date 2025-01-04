@@ -36,9 +36,10 @@ public:
   
   uint32_t mode = 0; //0: deferred, 1: composite
   VkBVertexBuffer fullscreenQuad;
-
+  VkBVertexBuffer* boundVBO;
   
   TextureAtlas diffuseAtlas;
+  TextureAtlas bumpAtlas;
   /*
 
     todo: atlas's?

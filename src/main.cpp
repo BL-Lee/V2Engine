@@ -18,7 +18,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/rotate_vector.hpp>
 #include <chrono>
-
+#include "mikktspace.h"
 uint32_t windowWidth = 1080;
 uint32_t windowHeight = 1080;
 
@@ -29,6 +29,8 @@ std::vector<const char*> deviceExtensions = {
   VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 VkInstance instance = VK_NULL_HANDLE;  
+SMikkTSpaceInterface mikkTSpaceInterface{};
+SMikkTSpaceContext mikkTSpaceContext{};
 
 VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
 VkPhysicalDeviceProperties physicalDeviceProperties;
@@ -130,15 +132,6 @@ public:
   VkSemaphore deferredPassFinishedSemaphore;
   VkFence inFlightFence;
 
-  Model* ratModel;
-  Model* sponzaModel;
-  Model* cornellScene;
-  Model* cornellLeftWall;
-  Model* cornellRightWall;
-  Model* cornellLight;
-  Model* cornellCeilLight;
-  Model* mirrorModel;
-
   MaterialHandler materialHandler;
   Material emissive;
   Material diffuseGreen;
@@ -233,6 +226,8 @@ private:
     vkGetPhysicalDeviceProperties(physicalDevice, &physicalDeviceProperties);
     VkBDeviceSelection::printPhysicalDeviceProperties(&physicalDeviceProperties);
 
+
+    MikkTSpaceTranslator::init();
     
     createLogicalDevice();
 
@@ -317,11 +312,14 @@ private:
 					    "../src/shaders/deferredCompositeVert.spv",
 					    "../src/shaders/deferredCompositeFrag.spv",
 					     &compositeLayouts, &cascadePushConstantRange);
-
+    std::vector<VkDescriptorSetLayout> deferredLayouts = {rayInputInfo.assemblerPool.descriptorSetLayout,
+							  cameraUniformPool.descriptorSetLayout,
+							  materialHandler.uniformPool.descriptorSetLayout,
+							  deferredRenderer.compositeUniformPool.descriptorSetLayout};  
     deferredRenderer.deferredPipeline.createGraphicsPipeline(swapChain, deferredRenderer.deferredRenderPass,
 							     "../src/shaders/deferredVert.spv",
 							     "../src/shaders/deferredFrag.spv",
-							     &uniformLayouts, &cascadePushConstantRange);
+							     &deferredLayouts, &cascadePushConstantRange);
 
 
     depthTexture.createTextureImage(VKB_TEXTURE_TYPE_DEPTH, swapChain.extent.width, swapChain.extent.height, nullptr);
@@ -338,25 +336,7 @@ private:
     diffuseGreen = emissive;
     diffuseRed = emissive;
     
-
-    
     tempModelBuffer = (Model**)calloc(sizeof(Model*), TEMP_MODEL_BUFFER_SIZE);
-    /*
-    sponzaModel = ModelImporter::loadOBJ("../models/sponza.obj",
-					 &rayInputInfo.vertexBuffer, &diffuseGreen);
-    cornellScene = ModelImporter::loadOBJ("../models/cornell_nowalls.obj",
-					  &rayInputInfo.vertexBuffer, &diffuseGrey);
-    cornellRightWall = ModelImporter::loadOBJ("../models/cornell_right_wall.obj",
-					      &rayInputInfo.vertexBuffer, &diffuseGreen);
-    cornellLeftWall = ModelImporter::loadOBJ("../models/cornell_left_wall.obj",
-					     &rayInputInfo.vertexBuffer, &diffuseRed);
-    cornellLight = ModelImporter::loadOBJ("../models/cornell_light.obj",
-					  &rayInputInfo.vertexBuffer, &emissive);
-    cornellCeilLight = ModelImporter::loadOBJ("../models/cornell_light_ceil.obj",
-					      &rayInputInfo.vertexBuffer, &emissive);
-    mirrorModel = ModelImporter::loadOBJ("../models/cornellMirror.obj",
-					 &rayInputInfo.vertexBuffer, &reflective);	  
-    */
     Model** sponzaModels = ModelImporter::loadOBJ("../models/sponza.obj",
 						  &diffuseGreen, &modelsLoaded);
     if (modelsLoaded >= TEMP_MODEL_BUFFER_SIZE)
@@ -368,8 +348,9 @@ private:
 	Model* model = sponzaModels[i];
 	std::cout << "Diffuse: " << model->diffuseTexturePath << std::endl;
 	std::cout << "Ambient: " << model->ambientTexturePath << std::endl;
+	std::cout << "Bump: " << model->bumpTexturePath << std::endl;
 	//model->normalizeUVs();
-	
+	model->calculateTangents();
 	if (model->diffuseTexturePath.length())
 	  {
 	    glm::ivec2 posOffset = deferredRenderer.diffuseAtlas.checkIfTextureExists(model->diffuseTexturePath);
@@ -378,23 +359,35 @@ private:
 		posOffset = deferredRenderer.diffuseAtlas.requestAtlasPage();
 
 	      }
+
+	    //Diffuse
 	    int w, h, c;
 	    std::string path = "../models/" + model->diffuseTexturePath;
 	    stbi_uc* pixels = stbi_load(path.c_str(), &w, &h, &c, STBI_rgb_alpha);
-      
 	    if (!pixels) {
 	      throw std::runtime_error(std::string("failed to load texture image: ") + path);
 	    }
-
 	    deferredRenderer.diffuseAtlas.addToAtlas(pixels, posOffset, model->diffuseTexturePath);
-
+	    stbi_image_free(pixels);
+	    if (model->bumpTexturePath.length())
+	      {
+		//Bump
+		path = "../models/" + model->bumpTexturePath;
+		pixels = stbi_load(path.c_str(), &w, &h, &c, STBI_rgb_alpha);
+		if (!pixels) {
+		  throw std::runtime_error(std::string("failed to load texture image: ") + path);
+		}
+		deferredRenderer.bumpAtlas.addToAtlas(pixels, posOffset, model->bumpTexturePath);
+		stbi_image_free(pixels);
+	      }
+	    
 	    glm::vec2 atlasDims = glm::vec2(deferredRenderer.diffuseAtlas.atlas.width,
 					    deferredRenderer.diffuseAtlas.atlas.height);					
 	    model->material.atlasMin = glm::vec2(posOffset) / atlasDims;
 	    model->material.atlasMax = glm::vec2((posOffset + glm::ivec2(128,128))) / atlasDims;
 
 	    model->indexIntoMaterialBuffer = materialHandler.fill(&model->material);
-	    stbi_image_free(pixels);
+
 	    model->setVerticesMatIndex();
 	  }
 	
@@ -404,22 +397,9 @@ private:
 	tempModelBuffer[i] = model;
 
       }
-    /*
-    rayInputInfo.addModel(cornellScene);
-    rayInputInfo.addModel(cornellLight);
-    rayInputInfo.addModel(cornellCeilLight);
-    rayInputInfo.addModel(cornellLeftWall);
-    rayInputInfo.addModel(cornellRightWall);
-    rayInputInfo.addModel(mirrorModel);
-    */
-    //    rayInputInfo.addModel(sponzaModel);
-
     rayInputInfo.bvh.transferBVHData();
-
-
-
-    
     deferredRenderer.diffuseAtlas.transitionAtlasToSample();
+    deferredRenderer.bumpAtlas.transitionAtlasToSample();
     std::vector<VkDescriptorSetLayout> computeUniformLayouts = {rayInputInfo.assemblerPool.descriptorSetLayout,
 								cameraUniformPool.descriptorSetLayout};
     VkPushConstantRange rayPushConstant = {
@@ -665,17 +645,8 @@ private:
 
 	deferredRenderer.bindDescriptorSet(&cameraUniformPool.descriptorSets[imageIndex][mainCamera.ubo.indexIntoPool], 1);
 	deferredRenderer.bindDescriptorSet(&rayInputInfo.assemblerPool.descriptorSets[imageIndex][rayInputInfo.assemblerBuffer.indexIntoPool], 0);
-
-
-	/*
-	deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellScene);
-	deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellRightWall);
-	deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellLeftWall);
-	deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellLight);
-	deferredRenderer.record(&rayInputInfo.vertexBuffer, cornellCeilLight);
-	deferredRenderer.record(&rayInputInfo.vertexBuffer, mirrorModel);
-	deferredRenderer.record(&rayInputInfo.vertexBuffer, sponzaModel);
-	*/
+	deferredRenderer.bindDescriptorSet(&materialHandler.uniformPool.descriptorSets[imageIndex][materialHandler.uniform.indexIntoPool], 2);
+	deferredRenderer.bindDescriptorSet(&deferredRenderer.compositeUniformPool.descriptorSets[imageIndex][deferredRenderer.compositeUniform.indexIntoPool],3); //G buffer (diffuse atlas)
 	for (int i = 0; i < modelsLoaded; i++)
 	  {
 	    //TODO check if bounding box in camera frustum
@@ -983,19 +954,15 @@ private:
 
     while (!glfwWindowShouldClose(window)) {
       glfwPollEvents();
-
-      
       processInputs();
       drawFrame();
       //               glfwSetWindowShouldClose(window, GL_TRUE);
-
     }
 
     if (vkDeviceWaitIdle(device) != VK_SUCCESS)
       {
 	  throw std::runtime_error("failed to wait idle!!");	
       }
-
   }
 
 
@@ -1006,11 +973,11 @@ private:
     vkDestroySemaphore(device, reflectionsFinishedSemaphore, nullptr);
     vkDestroySemaphore(device, deferredPassFinishedSemaphore, nullptr);
     vkDestroyFence(device, inFlightFence, nullptr);
-	
+
     vkDestroyCommandPool(device, drawCommandPool, nullptr);
     vkDestroyCommandPool(device, transientCommandPool, nullptr);
     vkDestroyCommandPool(device, computeCommandPool, nullptr);
-    
+
     for (auto framebuffer : swapChain.framebuffers) {
       vkDestroyFramebuffer(device, framebuffer, nullptr);
     }
@@ -1018,11 +985,15 @@ private:
       vkDestroyImageView(device, imageView, nullptr);
     }
     graphicsPipeline.destroy();
+    vkDestroyPipeline(device, linePipeline.pipeline, nullptr);	
+    vkDestroyPipelineLayout(device, linePipeline.layout, nullptr);
+    rayPipeline.destroy();
+    reflectPipeline.destroy();
+    radianceCascade3D.lightProbePipeline.destroy();
+    radianceCascadeSS.lightProbePipeline.destroy();
     
     free(tempModelBuffer);
     materialHandler.destroy();
-    vkDestroyPipeline(device, linePipeline.pipeline, nullptr);	
-    vkDestroyPipelineLayout(device, linePipeline.layout, nullptr);
     deferredRenderer.destroy();
     debugConsole.destroy();
     rayInputInfo.destroy();
@@ -1030,18 +1001,6 @@ private:
     ssaoPass.destroy();
     vkDestroySwapchainKHR(device, swapChain.swapChain, nullptr);
 
-    rayPipeline.destroy();
-    reflectPipeline.destroy();
-    radianceCascade3D.lightProbePipeline.destroy();
-    radianceCascadeSS.lightProbePipeline.destroy();
-    //    delete ratModel;
-    delete mirrorModel;
-    delete cornellScene;
-    delete cornellLight;
-    delete cornellRightWall;
-    delete cornellLeftWall;
-    delete cornellCeilLight;
-    delete sponzaModel;
     radianceCascade3D.lightProbeInfo.destroy();
     radianceCascadeSS.lightProbeInfo.destroy();
     mainCamera.ubo.destroy();

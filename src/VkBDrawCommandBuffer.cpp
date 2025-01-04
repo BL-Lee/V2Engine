@@ -84,15 +84,6 @@ VkBDrawCommandBuffer::record(
 			     int count
 			     )
 {
- 
-
-
-  VkBuffer vertexBuffers[] = {vertexBuffer->vertexBuffer};
-  VkDeviceSize offsets[] = {0};
-  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-  if (vertexBuffer->indexed)
-    vkCmdBindIndexBuffer(commandBuffer, vertexBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
-  
   if (vertexBuffer->indexed)
     vkCmdDrawIndexed(commandBuffer, count, 1, offset, 0, 0);
   else
@@ -108,12 +99,6 @@ VkBDrawCommandBuffer::record(VkPipeline pipeline,
 			     )
 {
  
-
-  VkBuffer vertexBuffers[] = {vertexBuffer->vertexBuffer};
-  VkDeviceSize offsets[] = {0};
-  vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
-  if (vertexBuffer->indexed)
-    vkCmdBindIndexBuffer(commandBuffer, vertexBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
   vkCmdPushConstants(commandBuffer,
 		     pipelineLayout,

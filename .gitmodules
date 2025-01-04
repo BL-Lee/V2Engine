@@ -4,3 +4,6 @@
 [submodule "libraries/implot"]
 	path = libraries/implot
 	url = https://github.com/epezent/implot
+[submodule "libraries/MikkTSpace"]
+	path = libraries/MikkTSpace
+	url = https://github.com/mmikk/MikkTSpace

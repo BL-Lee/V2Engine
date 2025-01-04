@@ -67,7 +67,7 @@ float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-#define NUM_SAMPLES 3
+#define NUM_SAMPLES 8
 #define KERNEL_RAD 4
 //Alchemy ao, slightly based off of https://gist.github.com/gordonnl/0a604ae7c515978d2e6d
 //Should extend to multiple pass using de-interleaved depth buffer
@@ -269,7 +269,7 @@ void main() {
       float skip = dot(diff, diff) > aoInfo.beta ? 0.0 : 1.0;
       occlusion += smoothstep(0.0,1.0, dot(normalize(diff), normal)) * skip;
     }
-  occlusion = 1.0 - (occlusion  / NUM_SAMPLES);
+  occlusion = 1.0 - (occlusion * aoInfo.alpha  / NUM_SAMPLES);
 
   imageStore(ssaoSlices[slice], texel, vec4(occlusion));
     

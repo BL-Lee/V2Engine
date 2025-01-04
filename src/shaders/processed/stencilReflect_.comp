@@ -3,6 +3,7 @@
 struct Vertex {
   vec3 position;
   vec3 normal;
+  vec4 tangent;	
   vec2 texCoord;
   uint materialIndex;
 };
@@ -167,7 +168,7 @@ TraceResult trace(vec3 rayOrigin, vec3 rayDir, float maxDist)
 {
   TraceResult result = {-1, min(100000.0, maxDist), vec3(0.0,0.0,0.0),vec3(0.0,1.0,0.0), 0,0};
   
-  for (int box = 0; box < 6; box++)
+  for (int box = 0; box < 3; box++)
     {
       BVHNode node = nodes[box];
       vec3 rayO = ( modelMatrices[node.modelMatrixIndex + 1] * vec4(rayOrigin,1.0)).xyz;

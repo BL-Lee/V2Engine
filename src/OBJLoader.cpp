@@ -39,22 +39,23 @@ Model** ModelImporter::loadOBJ(const char* modelPath,
 	for (const auto& index : shapes[i].mesh.indices) {
 	  Vertex vertex{};
 
-	  vertex.pos = {
-	    attrib.vertices[3 * index.vertex_index + 0],
-	    attrib.vertices[3 * index.vertex_index + 1],
-	    attrib.vertices[3 * index.vertex_index + 2]
-	  };
+	  vertex.pos = glm::vec3(
+				 attrib.vertices[3 * index.vertex_index + 0],
+				 attrib.vertices[3 * index.vertex_index + 1],
+				 attrib.vertices[3 * index.vertex_index + 2]
+				 );
 
-	  vertex.normal = {
-	    attrib.normals[3 * index.normal_index + 0],
-	    attrib.normals[3 * index.normal_index + 1],
-	    attrib.normals[3 * index.normal_index + 2]
-	  };
+	  vertex.normal = glm::vec3(
+				    attrib.normals[3 * index.normal_index + 0],
+				    attrib.normals[3 * index.normal_index + 1],
+				    attrib.normals[3 * index.normal_index + 2]
+				    );
 
-	  vertex.texCoord = {
-	    attrib.texcoords[2 * index.texcoord_index + 0],
-	    1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-	  };
+	  vertex.texCoord = glm::vec2(
+				      attrib.texcoords[2 * index.texcoord_index + 0],
+				      1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+				      );
+
 
 	  vertex.materialIndex = 0;
 	  /*
@@ -80,6 +81,8 @@ Model** ModelImporter::loadOBJ(const char* modelPath,
 	//std::cout << materials[shapes[i].mesh.material_ids[0]].diffuse_texname << std::endl;
 	model->diffuseTexturePath = materials[shapes[i].mesh.material_ids[0]].diffuse_texname;
 	model->ambientTexturePath = materials[shapes[i].mesh.material_ids[0]].ambient_texname;
+
+	model->bumpTexturePath = materials[shapes[i].mesh.material_ids[0]].displacement_texname;
       }
 
     *modelCount = shapeCount;
@@ -94,20 +97,9 @@ void Model::addToVBO(VkBVertexBuffer* vbo)
 	    &vertexOffset);
 }
 
-void Model::normalizeUVs()
+void Model::calculateTangents()
 {
-  glm::vec2 minUV = {FLT_MAX, FLT_MAX};
-  glm::vec2 maxUV = {-FLT_MAX, -FLT_MAX};
-
-  for (int i = 0; i < vertices.size(); i++)
-    {
-      minUV = glm::min(minUV, vertices[i].texCoord);
-      maxUV = glm::max(maxUV, vertices[i].texCoord);
-    }
-  for (int i = 0; i < vertices.size(); i++)
-    {
-      vertices[i].texCoord = (vertices[i].texCoord / (maxUV - minUV));// + minUV;
-    }
+  MikkTSpaceTranslator::calculateTangents(this);
 }
 
 void Model::setVerticesMatIndex()

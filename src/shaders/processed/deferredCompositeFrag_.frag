@@ -85,22 +85,19 @@ vec2 repeatUV(vec2 uv, vec2 width)
 
 void main() {
   
-  vec4 albedo = texture(albedos, fragTexCoord);
+  //vec4 albedo = texture(albedos, fragTexCoord);
   
-  uint matIndex = uint(albedo.a);
-  Material m = materials[matIndex];
+  //uint matIndex = uint(albedo.a);
+  //Material m = materials[matIndex];
   
-  /*  vec2 uv = (texture(uvs, fragTexCoord).rg)
-   * (m.atlasMax - m.atlasMin) + m.atlasMin, ;*/
-  vec2 tileWidth = m.atlasMax - m.atlasMin;
-  vec2 uv = repeatUV((texture(uvs, fragTexCoord).rg), tileWidth) + m.atlasMin;
+  //vec2 tileWidth = m.atlasMax - m.atlasMin;
+  //vec2 uv = repeatUV((texture(uvs, fragTexCoord).rg), tileWidth) + m.atlasMin;
+  //vec4 albedo = texture(albedos, fragTexCoord);
   
-  
-  vec3 col = texture(diffuseAtlas, uv).rgb;
-
-  outColour = vec4(col,1.0);
-  return;
-  
+  //vec3 col = texture(diffuseAtlas, uv).rgb;
+  //outColour = vec4(col, 1.0);
+  //return;
+  vec3 col = texture(albedos, fragTexCoord).rgb;
   vec3 normal = texture(normals, fragTexCoord).xyz;
   float depth = texture(depth, fragTexCoord).r;
 
@@ -127,13 +124,16 @@ void main() {
   // compute this dot product only once
   vec3 matDiffuseColor = col;
 
-  float ssaoVal = texture(ssao, fragTexCoord).r;
-  vec3 ambientLighting = vec3(0.3,0.3,0.3) * col;
-  //outColour = vec4(ssaoVal);
-  //return;
-  
-  vec3 lightColor0 = vec3(1.0,0.9,0.4);
+  float ssaoVal = 1.0;//texture(ssao, fragTexCoord).r;
+  vec3 ambientLighting = vec3(0.2);
+  vec3 lightColor0 = vec3(1.0,1.0,1.0);
 
+  /*
+
+    WARD ANISO
+    
+   */
+    
   vec3 diffuseReflection = attenuation * lightColor0 
     * vec3(matDiffuseColor) * max(0.0, dotLN);
             
@@ -151,7 +151,7 @@ void main() {
       //float _AlphaX = cascadeInfo.bilateralBlend;
       //float _AlphaY = cascadeInfo.end;
       float _AlphaX = 0.1;
-      float _AlphaY = 0.9;
+      float _AlphaY = 0.1;
       
       float dotHTAlphaX = 
 	dot(halfwayVector, tangentDirection) / _AlphaX;
@@ -165,11 +165,11 @@ void main() {
 	* exp(-2.0 * (dotHTAlphaX * dotHTAlphaX 
 		      + dotHBAlphaY * dotHBAlphaY) / (1.0 + dotHN));
     }
-  outColour = vec4(ssaoVal * (ambientLighting 
+  outColour = vec4( ssaoVal * (ambientLighting 
 		   + diffuseReflection) + specularReflection , 1.0);
   return;
 
-  /*
+    /*
   vec4 radiance = vec4(0.0);
   
   int cascade = cascadeInfo.cascade;

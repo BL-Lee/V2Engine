@@ -30,6 +30,7 @@ include_directories(libraries/glfw-3.4/include)
 include_directories(libraries/tinyobjloader)
 include_directories(libraries/stb)
 include_directories(libraries/imgui)
+include_directories(libraries/MikkTSpace)
 include_directories(libraries/implot)
 include_directories(libraries/imgui/backends)
 #other libs
@@ -50,9 +51,12 @@ file(GLOB IMGUI_SRC
 file(GLOB IMPLOT_SRC
 		libraries/implot/*.cpp
 )
+file(GLOB MIKKTSPACE_SRC
+		libraries/MikkTSpace/mikktspace.c
+)
 
 add_executable(V2Engine src/main.cpp ${LDFLAGS})
-target_sources(V2Engine PUBLIC ${SRC} ${IMGUI_SRC} ${IMPLOT_SRC})
+target_sources(V2Engine PUBLIC ${SRC} ${IMGUI_SRC} ${IMPLOT_SRC} ${MIKKTSPACE_SRC})
 #add_executable(V2Engine src/main.cpp ${LDFLAGS})
 
 if (VULKAN_FOUND)

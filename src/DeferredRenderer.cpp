@@ -9,12 +9,12 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   vertices[3].pos = {1.0,1.0,0.0};
   vertices[4].pos = {1.0,-1.0,0.0};
   vertices[5].pos = {-1.0,-1.0,0.0};
-  vertices[0].texCoord = {0.0,0.0};
-  vertices[1].texCoord = {0.0,1.0};
-  vertices[2].texCoord = {1.0,1.0};
-  vertices[3].texCoord = {1.0,1.0};
-  vertices[4].texCoord = {1.0,0.0};
-  vertices[5].texCoord = {0.0,0.0};
+  vertices[0].texCoord = glm::vec2(0.0,0.0);
+  vertices[1].texCoord = glm::vec2(0.0,1.0);
+  vertices[2].texCoord = glm::vec2(1.0,1.0);
+  vertices[3].texCoord = glm::vec2(1.0,1.0);
+  vertices[4].texCoord = glm::vec2(1.0,0.0);
+  vertices[5].texCoord = glm::vec2(0.0,0.0);
   
   uint32_t s; //throwaway, dont need the offset
   fullscreenQuad.fill(vertices, 6, &s);
@@ -64,6 +64,7 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
 
 
   diffuseAtlas.init(1024,1024, VKB_TEXTURE_TYPE_SAMPLED_RGBA, 128);
+  bumpAtlas.init(1024,1024, VKB_TEXTURE_TYPE_SAMPLED_RGBA, 128); //TODO: RGB
   
   compositeUniformPool.create(1, framesInFlight, 0, true);
   compositeUniformPool.addImage(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //normal
@@ -75,6 +76,7 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   compositeUniformPool.addImage(6, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //ssao
   compositeUniformPool.addImage(7, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE); //ssao
   compositeUniformPool.addImage(8, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //diffuse atlas
+  compositeUniformPool.addImage(9, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER); //bump atlas
 
 
   compositeUniformPool.createDescriptorSetLayout();
@@ -87,7 +89,8 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
 			 &uvTexture,
 			 &ssaoTexture,
 			 &ssaoTexture,
-			 &diffuseAtlas.atlas
+			 &diffuseAtlas.atlas,
+			 &bumpAtlas.atlas
   };
 
   compositeUniform.allocateDescriptorSets(&compositeUniformPool, texs, nullptr);
@@ -107,6 +110,7 @@ void DeferredRenderer::destroy()
   compositeUniformPool.destroy();
   compositeUniform.destroy();
   diffuseAtlas.destroy();
+  bumpAtlas.destroy();
   vkDestroyFramebuffer(device, deferredFramebuffer, nullptr);
   deferredPipeline.destroy();
 }
@@ -120,8 +124,9 @@ void DeferredRenderer::setCompositeInformation(VkBGraphicsPipeline pipeline,
   compositeRenderPass = renderPass;
 }
 
-void DeferredRenderer::begin( VkExtent2D extent  )
+void DeferredRenderer::begin( VkExtent2D extent )
 {
+  boundVBO = nullptr;
   vkResetCommandBuffer(drawCommandBuffer.commandBuffer, 0);
     
   drawCommandBuffer.begin(deferredRenderPass,
@@ -129,7 +134,7 @@ void DeferredRenderer::begin( VkExtent2D extent  )
 			  extent);
 	
   vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, deferredPipeline.pipeline);
-  //deferredPipeline = pipeline;
+
 }
 
 void DeferredRenderer::bindDescriptorSet( VkDescriptorSet* dSet, uint32_t ind )
@@ -147,6 +152,18 @@ void DeferredRenderer::bindDescriptorSetComposite( VkDescriptorSet* dSet, uint32
 
 void DeferredRenderer::record(VkBVertexBuffer* vertexBuffer, Model* model)
 {
+
+  if (boundVBO != vertexBuffer)
+    {
+      VkBuffer vertexBuffers[] = {vertexBuffer->vertexBuffer};
+      VkDeviceSize offsets[] = {0};
+
+      boundVBO = vertexBuffer;
+      vkCmdBindVertexBuffers(drawCommandBuffer.commandBuffer, 0, 1, vertexBuffers, offsets);
+      if (vertexBuffer->indexed)
+	vkCmdBindIndexBuffer(drawCommandBuffer.commandBuffer, vertexBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    }
+
   drawCommandBuffer.record(deferredPipeline.pipeline,
 			   deferredPipeline.layout,
 			   vertexBuffer,
@@ -155,6 +172,17 @@ void DeferredRenderer::record(VkBVertexBuffer* vertexBuffer, Model* model)
 
 void DeferredRenderer::record(VkBVertexBuffer* vertexBuffer, uint32_t start, uint32_t stop)
 {
+  if (boundVBO != vertexBuffer)
+    {
+      VkBuffer vertexBuffers[] = {vertexBuffer->vertexBuffer};
+      VkDeviceSize offsets[] = {0};
+
+      boundVBO = vertexBuffer;
+      vkCmdBindVertexBuffers(drawCommandBuffer.commandBuffer, 0, 1, vertexBuffers, offsets);
+      if (vertexBuffer->indexed)
+	vkCmdBindIndexBuffer(drawCommandBuffer.commandBuffer, vertexBuffer->indexBuffer, 0, VK_INDEX_TYPE_UINT32);
+    }
+
   drawCommandBuffer.record(deferredPipeline.pipeline,
 			   deferredPipeline.layout,
 			   vertexBuffer,
@@ -207,7 +235,10 @@ void DeferredRenderer::beginComposite(VkExtent2D extent, VkFramebuffer framebuff
 
 void DeferredRenderer::recordComposite()
 {
-    compositeCommandBuffer.record(compositePipeline.pipeline, compositePipeline.layout, &fullscreenQuad, 0, 6);
+  VkBuffer vertexBuffers[] = {fullscreenQuad.vertexBuffer};
+  VkDeviceSize offsets[] = {0};
+  vkCmdBindVertexBuffers(compositeCommandBuffer.commandBuffer, 0, 1, vertexBuffers, offsets);
+  compositeCommandBuffer.record(compositePipeline.pipeline, compositePipeline.layout, &fullscreenQuad, 0, 6);
 }
 
  void DeferredRenderer::submitComposite(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores, VkFence fence)
