@@ -64,19 +64,13 @@ vec2 repeatUV(vec2 uv, vec2 width)
 
 void main() {
   
-  //vec4 albedo = texture(albedos, fragTexCoord);
+
+
   
-  //uint matIndex = uint(albedo.a);
-  //Material m = materials[matIndex];
-  
-  //vec2 tileWidth = m.atlasMax - m.atlasMin;
-  //vec2 uv = repeatUV((texture(uvs, fragTexCoord).rg), tileWidth) + m.atlasMin;
-  //vec4 albedo = texture(albedos, fragTexCoord);
-  
-  //vec3 col = texture(diffuseAtlas, uv).rgb;
-  //outColour = vec4(col, 1.0);
-  //return;
   vec3 col = texture(albedos, fragTexCoord).rgb;
+  outColour = vec4(col, 1.0);
+  return;
+
   vec3 normal = texture(normals, fragTexCoord).xyz;
   float depth = texture(depth, fragTexCoord).r;
 
@@ -104,7 +98,7 @@ void main() {
   vec3 matDiffuseColor = col;
 
   float ssaoVal = 1.0;//texture(ssao, fragTexCoord).r;
-  vec3 ambientLighting = vec3(0.2);
+  vec3 ambientLighting = vec3(0.3) * col;
   vec3 lightColor0 = vec3(1.0,1.0,1.0);
 
   /*

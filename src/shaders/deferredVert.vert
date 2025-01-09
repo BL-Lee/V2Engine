@@ -32,14 +32,15 @@ layout(location = 4) in uint materialIndex;
 layout(location = 0) out vec2 outTexCoord;
 layout(location = 1) out vec3 outWorldPos;
 layout(location = 2) out vec3 outNormal;
-layout(location = 3) out uint outMatIndex;
+layout(location = 3) out vec4 outTangent;	
+layout(location = 4) out uint outMatIndex;
 
 void main() {
   mat4 modelMat = modelMatrices[info.matIndex];
   gl_Position = _MainCamera.proj * _MainCamera.view * modelMat * vec4(position, 1.0);
   outWorldPos = (modelMat * vec4(position, 1.0)).xyz;
   outTexCoord = texCoord;
-  
+  outTangent = tangent;
   outNormal = normal;//(modelMat * vec4(normal, 0.0)).xyz;
   outMatIndex = materialIndex;
 }
