@@ -8,7 +8,7 @@ Model::~Model()
 {
 }
 
-Model** ModelImporter::loadOBJ(const char* modelPath,
+Model** OBJImporter::loadOBJ(const char* modelPath,
 			       Material* mat,
 			       uint32_t* modelCount)
   {
@@ -30,6 +30,9 @@ Model** ModelImporter::loadOBJ(const char* modelPath,
     //std::vector<uint32_t> indices;
     std::unordered_map<Vertex, uint32_t> uniqueVertices{};
     //material_t->ambient_texname
+    bool hasTexCoords = attrib.texcoords.size() > 0;
+    bool hasMaterials = materials.size() > 0;
+    bool hasNormals = attrib.normals.size() > 0;
     //material_t->bump_texname
     uint32_t shapeCount = shapes.size();
     for (int i = 0; i < shapeCount; i++)
@@ -44,19 +47,22 @@ Model** ModelImporter::loadOBJ(const char* modelPath,
 				 attrib.vertices[3 * index.vertex_index + 1],
 				 attrib.vertices[3 * index.vertex_index + 2]
 				 );
+	  // if (hasNormals)
+	    {
+	      vertex.normal = glm::vec3(
+					attrib.normals[3 * index.normal_index + 0],
+					attrib.normals[3 * index.normal_index + 1],
+					attrib.normals[3 * index.normal_index + 2]
+					);
+	    }
+	    //if (hasTexCoords)
+	    {
+	      vertex.texCoord = glm::vec2(
+					  attrib.texcoords[2 * index.texcoord_index + 0],
+					  1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
+					  );
 
-	  vertex.normal = glm::vec3(
-				    attrib.normals[3 * index.normal_index + 0],
-				    attrib.normals[3 * index.normal_index + 1],
-				    attrib.normals[3 * index.normal_index + 2]
-				    );
-
-	  vertex.texCoord = glm::vec2(
-				      attrib.texcoords[2 * index.texcoord_index + 0],
-				      1.0f - attrib.texcoords[2 * index.texcoord_index + 1]
-				      );
-
-
+	    }
 	  vertex.materialIndex = 0;
 	  /*
 	    if (uniqueVertices.count(vertex) == 0) {
@@ -73,16 +79,13 @@ Model** ModelImporter::loadOBJ(const char* modelPath,
 	model->vertexCount = (uint32_t)model->vertices.size();
 
 	model->modelMatrix = glm::mat4(1.0);
-    
-	//    model->VBO.transferToDevice(transientCommandPool, graphicsQueue);
-	//model->textures.createTextureImage(VKB_TEXTURE_TYPE_SAMPLED_RGBA, texturePath);
-	//std::cout << model->vertices.size() << ": VERTICES" << std::endl;
-	//std::cout << model->indices.size() << ": INDICES" << std::endl;
-	//std::cout << materials[shapes[i].mesh.material_ids[0]].diffuse_texname << std::endl;
-	model->diffuseTexturePath = materials[shapes[i].mesh.material_ids[0]].diffuse_texname;
-	model->ambientTexturePath = materials[shapes[i].mesh.material_ids[0]].ambient_texname;
+	//if (hasMaterials)
+	  {
 
-	model->bumpTexturePath = materials[shapes[i].mesh.material_ids[0]].displacement_texname;
+	    model->diffuseTexturePath = materials[shapes[i].mesh.material_ids[0]].diffuse_texname;
+	    model->ambientTexturePath = materials[shapes[i].mesh.material_ids[0]].ambient_texname;
+	    model->bumpTexturePath = materials[shapes[i].mesh.material_ids[0]].displacement_texname;
+	  }
       }
 
     *modelCount = shapeCount;

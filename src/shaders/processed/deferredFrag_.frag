@@ -46,4 +46,5 @@ void main()
   vec3 bump = tangent.xyz * bumpVal.x + bitangent * bumpVal.y + normal * bumpVal.z;
   float reflective = abs(matIndex - 4.0) < 0.01 ? 1.0 : 0.0;
   outNormal = vec4(bump, reflective);
+  //outNormal = vec4(normal, reflective);
 }

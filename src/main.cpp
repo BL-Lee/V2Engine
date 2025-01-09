@@ -89,6 +89,7 @@ const bool enableVulkanValidationLayers = true;
 #include "ForwardRenderer.hpp"
 #include "DeferredRenderer.hpp"
 #include "SSAOPass.hpp"
+#include "MeshIO.hpp"
 Input inputInfo = {};
 DebugConsole debugConsole;
 uint32_t TEMP_MODEL_BUFFER_SIZE = 400;
@@ -217,6 +218,8 @@ private:
   }
   
   void initVulkan() {
+
+
     createInstance();
 #if !NDEBUG_MODE
       debugUtils.setupDebugMessenger(instance);
@@ -337,52 +340,61 @@ private:
     diffuseRed = emissive;
     
     tempModelBuffer = (Model**)calloc(sizeof(Model*), TEMP_MODEL_BUFFER_SIZE);
-    Model** sponzaModels = ModelImporter::loadOBJ("../models/sponza.obj",
-						  &diffuseGreen, &modelsLoaded);
+    //Model** sponzaModels = OBJImporter::loadOBJ("../models/sponza.obj",
+    //  &diffuseGreen, &modelsLoaded);
+    
+    //ModelIO::saveModels("../models/test.bmod", sponzaModels, modelsLoaded);
+
+    Model** sponzaModels = ModelIO::loadModels("../models/test.bmod",
+					       &diffuseGreen, &modelsLoaded);
+
     if (modelsLoaded >= TEMP_MODEL_BUFFER_SIZE)
       {
 	throw std::runtime_error("Model buffer too small for loaded models");
       }
+    std::cout << "Processing Models..." << std::endl;
     for (int i = 0; i < modelsLoaded; i++)
       {
+	std::cout << "\r[" ;
+	float percentageThrough = (float)i / modelsLoaded;
+	for (int j = 0; j < 60; j++)
+	  {
+	    std::cout << (percentageThrough > (float)j / 60 ? "-" : " ");
+	  }
+	std::cout << "] " << percentageThrough;
 	Model* model = sponzaModels[i];
-	std::cout << "Diffuse: " << model->diffuseTexturePath << std::endl;
-	std::cout << "Ambient: " << model->ambientTexturePath << std::endl;
-	std::cout << "Bump: " << model->bumpTexturePath << std::endl;
-	//model->normalizeUVs();
-	model->calculateTangents();
 	if (model->diffuseTexturePath.length())
 	  {
 	    glm::ivec2 posOffset = deferredRenderer.diffuseAtlas.checkIfTextureExists(model->diffuseTexturePath);
 	    if (posOffset == glm::ivec2(-1,-1))
 	      {
 		posOffset = deferredRenderer.diffuseAtlas.requestAtlasPage();
-
-	      }
-
-	    //Diffuse
-	    int w, h, c;
-	    std::string path = "../models/" + model->diffuseTexturePath;
-	    stbi_uc* pixels = stbi_load(path.c_str(), &w, &h, &c, STBI_rgb_alpha);
-	    if (!pixels) {
-	      throw std::runtime_error(std::string("failed to load texture image: ") + path);
-	    }
-	    deferredRenderer.diffuseAtlas.addToAtlas(pixels, posOffset, model->diffuseTexturePath);
-	    stbi_image_free(pixels);
-	    if (model->bumpTexturePath.length())
-	      {
-		//Bump
-		path = "../models/" + model->bumpTexturePath;
-		pixels = stbi_load(path.c_str(), &w, &h, &c, STBI_rgb_alpha);
+		//Diffuse
+		int w, h, c;
+		std::string path = "../models/" + model->diffuseTexturePath;
+		stbi_uc* pixels = stbi_load(path.c_str(), &w, &h, &c, STBI_rgb_alpha);
 		if (!pixels) {
 		  throw std::runtime_error(std::string("failed to load texture image: ") + path);
 		}
-		deferredRenderer.bumpAtlas.addToAtlas(pixels, posOffset, model->bumpTexturePath);
+		deferredRenderer.diffuseAtlas.addToAtlas(pixels, posOffset, model->diffuseTexturePath);
 		stbi_image_free(pixels);
+		if (model->bumpTexturePath.length())
+		  {
+		    //Bump
+		    path = "../models/" + model->bumpTexturePath;
+		    pixels = stbi_load(path.c_str(), &w, &h, &c, STBI_rgb_alpha);
+		    if (!pixels) {
+		      throw std::runtime_error(std::string("failed to load texture image: ") + path);
+		    }
+		    deferredRenderer.bumpAtlas.addToAtlas(pixels, posOffset, model->bumpTexturePath);
+		    stbi_image_free(pixels);
+		  }
+
 	      }
+
 	    
 	    glm::vec2 atlasDims = glm::vec2(deferredRenderer.diffuseAtlas.atlas.width,
-					    deferredRenderer.diffuseAtlas.atlas.height);					
+					    deferredRenderer.diffuseAtlas.atlas.height);
 	    model->material.atlasMin = glm::vec2(posOffset) / atlasDims;
 	    model->material.atlasMax = glm::vec2((posOffset + glm::ivec2(128,128))) / atlasDims;
 
@@ -397,6 +409,7 @@ private:
 	tempModelBuffer[i] = model;
 
       }
+    std::cout << std::endl;
     rayInputInfo.bvh.transferBVHData();
     deferredRenderer.diffuseAtlas.transitionAtlasToSample();
     deferredRenderer.bumpAtlas.transitionAtlasToSample();

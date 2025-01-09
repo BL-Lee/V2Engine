@@ -68,10 +68,11 @@ void main() {
 
   
   vec3 col = texture(albedos, fragTexCoord).rgb;
-  outColour = vec4(col, 1.0);
-  return;
 
   vec3 normal = texture(normals, fragTexCoord).xyz;
+  //outColour = vec4(normal, 1.0);
+  //return;
+
   float depth = texture(depth, fragTexCoord).r;
 
   vec3 worldPos = worldPosFromDepth(depth, fragTexCoord, _MainCamera.invViewProj);
