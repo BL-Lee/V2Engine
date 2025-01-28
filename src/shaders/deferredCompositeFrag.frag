@@ -139,8 +139,17 @@ void main() {
 	* exp(-2.0 * (dotHTAlphaX * dotHTAlphaX 
 		      + dotHBAlphaY * dotHBAlphaY) / (1.0 + dotHN));
     }
+
+
   outColour = vec4( ssaoVal * (ambientLighting 
-		   + diffuseReflection) + specularReflection , 1.0);
+			       + diffuseReflection) + specularReflection , 1.0);
+
+  if (normal == vec3(0.0,0.0,0.0)) //debug mat
+    {
+      outColour = vec4(1.0,0.0,1.0,1.0);
+    }
+
+  
   return;
 
     /*

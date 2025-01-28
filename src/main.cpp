@@ -105,7 +105,6 @@ public:
   VkSurfaceKHR surface;
 
   VkBGraphicsPipeline graphicsPipeline;
-  VkBGraphicsPipeline linePipeline;
   VkBComputePipeline rayPipeline;
   VkBComputePipeline reflectPipeline;
   RadianceCascade3D radianceCascade3D;
@@ -133,6 +132,7 @@ public:
   VkSemaphore deferredPassFinishedSemaphore;
   VkFence inFlightFence;
 
+  
   MaterialHandler materialHandler;
   Material emissive;
   Material diffuseGreen;
@@ -271,6 +271,9 @@ private:
 
     radianceCascade3D.create();
     radianceCascadeSS.create();
+
+
+    
     
     rayInputInfo.init();
     VkBuffer storageBuffers[] = {rayInputInfo.vertexBuffer.vertexBuffer, rayInputInfo.vertexBuffer.indexBuffer, rayInputInfo.bvh.deviceBuffer, rayInputInfo.deviceMatrixBuffer};
@@ -287,11 +290,6 @@ private:
     };
 
     std::vector<VkPushConstantRange> cascadePushConstantRange = {cascadePushConstant};
-    linePipeline.createLinePipeline(swapChain, forwardRenderer.renderPass,
-					    "../src/shaders/lineVert.spv",
-					    "../src/shaders/lineFrag.spv",
-					    &uniformLayouts, &cascadePushConstantRange);
-    
     cascadePushConstantRange[0].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     VkPushConstantRange modelPushConstant = {
       VK_SHADER_STAGE_VERTEX_BIT, 
@@ -322,6 +320,10 @@ private:
     deferredRenderer.deferredPipeline.createGraphicsPipeline(swapChain, deferredRenderer.deferredRenderPass,
 							     "../src/shaders/deferredVert.spv",
 							     "../src/shaders/deferredFrag.spv",
+							     &deferredLayouts, &cascadePushConstantRange);
+    deferredRenderer.deferredDebugLinePipeline.createLinePipeline(swapChain, deferredRenderer.deferredRenderPass,
+							     "../src/shaders/debugLineVert.spv",
+							     "../src/shaders/debugLineFrag.spv",
 							     &deferredLayouts, &cascadePushConstantRange);
 
 
@@ -404,8 +406,13 @@ private:
 	  }
 	
 	model->addToVBO(&rayInputInfo.vertexBuffer);
-
+	
 	rayInputInfo.addModel(model);
+	
+	model->getAABBLines(deferredRenderer.stagingDebugAABB);
+	uint32_t s;
+	deferredRenderer.debugLineVBO.fill(&deferredRenderer.stagingDebugAABB[0], 24, &s);
+
 	tempModelBuffer[i] = model;
 
       }
@@ -652,6 +659,7 @@ private:
       {
 	    
 	deferredRenderer.begin(swapChain.extent);
+	vkCmdBindPipeline(deferredRenderer.drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, deferredRenderer.deferredPipeline.pipeline);
 	vkCmdWriteTimestamp(deferredRenderer.drawCommandBuffer.commandBuffer,
 			    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			    debugConsole.queryPoolTimeStamps, 1);
@@ -687,6 +695,13 @@ private:
 		deferredRenderer.record(&rayInputInfo.vertexBuffer, tempModelBuffer[i]);
 	      }
 	  }
+
+	//Debug lines
+	vkCmdBindPipeline(deferredRenderer.drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, deferredRenderer.deferredDebugLinePipeline.pipeline);
+
+	deferredRenderer.record(&deferredRenderer.debugLineVBO, 0, deferredRenderer.debugLineVBO.vertexCount);
+	
+	
 	VkSubmitInfo submitInfo{};
 	std::vector<VkSemaphore> waitSemaphores = {imageAvailableSemaphore};
 	std::vector<VkSemaphore> signalSemaphores = {deferredPassFinishedSemaphore};
@@ -799,8 +814,7 @@ private:
 
 	//bind descriptor sets (probes and stuff)
 	deferredRenderer.beginComposite(swapChain.extent, swapChain.framebuffers[imageIndex], compositePipeline);
-	/*
-	vkCmdWriteTimestamp(deferredRenderer.compositeCommandBuffer.commandBuffer,
+	/*	vkCmdWriteTimestamp(deferredRenderer.compositeCommandBuffer.commandBuffer,
 			    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 			    debugConsole.queryPoolTimeStamps, 2);
 	*/
@@ -834,6 +848,10 @@ private:
 			    debugConsole.queryPoolTimeStamps, 4);
 
 	deferredRenderer.submitComposite(waitCompositeSemaphores, signalCompositeSemaphores, inFlightFence);
+
+
+
+	
 	debugConsole.gatherTimings();
       }
 
@@ -998,12 +1016,11 @@ private:
       vkDestroyImageView(device, imageView, nullptr);
     }
     graphicsPipeline.destroy();
-    vkDestroyPipeline(device, linePipeline.pipeline, nullptr);	
-    vkDestroyPipelineLayout(device, linePipeline.layout, nullptr);
     rayPipeline.destroy();
     reflectPipeline.destroy();
     radianceCascade3D.lightProbePipeline.destroy();
     radianceCascadeSS.lightProbePipeline.destroy();
+
     
     free(tempModelBuffer);
     materialHandler.destroy();

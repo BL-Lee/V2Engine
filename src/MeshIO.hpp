@@ -26,6 +26,9 @@ public:
   void setVerticesMatIndex();
   void calculateTangents();
   void addToVBO(VkBVertexBuffer* vbo);
+
+  
+  void getAABBLines(Vertex* vertexBuffer);
   
   ~Model();
 };

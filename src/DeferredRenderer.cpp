@@ -15,7 +15,10 @@ void DeferredRenderer::init(VkBSwapChain* swapChain)
   vertices[3].texCoord = glm::vec2(1.0,1.0);
   vertices[4].texCoord = glm::vec2(1.0,0.0);
   vertices[5].texCoord = glm::vec2(0.0,0.0);
-  
+
+
+  debugLineVBO.create(sizeof(Vertex) * 10000);
+
   uint32_t s; //throwaway, dont need the offset
   fullscreenQuad.fill(vertices, 6, &s);
   
@@ -106,6 +109,7 @@ void DeferredRenderer::destroy()
   normalTexture.destroy();
   depthTexture.destroy();
   ssaoTexture.destroy();
+  debugLineVBO.destroy();
   uvTexture.destroy();
   compositeUniformPool.destroy();
   compositeUniform.destroy();
@@ -113,6 +117,7 @@ void DeferredRenderer::destroy()
   bumpAtlas.destroy();
   vkDestroyFramebuffer(device, deferredFramebuffer, nullptr);
   deferredPipeline.destroy();
+  deferredDebugLinePipeline.destroy();
 }
 
 void DeferredRenderer::setCompositeInformation(VkBGraphicsPipeline pipeline,
@@ -264,13 +269,13 @@ void DeferredRenderer::recordComposite()
   mode = 0;
 }
 
-void DeferredRenderer::changeDeferredPipeline(VkBGraphicsPipeline pipeline)
+/*void DeferredRenderer::changeDeferredPipeline(VkBGraphicsPipeline pipeline)
 {
   vkCmdBindPipeline(drawCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
   deferredPipeline = pipeline;
-}
+  }
 void DeferredRenderer::changeCompositePipeline(VkBGraphicsPipeline pipeline)
 {
   vkCmdBindPipeline(compositeCommandBuffer.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline.pipeline);
   compositePipeline = pipeline;
-}
+  }*/

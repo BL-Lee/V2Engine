@@ -17,6 +17,10 @@ public:
   VkBDrawCommandBuffer compositeCommandBuffer;
   
   VkBGraphicsPipeline deferredPipeline;
+  VkBGraphicsPipeline deferredDebugLinePipeline;
+  VkBVertexBuffer debugLineVBO;
+  Vertex stagingDebugAABB[24];
+  
   VkFramebuffer deferredFramebuffer;
   VkBRenderPass deferredRenderPass;
   
@@ -27,6 +31,9 @@ public:
   VkBUniformPool compositeUniformPool;
   VkBUniformBuffer compositeUniform;
 
+  
+
+  
   //G-Buffer
   VkBTexture ssaoTexture;
   VkBTexture albedoTexture;
@@ -65,6 +72,6 @@ public:
   void submitDeferred(std::vector<VkSemaphore> waitSemaphores, std::vector<VkSemaphore> signalSemaphores, VkFence fence);
   void beginComposite(VkExtent2D extent, VkFramebuffer framebuffer, VkBGraphicsPipeline pipeline);
 
-  void changeDeferredPipeline(VkBGraphicsPipeline pipeline);
-  void changeCompositePipeline(VkBGraphicsPipeline pipeline);
+  //  void changeDeferredPipeline(VkBGraphicsPipeline pipeline);
+  //  void changeCompositePipeline(VkBGraphicsPipeline pipeline);
 };

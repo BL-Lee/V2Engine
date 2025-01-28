@@ -54,7 +54,11 @@ void BVH::destroy()
   
 }
 
-//void BVH::reorderVertices(Vertex* vertices, 
+/*void BVH::reorderVertices(Vertex* vertices, uint32_t vertexCount)
+{
+  
+}*/
+
 
 void BVH::addModel(Model* model)
 {

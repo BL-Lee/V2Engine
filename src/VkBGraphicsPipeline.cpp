@@ -74,7 +74,7 @@ void VkBGraphicsPipeline::createPipeline(VkBSwapChain& swapChain,
 
     //Vertex input (How each vertex is set up)
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-    if (isLineMode)
+    /*    if (isLineMode)
       {
 	auto bindingDescription = LineVertex::getBindingDescription();
 	auto attributeDescriptions = LineVertex::getAttributeDescriptions();
@@ -85,7 +85,7 @@ void VkBGraphicsPipeline::createPipeline(VkBSwapChain& swapChain,
 	vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data(); // Optional
 
       }
-    else
+      else*/
       {
 	auto bindingDescription = Vertex::getBindingDescription();
 	auto attributeDescriptions = Vertex::getAttributeDescriptions();

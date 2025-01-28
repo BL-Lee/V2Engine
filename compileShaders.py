@@ -16,7 +16,10 @@ filesToCompile = [
     'ray.comp',
     'rayProbe.comp',
     'lineVert.vert',
-    'lineFrag.frag'
+    'lineFrag.frag',
+    'debugLineVert.vert',
+    'debugLineFrag.frag'
+
 ]
 
 compilerPath = 'C:/VulkanSDK/1.3.296.0/Bin/glslc.exe'

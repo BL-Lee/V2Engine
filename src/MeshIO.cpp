@@ -1,4 +1,5 @@
 #include "MeshIO.hpp"
+#include "BVH.hpp"
 void ModelIO::writeModel(std::ofstream& fileHandle, Model* model)
 {
   size_t vCount = model->vertices.size();
@@ -91,3 +92,69 @@ Model** ModelIO::loadModels(const char* modelPath, Material* mat, uint32_t* mode
   fileHandle.close();
   return models;
 }
+
+
+void Model::getAABBLines(Vertex* vertexBuffer)
+{
+
+  if (!rootBVHNode)
+    {
+      throw std::runtime_error("Trying to get aabb of mesh with no bvh yet");
+    }
+  BVHNode* node = (BVHNode*)rootBVHNode;
+
+  float TEMP_SCALE = 0.01f;
+  
+  glm::vec3 fbl = glm::vec3(node->min.x, node->min.y, node->min.z) * TEMP_SCALE;
+  glm::vec3 fbr = glm::vec3(node->max.x, node->min.y, node->min.z) * TEMP_SCALE;
+  glm::vec3 ftl = glm::vec3(node->min.x, node->max.y, node->min.z) * TEMP_SCALE;
+  glm::vec3 ftr = glm::vec3(node->max.x, node->max.y, node->min.z) * TEMP_SCALE;
+
+  glm::vec3 bbl = glm::vec3(node->min.x, node->min.y, node->max.z) * TEMP_SCALE;
+  glm::vec3 bbr = glm::vec3(node->max.x, node->min.y, node->max.z) * TEMP_SCALE;
+  glm::vec3 btl = glm::vec3(node->min.x, node->max.y, node->max.z) * TEMP_SCALE;
+  glm::vec3 btr = glm::vec3(node->max.x, node->max.y, node->max.z) * TEMP_SCALE;
+
+
+  //front face
+  vertexBuffer[0].pos = fbl;
+  vertexBuffer[1].pos = fbr;
+
+  vertexBuffer[2].pos = fbr;
+  vertexBuffer[3].pos = ftr;
+
+  vertexBuffer[4].pos = ftr;
+  vertexBuffer[5].pos = ftl;
+
+  vertexBuffer[6].pos = ftl;
+  vertexBuffer[7].pos = fbl;
+
+  //back face
+  vertexBuffer[8].pos = bbl;
+  vertexBuffer[9].pos = bbr;
+
+  vertexBuffer[10].pos = bbr;
+  vertexBuffer[11].pos = btr;
+
+  vertexBuffer[12].pos = btr;
+  vertexBuffer[13].pos = btl;
+
+  vertexBuffer[14].pos = btl;
+  vertexBuffer[15].pos = bbl;
+
+  //Connectors from front to back
+  vertexBuffer[16].pos = fbl;
+  vertexBuffer[17].pos = bbl;
+
+  vertexBuffer[18].pos = fbr;
+  vertexBuffer[19].pos = bbr;
+
+  vertexBuffer[20].pos = ftr;
+  vertexBuffer[21].pos = btr;
+
+  vertexBuffer[22].pos = ftl;
+  vertexBuffer[23].pos = btl;
+
+
+}
+
